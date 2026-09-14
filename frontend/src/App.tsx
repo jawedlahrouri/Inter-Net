@@ -5,13 +5,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge'
 import {
   Server,
-  Activity,
   RefreshCw,
-  ExternalLink,
   Code2,
-  CheckCircle2,
   AlertTriangle,
-  Sparkles,
+  Globe,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react'
 
 export function App() {
@@ -41,57 +40,66 @@ export function App() {
   }, [checkConnection])
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6">
-      <div className="max-w-3xl w-full space-y-6">
-        {/* Header Hero Card */}
-        <Card className="bg-neutral-900/90 border-neutral-800 shadow-2xl backdrop-blur-sm">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-1">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col selection:bg-cyan-500/20">
+      {/* Top Navbar Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-neutral-800/80 bg-neutral-950/80 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Logo & Navigation */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2.5">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
+                <span className="font-bold text-base tracking-tight bg-gradient-to-r from-neutral-100 via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
                   INTER-NET
-                </CardTitle>
-                <Badge variant="secondary" className="gap-1 text-[11px]">
-                  <Sparkles className="size-3 text-cyan-400" />
-                  shadcn/ui
-                </Badge>
+                </span>
               </div>
-              <CardDescription className="text-neutral-400 text-sm">
-                Stack moderne FastAPI (Python) + React (TypeScript, Vite, Tailwind CSS, shadcn/ui)
-              </CardDescription>
             </div>
 
-            <div>
-              {loading ? (
-                <Badge variant="outline" className="gap-1.5 border-amber-500/40 text-amber-300 bg-amber-950/30">
-                  <Activity className="size-3 animate-spin text-amber-400" />
-                  Connexion...
-                </Badge>
-              ) : health ? (
-                <Badge variant="outline" className="gap-1.5 border-emerald-500/40 text-emerald-300 bg-emerald-950/30">
-                  <CheckCircle2 className="size-3 text-emerald-400" />
-                  Backend Connecté
-                </Badge>
-              ) : (
-                <Badge variant="destructive" className="gap-1.5">
-                  <AlertTriangle className="size-3" />
-                  Backend Hors Ligne
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-        </Card>
+            {/* Quick links */}
+            <nav className="hidden md:flex items-center gap-1 pl-4 border-l border-neutral-800/80">
+              <a
+                href="#dashboard"
+                className="px-3 py-1.5 text-xs font-medium text-neutral-100 bg-neutral-900 border border-neutral-800 rounded-lg shadow-xs"
+              >
+                Dashboard
+              </a>
+              <a
+                href="http://localhost:8000/api/v1/docs"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50 rounded-lg transition-colors inline-flex items-center gap-1.5"
+              >
+                <BookOpen className="size-3" />
+                API Docs
+              </a>
+            </nav>
+          </div>
+        </div>
+      </header>
 
-        {/* Status Monitoring Card */}
+      {/* Main Page Content */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-10 space-y-8">
+        {/* Page Hero Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-100">
+            DashBoard - INTER-NET
+          </h1>
+          <p className="text-neutral-400 text-sm sm:text-base max-w-md mx-auto">
+            Suivez l'état de votre application et jeux en temps réel.
+          </p>
+        </div>
+
+        {/* TODO: Peut être supprimer cette partie du code ou la déplacé dans une autre page par la suite.*/}
+
+        {/* Status Monitoring Card
         <Card className="bg-neutral-900/90 border-neutral-800 shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div className="space-y-1">
               <CardTitle className="text-lg flex items-center gap-2 text-neutral-200">
                 <Server className="size-5 text-indigo-400" />
-                Statut de l'API FastAPI
+                Statut de l'API
               </CardTitle>
               <CardDescription className="text-neutral-400 text-xs">
-                Surveillance de l'état du serveur backend en temps réel
+                Informations en temps réel du serveur backend FastAPI.
               </CardDescription>
             </div>
 
@@ -100,7 +108,7 @@ export function App() {
               disabled={loading}
               variant="outline"
               size="sm"
-              className="gap-2 cursor-pointer border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200"
+              className="gap-2 cursor-pointer border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-200"
             >
               <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Test...' : 'Rafraîchir'}
@@ -109,7 +117,7 @@ export function App() {
 
           <CardContent className="space-y-4">
             {loading ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">
+              <p className="text-sm text-neutral-400 py-6 text-center">
                 Interrogation des endpoints API...
               </p>
             ) : error ? (
@@ -127,9 +135,9 @@ export function App() {
                 </div>
               </div>
             ) : health ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {rootInfo?.message && (
-                  <div className="p-3 bg-indigo-950/30 border border-indigo-900/40 rounded-lg text-sm text-indigo-200 flex items-center gap-2">
+                  <div className="p-3.5 bg-indigo-950/30 border border-indigo-900/40 rounded-lg text-sm text-indigo-200 flex items-center gap-2.5">
                     <Code2 className="size-4 text-indigo-400 shrink-0" />
                     <span>
                       Message backend : <strong className="text-white">{rootInfo.message}</strong>
@@ -137,26 +145,26 @@ export function App() {
                   </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Service</span>
+                  <div className="p-3.5 bg-neutral-950/60 rounded-lg border border-neutral-800/80">
+                    <span className="text-neutral-400 text-xs block mb-1">Service</span>
                     <span className="font-mono font-medium text-neutral-200 text-xs sm:text-sm truncate block">
                       {health.service}
                     </span>
                   </div>
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Version</span>
+                  <div className="p-3.5 bg-neutral-950/60 rounded-lg border border-neutral-800/80">
+                    <span className="text-neutral-400 text-xs block mb-1">Version</span>
                     <span className="font-mono font-medium text-neutral-200 text-xs sm:text-sm block">
                       {health.version}
                     </span>
                   </div>
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Statut</span>
+                  <div className="p-3.5 bg-neutral-950/60 rounded-lg border border-neutral-800/80">
+                    <span className="text-neutral-400 text-xs block mb-1">Statut</span>
                     <span className="font-mono font-medium text-emerald-400 text-xs sm:text-sm block">
                       {health.status.toUpperCase()}
                     </span>
                   </div>
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Dernier Ping</span>
+                  <div className="p-3.5 bg-neutral-950/60 rounded-lg border border-neutral-800/80">
+                    <span className="text-neutral-400 text-xs block mb-1">Dernier Ping</span>
                     <span className="font-mono text-neutral-300 text-xs block truncate">
                       {new Date(health.timestamp).toLocaleTimeString()}
                     </span>
@@ -165,73 +173,44 @@ export function App() {
               </div>
             ) : null}
           </CardContent>
-        </Card>
+        </Card> */}
+      </main>
 
-        {/* Documentation Links Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Footer */}
+      <footer className="border-t border-neutral-800/80 py-6 text-center text-xs text-neutral-500 mt-auto">
+        <p className="font-medium text-neutral-400 mb-2">CrabeCorp Tools</p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
           <a
             href="http://localhost:8000/api/v1/docs"
             target="_blank"
             rel="noreferrer"
-            className="group block"
+            className="text-neutral-400 hover:text-indigo-400 inline-flex items-center gap-1 transition-colors"
           >
-            <Card className="bg-neutral-900/60 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-900 transition-all h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center justify-between text-neutral-200 group-hover:text-indigo-400">
-                  Swagger OpenAPI
-                  <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-neutral-400">Documentation interactive des endpoints FastAPI</p>
-              </CardContent>
-            </Card>
+            Documentation (Swagger)
+            <ExternalLink className="size-3" />
           </a>
-
+          <span className="text-neutral-700">•</span>
           <a
             href="http://localhost:8000/api/v1/redoc"
             target="_blank"
             rel="noreferrer"
-            className="group block"
+            className="text-neutral-400 hover:text-indigo-400 inline-flex items-center gap-1 transition-colors"
           >
-            <Card className="bg-neutral-900/60 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-900 transition-all h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center justify-between text-neutral-200 group-hover:text-indigo-400">
-                  ReDoc
-                  <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-neutral-400">Documentation détaillée et lisible des schemas</p>
-              </CardContent>
-            </Card>
+            Documentation (ReDoc)
+            <ExternalLink className="size-3" />
           </a>
-
+          <span className="text-neutral-700">•</span>
           <a
             href="https://ui.shadcn.com/docs"
             target="_blank"
             rel="noreferrer"
-            className="group block"
+            className="text-neutral-400 hover:text-indigo-400 inline-flex items-center gap-1 transition-colors"
           >
-            <Card className="bg-neutral-900/60 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-900 transition-all h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center justify-between text-neutral-200 group-hover:text-indigo-400">
-                  shadcn/ui Docs
-                  <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-neutral-400">Composants accessibles et stylables à volonté</p>
-              </CardContent>
-            </Card>
+            shadcn/ui Docs
+            <ExternalLink className="size-3" />
           </a>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-neutral-500 pt-2">
-          INTER-NET • FastAPI + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui
-        </p>
-      </div>
+      </footer>
     </div>
   )
 }
