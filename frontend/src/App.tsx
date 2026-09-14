@@ -3,18 +3,9 @@ import { fetchHealth, fetchRoot, type HealthResponse, type RootResponse } from '
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { AddButton } from '@/components/ui/addbutton'
-import { RemoveButton } from '@/components/ui/removebutton'
 import { Separator } from '@/components/ui/separator'
-import { InputField } from '@/components/ui/input-field'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { WidgetGrid } from '@/components/dashboard/WidgetGrid'
+import { useWidgets } from '@/hooks/useWidgets'
 import {
   Server,
   RefreshCw,
@@ -56,35 +47,7 @@ export function App() {
     setIsEditing((prev) => !prev)
   }
 
-  interface Widget {
-    id: string
-    title: string
-  }
-
-  const [widgets, setWidgets] = useState<Widget[]>([
-    { id: '1', title: 'Widget 1' },
-    { id: '2', title: 'Widget 2' },
-  ])
-
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
-  const [widgetTitle, setWidgetTitle] = useState<string>('')
-
-  const handleCreateWidget = (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!widgetTitle.trim()) return
-
-    const newId = (widgets.length + 1).toString()
-    setWidgets((prev) => [
-      ...prev,
-      { id: newId, title: widgetTitle.trim() },
-    ])
-    setWidgetTitle('')
-    setIsDialogOpen(false)
-  }
-
-  const removeWidget = (id: string) => {
-    setWidgets((prev) => prev.filter((w) => w.id !== id))
-  }
+  const { widgets, addWidget, removeWidget } = useWidgets()
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-cyan-500/20">
@@ -129,64 +92,12 @@ export function App() {
           </p>
         </div>
         {/* Widgets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {widgets.map((widget) => (
-            <Card key={widget.id} className="min-h-[320px] bg-card border-border flex flex-col justify-between">
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg text-card-foreground">{widget.title}</CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground">Widget #{widget.id}</CardDescription>
-                </div>
-                {isEditing && (
-                  <RemoveButton onClick={() => removeWidget(widget.id)} />
-                )}
-              </CardHeader>
-              <CardContent className="flex-1 flex items-center justify-center text-muted-foreground text-sm border-t border-dashed border-border/60 m-4 rounded-lg bg-muted/20">
-                Contenu du widget
-              </CardContent>
-            </Card>
-          ))}
-
-          {isEditing && (
-            <AddButton onClick={() => setIsDialogOpen(true)} />
-          )}
-        </div>
-
-        {/* Modal d'ajout de widget (UX 1) */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Ajouter un widget</DialogTitle>
-              <DialogDescription>
-                Renseignez les détails de votre nouveau widget.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleCreateWidget} className="space-y-4 py-2">
-              <InputField
-                label="Nom du widget"
-                placeholder="Entrez le nom du widget"
-                value={widgetTitle}
-                onChange={(e) => setWidgetTitle(e.target.value)}
-                autoFocus
-                required
-              />
-
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={!widgetTitle.trim()}>
-                  Créer le widget
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <WidgetGrid
+          widgets={widgets}
+          isEditing={isEditing}
+          onAddWidget={addWidget}
+          onRemoveWidget={removeWidget}
+        />
 
         {/* TODO: Peut être supprimer cette partie du code ou la déplacé dans une autre page par la suite.*/}
 
