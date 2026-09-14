@@ -127,3 +127,122 @@ export function extractJsonValue(
 
   return { value: current, found: true }
 }
+
+export interface DiscoveredPath {
+  path: string
+  value: any
+  type: 'number' | 'string' | 'boolean' | 'count'
+  suggestedMode?: 'kpi' | 'gauge'
+}
+
+/**
+ * Automatically inspects a JSON response to discover all available leaf paths and array counts.
+ */
+export function discoverJsonPaths(
+  data: any,
+  prefix = '',
+  depth = 0,
+  results: DiscoveredPath[] = []
+): DiscoveredPath[] {
+  if (depth > 5 || results.length >= 60) return results
+  if (data === null || data === undefined) return results
+
+  if (Array.isArray(data)) {
+    results.push({
+      path: prefix ? `${prefix}.length` : 'length',
+      value: data.length,
+      type: 'count',
+      suggestedMode: 'kpi',
+    })
+    if (data.length > 0) {
+      discoverJsonPaths(data[0], prefix ? `${prefix}[0]` : '[0]', depth + 1, results)
+    }
+    return results
+  }
+
+  if (typeof data === 'object') {
+    for (const [key, val] of Object.entries(data)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue
+      const currentPath = prefix ? `${prefix}.${key}` : key
+      if (val !== null && typeof val === 'object') {
+        discoverJsonPaths(val, currentPath, depth + 1, results)
+      } else if (val !== undefined && val !== null) {
+        const isNum = typeof val === 'number'
+        const isPercentage =
+          isNum &&
+          val >= 0 &&
+          val <= 100 &&
+          /(percent|pct|usage|load|progress|cpu|ram|battery)/i.test(key)
+
+        results.push({
+          path: currentPath,
+          value: val,
+          type: typeof val as 'number' | 'string' | 'boolean',
+          suggestedMode: isPercentage ? 'gauge' : 'kpi',
+        })
+      }
+    }
+  }
+
+  return results
+}
+
+const METRIC_KEYWORDS = [
+  'count', 'total', 'length', 'items', 'stargazers', 'followers',
+  'price', 'rate', 'value', 'amount', 'balance', 'score', 'status',
+  'healthy', 'uptime', 'temp', 'speed', 'humidity', 'users', 'online'
+]
+
+const LOW_PRIORITY_KEYS = [
+  'id', 'node_id', 'sha', 'url', 'avatar_url', 'html_url', 'etag',
+  'gravatar_id', 'type', 'created_at', 'updated_at'
+]
+
+function calculatePathScore(item: DiscoveredPath): number {
+  const lowerPath = item.path.toLowerCase()
+  let score = 0
+
+  if (item.type === 'number' || item.type === 'count') score += 50
+  if (item.type === 'string') score += 10
+
+  for (const kw of METRIC_KEYWORDS) {
+    if (lowerPath.includes(kw)) {
+      score += 40
+      break
+    }
+  }
+
+  for (const lk of LOW_PRIORITY_KEYS) {
+    if (lowerPath.endsWith(`.${lk}`) || lowerPath === lk) {
+      score -= 30
+      break
+    }
+  }
+
+  const depth = (item.path.match(/\./g) || []).length
+  score -= depth * 5
+
+  return score
+}
+
+/**
+ * Automatically selects the best candidate path for a dashboard metric.
+ */
+export function findBestDefaultPath(paths: DiscoveredPath[]): DiscoveredPath | undefined {
+  if (!paths || paths.length === 0) return undefined
+
+  let best = paths[0]
+  let bestScore = calculatePathScore(best)
+
+  for (let i = 1; i < paths.length; i++) {
+    const score = calculatePathScore(paths[i])
+    if (score > bestScore) {
+      bestScore = score
+      best = paths[i]
+    }
+  }
+
+  return best
+}
+
+

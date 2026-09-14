@@ -14,6 +14,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { CloudSun, Activity, ExternalLink } from 'lucide-react'
 import type { NewWidgetData, WidgetType } from '@/types/widget'
+import { JsonPathPicker } from './JsonPathPicker'
+import { RefreshField } from '@/components/ui/refresh-field'
 
 export interface AddWidgetDialogProps {
   open: boolean
@@ -48,14 +50,28 @@ export function AddWidgetDialog({
     title: string
     apiUrl: string
     jsonPath: string
+    refresh: number
     displayMode: 'kpi' | 'gauge'
     unit: string
   }) => {
     setTitle(preset.title)
     setApiUrl(preset.apiUrl)
     setJsonPath(preset.jsonPath)
+    setRefreshInterval(preset.refresh)
     setDisplayMode(preset.displayMode)
     setUnit(preset.unit)
+  }
+
+  const handleSelectPath = (path: string, _previewValue: any, suggestedMode?: 'kpi' | 'gauge') => {
+    setJsonPath(path)
+    if (suggestedMode) {
+      setDisplayMode(suggestedMode)
+    }
+    if (!title.trim()) {
+      const parts = path.split('.')
+      const name = parts[parts.length - 1]
+      setTitle(name.charAt(0).toUpperCase() + name.slice(1))
+    }
   }
 
   const resetForm = () => {
@@ -167,6 +183,7 @@ export function AddWidgetDialog({
                     handleApplyPreset({
                       title: 'Statut Backend',
                       apiUrl: 'http://127.0.0.1:8000/api/v1/health',
+                      refresh: 15,
                       jsonPath: 'status',
                       displayMode: 'kpi',
                       unit: '',
@@ -184,6 +201,7 @@ export function AddWidgetDialog({
                       apiUrl: 'https://api.steampowered.com/IWishlistService/GetWishlist/v1/?steamid=76561199802292886',
                       jsonPath: 'response.items.length',
                       displayMode: 'kpi',
+                      refresh: 60,
                       unit: 'jeux',
                     })
                   }
@@ -208,19 +226,34 @@ export function AddWidgetDialog({
                 required
               />
 
-              <div className="grid grid-cols-2 gap-3">
-                <InputField
-                  label="Chemin JSON (Path)"
-                  placeholder="status ou data.value"
-                  value={jsonPath}
-                  onChange={(e) => setJsonPath(e.target.value)}
-                  required
+              {apiUrl.trim().length > 5 && (
+                <JsonPathPicker
+                  apiUrl={apiUrl}
+                  selectedPath={jsonPath}
+                  onSelectPath={handleSelectPath}
+                  className="p-2.5 rounded-lg border border-border/80 bg-muted/20"
                 />
+              )}
+
+              <InputField
+                label="Chemin JSON (Path)"
+                placeholder="status ou data.value"
+                value={jsonPath}
+                onChange={(e) => setJsonPath(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-2 gap-3">
                 <InputField
                   label="Unité (optionnelle)"
                   placeholder="Ex: $, ms, %, °C"
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
+                />
+                <RefreshField
+                  label="Refresh"
+                  value={refreshInterval}
+                  onChange={(val) => setRefreshInterval(val)}
                 />
               </div>
 
