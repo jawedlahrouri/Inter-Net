@@ -112,6 +112,15 @@ export async function fetchHealth(): Promise<HealthResponse> {
   return apiFetch<HealthResponse>('/api/v1/health');
 }
 
+export interface QuoteResponse {
+  quote: string;
+  author: string;
+}
+
+export async function fetchRandomQuote(): Promise<QuoteResponse> {
+  return apiFetch<QuoteResponse>('/api/v1/quotes/random');
+}
+
 export async function fetchRoot(): Promise<RootResponse> {
   return apiFetch<RootResponse>('/');
 }

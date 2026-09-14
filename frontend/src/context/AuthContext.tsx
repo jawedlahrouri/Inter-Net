@@ -13,6 +13,8 @@ import {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  showMotivationalTransition: boolean;
+  setShowMotivationalTransition: (show: boolean) => void;
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
@@ -23,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showMotivationalTransition, setShowMotivationalTransition] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -49,16 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleLogin = async (payload: LoginPayload) => {
     const data = await loginUser(payload);
     setUser(data.user);
+    setShowMotivationalTransition(true);
   };
 
   const handleRegister = async (payload: RegisterPayload) => {
     const data = await registerUser(payload);
     setUser(data.user);
+    setShowMotivationalTransition(true);
   };
 
   const handleLogout = () => {
     clearStoredToken();
     setUser(null);
+    setShowMotivationalTransition(false);
   };
 
   return (
@@ -66,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
+        showMotivationalTransition,
+        setShowMotivationalTransition,
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,

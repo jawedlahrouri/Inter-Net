@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { UserDashboardHeader } from '@/components/auth/UserDashboardHeader';
+import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
 import { fetchHealth, type HealthResponse } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +15,16 @@ import {
   Zap,
   Activity,
   PlusCircle,
+  Quote,
 } from 'lucide-react';
 
 function DashboardContent() {
-  const { user, loading: authLoading } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    showMotivationalTransition,
+    setShowMotivationalTransition,
+  } = useAuth();
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(true);
   const [healthError, setHealthError] = useState<string | null>(null);
@@ -51,6 +58,12 @@ function DashboardContent() {
     );
   }
 
+  if (showMotivationalTransition) {
+    return (
+      <MotivationalLoader onComplete={() => setShowMotivationalTransition(false)} />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20">
       {/* Top Navbar Header */}
@@ -66,6 +79,18 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-3">
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMotivationalTransition(true)}
+                className="text-xs gap-1.5 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+              >
+                <Quote className="size-3" />
+                Méditer
+              </Button>
+            )}
+
             {health ? (
               <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/20 flex items-center gap-1.5 py-1">
                 <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
