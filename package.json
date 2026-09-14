@@ -1,7 +1,7 @@
 {
   "name": "inter-net",
   "version": "1.0.0",
-  "description": "",
+  "description": "INTER-NET project - FastAPI backend & React Vite frontend",
   "homepage": "https://github.com/Crabe-Corp/INTER-NET#readme",
   "bugs": {
     "url": "https://github.com/Crabe-Corp/INTER-NET/issues"
@@ -10,9 +10,11 @@
     "type": "git",
     "url": "git+https://github.com/Crabe-Corp/INTER-NET.git"
   },
-  "type": "commonjs",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "dev:backend": "bash -c 'cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000'",
+    "test:backend": "bash -c 'cd backend && source .venv/bin/activate && pytest'",
+    "install:all": "bash -c 'cd backend && uv venv --python 3.12 .venv && uv pip install -e \".[dev]\" && cd ../frontend && npm install'"
   }
 }
