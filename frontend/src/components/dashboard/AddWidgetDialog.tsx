@@ -13,7 +13,7 @@ import {
 export interface AddWidgetDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddWidget: (title: string) => void
+  onAddWidget: (title: string, url?: string) => void
 }
 
 export function AddWidgetDialog({
@@ -22,18 +22,22 @@ export function AddWidgetDialog({
   onAddWidget,
 }: AddWidgetDialogProps) {
   const [title, setTitle] = React.useState('')
+  const [url, setUrl] = React.useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+    if (!url.trim()) return
 
-    onAddWidget(title)
+    onAddWidget(title.trim(), url.trim())
     setTitle('')
+    setUrl('')
     onOpenChange(false)
   }
 
   const handleCancel = () => {
     setTitle('')
+    setUrl('')
     onOpenChange(false)
   }
 
@@ -51,12 +55,20 @@ export function AddWidgetDialog({
           <InputField
             label="Nom du widget"
             placeholder="Entrez le nom du widget"
+            type="text"
             value={title}
+            required
             onChange={(e) => setTitle(e.target.value)}
+          />
+          <InputField
+            label= "Lien du widget"
+            placeholder= "Entrez le lien du widget"
+            type= "text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
             autoFocus
             required
           />
-
           <DialogFooter className="pt-2">
             <Button
               type="button"
@@ -65,7 +77,7 @@ export function AddWidgetDialog({
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={!title.trim()}>
+            <Button type="submit" disabled={!title.trim() || !url.trim()}>
               Créer le widget
             </Button>
           </DialogFooter>

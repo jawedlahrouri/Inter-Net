@@ -7,7 +7,7 @@ import type { Widget } from '@/types/widget'
 export interface WidgetGridProps {
   widgets: Widget[]
   isEditing: boolean
-  onAddWidget: (title: string) => void
+  onAddWidget: (title: string, url?: string) => void
   onRemoveWidget: (id: string) => void
 }
 

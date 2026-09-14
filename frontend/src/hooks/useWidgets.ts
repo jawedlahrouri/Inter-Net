@@ -9,11 +9,14 @@ const DEFAULT_WIDGETS: Widget[] = [
 export function useWidgets(initialWidgets: Widget[] = DEFAULT_WIDGETS) {
   const [widgets, setWidgets] = useState<Widget[]>(initialWidgets)
 
-  const addWidget = (title: string) => {
+  const addWidget = (title: string, url?: string) => {
     const trimmed = title.trim()
     if (!trimmed) return
     const newId = (widgets.length + 1).toString()
-    setWidgets((prev) => [...prev, { id: newId, title: trimmed }])
+    setWidgets((prev) => [
+      ...prev,
+      { id: newId, title: trimmed, url: url?.trim() },
+    ])
   }
 
   const removeWidget = (id: string) => {

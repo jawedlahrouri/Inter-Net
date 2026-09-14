@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { RemoveButton } from '@/components/ui/removebutton'
 import type { Widget } from '@/types/widget'
@@ -14,7 +15,19 @@ export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardPr
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="space-y-1">
           <CardTitle className="text-lg text-card-foreground">{widget.title}</CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">Widget #{widget.id}</CardDescription>
+          {widget.url ? (
+            <a
+              href={widget.url.startsWith('http') ? widget.url : `https://${widget.url}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-cyan-400 hover:underline inline-flex items-center gap-1 truncate max-w-[200px]"
+            >
+              <span className="truncate">{widget.url}</span>
+              <ExternalLink className="size-3 shrink-0" />
+            </a>
+          ) : (
+            <CardDescription className="text-xs text-muted-foreground">Widget #{widget.id}</CardDescription>
+          )}
         </div>
         {isEditing && onRemove && (
           <RemoveButton onClick={() => onRemove(widget.id)} />
