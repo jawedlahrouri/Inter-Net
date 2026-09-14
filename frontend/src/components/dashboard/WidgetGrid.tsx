@@ -2,12 +2,12 @@ import * as React from 'react'
 import { AddButton } from '@/components/ui/addbutton'
 import { WidgetCard } from '@/components/dashboard/WidgetCard'
 import { AddWidgetDialog } from '@/components/dashboard/AddWidgetDialog'
-import type { Widget } from '@/types/widget'
+import type { Widget, NewWidgetData } from '@/types/widget'
 
 export interface WidgetGridProps {
   widgets: Widget[]
   isEditing: boolean
-  onAddWidget: (title: string, url?: string) => void
+  onAddWidget: (data: NewWidgetData) => void
   onRemoveWidget: (id: string) => void
 }
 
@@ -46,4 +46,3 @@ export function WidgetGrid({
 }
 
 export default WidgetGrid
-
