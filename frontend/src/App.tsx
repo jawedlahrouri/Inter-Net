@@ -1,37 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { AuthCard } from '@/components/auth/AuthCard';
-import { UserDashboardHeader } from '@/components/auth/UserDashboardHeader';
-import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
-import { fetchHealth, type HealthResponse } from '@/services/api';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useState, useEffect, useCallback } from 'react'
+import { fetchHealth, fetchRoot, type HealthResponse, type RootResponse } from '@/services/api'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { WidgetGrid } from '@/components/dashboard/WidgetGrid'
+import { useWidgets } from '@/hooks/useWidgets'
 import {
   Server,
   RefreshCw,
   ExternalLink,
-  ShieldCheck,
-  Zap,
-  Activity,
-  PlusCircle,
-  Quote,
-} from 'lucide-react';
+} from 'lucide-react'
 
-function DashboardContent() {
-  const {
-    user,
-    loading: authLoading,
-    showMotivationalTransition,
-    setShowMotivationalTransition,
-  } = useAuth();
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [healthLoading, setHealthLoading] = useState<boolean>(true);
-  const [healthError, setHealthError] = useState<string | null>(null);
 
-  const checkHealth = useCallback(async () => {
-    setHealthLoading(true);
-    setHealthError(null);
+export function App() {
+  const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [rootInfo, setRootInfo] = useState<RootResponse | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const checkConnection = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
       const data = await fetchHealth();
       setHealth(data);
@@ -64,6 +54,14 @@ function DashboardContent() {
     );
   }
 
+  const [isEditing, setIsEditing] = useState<boolean>(false)
+
+  const toggleEditMode = () => {
+    setIsEditing((prev) => !prev)
+  }
+
+  const { widgets, addWidget, removeWidget } = useWidgets()
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20">
       {/* Top Navbar Header */}
@@ -78,30 +76,55 @@ function DashboardContent() {
             </Badge>
           </div>
 
-          <div className="flex items-center gap-3">
-            {user && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowMotivationalTransition(true)}
-                className="text-xs gap-1.5 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
-              >
-                <Quote className="size-3" />
-                Méditer
-              </Button>
-            )}
+          {/* Boutons header */}
+          <nav className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" asChild>
+              <a href="#dashboard">Dashboard</a>
+            </Button>
+            <Button
+              variant={isEditing ? 'default' : 'outline'}
+              size="sm"
+              onClick={toggleEditMode}
+            >
+              {isEditing ? 'Done' : 'Edit'}
+            </Button>
+          </nav>
+        </div>
+      </header>
 
-            {health ? (
-              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/20 flex items-center gap-1.5 py-1">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                API Connectée
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/20 flex items-center gap-1.5 py-1">
-                <span className="size-1.5 rounded-full bg-destructive" />
-                API Déconnectée
-              </Badge>
-            )}
+      {/* Main Page Content */}
+      <main className="flex-1 w-full px-6 sm:px-8 py-8 space-y-8">
+        {/* Page Hero Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            DashBoard - INTER-NET
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+            Suivez l'état de votre application et jeux en temps réel.
+          </p>
+        </div>
+        {/* Widgets Grid */}
+        <WidgetGrid
+          widgets={widgets}
+          isEditing={isEditing}
+          onAddWidget={addWidget}
+          onRemoveWidget={removeWidget}
+        />
+
+        {/* TODO: Peut être supprimer cette partie du code ou la déplacé dans une autre page par la suite.*/}
+
+        {/* Status Monitoring Card
+        <Card className="bg-card border-border shadow-xl">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div className="space-y-1">
+              <CardTitle className="text-lg flex items-center gap-2 text-card-foreground">
+                <Server className="size-5 text-indigo-400" />
+                Statut de l'API
+              </CardTitle>
+              <CardDescription className="text-muted-foreground text-xs">
+                Informations en temps réel du serveur backend FastAPI.
+              </CardDescription>
+            </div>
 
             <Button
               variant="ghost"
