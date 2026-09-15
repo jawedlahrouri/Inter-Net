@@ -89,7 +89,6 @@ export function CustomApiWidget({
           })
         } catch (directErr: any) {
           if (directErr.name === 'AbortError') return
-          // Fallback via backend proxy to bypass browser CORS restrictions
           const proxyUrl = `/api/v1/proxy?url=${encodeURIComponent(apiUrl)}`
           response = await fetch(proxyUrl, {
             signal: controller.signal,
@@ -109,7 +108,7 @@ export function CustomApiWidget({
         if (err.name === 'AbortError') return
         const message =
           err instanceof TypeError && err.message.includes('fetch')
-            ? "Impossible de joindre l'API (Erreur réseau ou blocage CORS)"
+            ? "Impossible de joindre l'API (Erreur réseau ou CORS)"
             : err instanceof Error
               ? err.message
               : "Erreur inconnue lors de l'appel API"
@@ -167,14 +166,14 @@ export function CustomApiWidget({
         className
       )}
     >
-      <CardHeader className="flex flex-row items-start justify-between pb-2">
-        <div className="space-y-0.5 min-w-0">
-          <CardTitle className="text-base font-semibold flex items-center gap-1.5 text-card-foreground truncate">
+      <CardHeader className="flex flex-row items-start justify-between pb-2 p-6">
+        <div className="space-y-1 min-w-0">
+          <CardTitle className="text-base font-semibold flex items-center gap-2 text-card-foreground truncate">
             <Activity className="size-4 text-muted-foreground shrink-0" />
             <span className="truncate">{title || 'API Metric'}</span>
           </CardTitle>
           {apiUrl ? (
-            <CardDescription className="text-xs text-muted-foreground truncate" title={apiUrl}>
+            <CardDescription className="text-xs text-muted-foreground truncate font-mono" title={apiUrl}>
               {getHostname(apiUrl)}
             </CardDescription>
           ) : (
@@ -185,19 +184,19 @@ export function CustomApiWidget({
         </div>
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
           onClick={() => fetchData({ background: true })}
           disabled={loading || isRefreshing}
-          aria-label="Refresh metric"
+          aria-label="Actualiser la métrique"
           className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
         >
-          <RefreshCw className={cn('size-3.5', (loading || isRefreshing) && 'animate-spin')} />
+          <RefreshCw className={cn('size-4', (loading || isRefreshing) && 'animate-spin')} />
         </Button>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col justify-between pt-1">
+      <CardContent className="flex-1 flex flex-col justify-between px-6 pb-6 pt-0">
         {!apiUrl ? (
-          <div className="flex flex-col items-center justify-center my-auto py-8 text-center gap-2 text-muted-foreground">
+          <div className="flex flex-col items-center justify-center my-auto py-8 text-center gap-3 text-muted-foreground">
             <Code2 className="size-6 opacity-60" />
             <span className="text-xs">Aucune URL d'API configurée</span>
           </div>
@@ -222,15 +221,17 @@ export function CustomApiWidget({
           <WidgetKpiView value={value} unit={unit} jsonPath={jsonPath} />
         )}
 
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50 pt-2 mt-auto">
-          <span className="flex items-center gap-1 truncate">
-            <Clock className="size-3 shrink-0" />
-            {lastUpdated
-              ? `Mis à jour : ${lastUpdated.toLocaleTimeString()}`
-              : 'En attente de données'}
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50 pt-3 mt-auto">
+          <span className="flex items-center gap-1.5 truncate font-mono">
+            <Clock className="size-3.5 shrink-0 text-muted-foreground/70" />
+            <span className="tabular-nums">
+              {lastUpdated
+                ? `${lastUpdated.toLocaleTimeString()}`
+                : 'En attente'}
+            </span>
           </span>
           {refreshIntervalSeconds && refreshIntervalSeconds > 0 ? (
-            <span className="text-[10px] font-mono opacity-80">
+            <span className="text-[10px] font-mono tabular-nums opacity-80 text-right">
               auto: {refreshIntervalSeconds}s
             </span>
           ) : null}
