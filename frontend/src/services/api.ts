@@ -124,3 +124,76 @@ export async function fetchRandomQuote(): Promise<QuoteResponse> {
 export async function fetchRoot(): Promise<RootResponse> {
   return apiFetch<RootResponse>('/');
 }
+
+export interface DeleteWidgetResponse {
+  message: string;
+  id: number;
+}
+
+export interface ApiWidgetDefinition {
+  id: number;
+  service_id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  params_schema: any;
+}
+
+export interface ApiUserWidget {
+  id: number;
+  user_id: number;
+  widget_id: number;
+  title?: string;
+  params_values: Record<string, any>;
+  refresh_rate: number;
+  position_x: number;
+  position_y: number;
+  width: number;
+  height: number;
+  created_at: string;
+  updated_at: string;
+  widget_def?: ApiWidgetDefinition;
+}
+
+export async function fetchUserWidgets(): Promise<ApiUserWidget[]> {
+  return apiFetch<ApiUserWidget[]>('/api/v1/widgets');
+}
+
+export async function createUserWidget(payload: {
+  widget_id?: number;
+  type?: string;
+  title?: string;
+  params_values: Record<string, any>;
+  refresh_rate?: number;
+  position_x?: number;
+  position_y?: number;
+}): Promise<ApiUserWidget> {
+  return apiFetch<ApiUserWidget>('/api/v1/widgets', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateUserWidget(
+  widgetId: string | number,
+  payload: {
+    title?: string;
+    params_values?: Record<string, any>;
+    refresh_rate?: number;
+    position_x?: number;
+    position_y?: number;
+  }
+): Promise<ApiUserWidget> {
+  return apiFetch<ApiUserWidget>(`/api/v1/widgets/${widgetId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteWidgetApi(widgetId: string | number): Promise<DeleteWidgetResponse> {
+  return apiFetch<DeleteWidgetResponse>(`/api/v1/widgets/${widgetId}`, {
+    method: 'DELETE',
+  });
+}
+
+

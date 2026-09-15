@@ -20,7 +20,8 @@ function DashboardContent() {
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
   };
-  const { widgets, addWidget, removeWidget } = useWidgets();
+  const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
+
 
   if (authLoading) {
     return (
@@ -124,8 +125,10 @@ function DashboardContent() {
                 widgets={widgets}
                 isEditing={isEditing}
                 onAddWidget={addWidget}
+                onUpdateWidget={updateWidget}
                 onRemoveWidget={removeWidget}
               />
+
             </div>
           </div>
         )}

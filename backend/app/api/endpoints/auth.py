@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
+from app.models.widget import UserWidget, WidgetDefinition
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 
 router = APIRouter()
@@ -33,6 +34,32 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Initialisation des widgets par défaut en BDD pour le nouvel utilisateur
+    weather_def = db.query(WidgetDefinition).filter(WidgetDefinition.name == "city_temperature").first()
+    if weather_def:
+        db.add(UserWidget(
+            user_id=user.id,
+            widget_id=weather_def.id,
+            title="Météo locale",
+            params_values={"city": "Paris"},
+            refresh_rate=60,
+        ))
+    custom_def = db.query(WidgetDefinition).filter(WidgetDefinition.name == "custom_api").first()
+    if custom_def:
+        db.add(UserWidget(
+            user_id=user.id,
+            widget_id=custom_def.id,
+            title="Statut API Backend",
+            params_values={
+                "apiUrl": "http://127.0.0.1:8000/api/v1/health",
+                "jsonPath": "status",
+                "displayMode": "kpi",
+            },
+            refresh_rate=15,
+        ))
+    db.commit()
+
 
     access_token = create_access_token(subject=user.id)
     return Token(

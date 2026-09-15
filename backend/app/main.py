@@ -95,6 +95,40 @@ def get_about(request: Request):
                             ]
                         }
                     ]
+                },
+                {
+                    "name": "custom",
+                    "widgets": [
+                        {
+                            "name": "custom_api",
+                            "description": "Display a metric from an external JSON API",
+                            "params": [
+                                {
+                                    "name": "apiUrl",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "jsonPath",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "shortcuts",
+                    "widgets": [
+                        {
+                            "name": "shortcut",
+                            "description": "Quick external website shortcut",
+                            "params": [
+                                {
+                                    "name": "url",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }

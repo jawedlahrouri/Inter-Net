@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { RemoveButton } from '@/components/ui/removebutton'
+import { EditButton } from '@/components/ui/editbutton'
 import { WeatherWidget } from '@/components/dashboard/widgets/WeatherWidget'
 import { CustomApiWidget } from '@/components/dashboard/widgets/CustomApiWidget'
 import type { Widget } from '@/types/widget'
@@ -8,20 +9,36 @@ import type { Widget } from '@/types/widget'
 export interface WidgetCardProps {
   widget: Widget
   isEditing?: boolean
+  onEdit?: (widget: Widget) => void
   onRemove?: (id: string) => void
 }
 
-export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardProps) {
+export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: WidgetCardProps) {
+  const renderActions = () => {
+    if (!isEditing) return null
+    return (
+      <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
+        {onEdit && (
+          <EditButton
+            onClick={() => onEdit(widget)}
+            label="Modifier le widget"
+          />
+        )}
+        {onRemove && (
+          <RemoveButton
+            onClick={() => onRemove(widget.id)}
+            label="Supprimer le widget"
+          />
+        )}
+      </div>
+    )
+  }
+
   // If Weather Widget
   if (widget.type === 'weather') {
     return (
       <div className="relative group h-full">
-        {isEditing && onRemove && (
-          <RemoveButton
-            onClick={() => onRemove(widget.id)}
-            className="absolute top-2 right-2 z-30"
-          />
-        )}
+        {renderActions()}
         <WeatherWidget
           city={widget.city}
           lat={widget.lat}
@@ -36,12 +53,7 @@ export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardPr
   if (widget.type === 'custom_api' && widget.apiUrl && widget.jsonPath) {
     return (
       <div className="relative group h-full">
-        {isEditing && onRemove && (
-          <RemoveButton
-            onClick={() => onRemove(widget.id)}
-            className="absolute top-2 right-2 z-30"
-          />
-        )}
+        {renderActions()}
         <CustomApiWidget
           apiUrl={widget.apiUrl}
           jsonPath={widget.jsonPath}
@@ -60,13 +72,9 @@ export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardPr
   // Default / Shortcut Widget
   return (
     <div className="relative group h-full">
-      {isEditing && onRemove && (
-        <RemoveButton
-          onClick={() => onRemove(widget.id)}
-          className="absolute top-2 right-2 z-30"
-        />
-      )}
+      {renderActions()}
       <Card className="min-h-[320px] h-full bg-card border-border flex flex-col justify-between">
+
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle className="text-lg text-card-foreground">{widget.title}</CardTitle>

@@ -66,7 +66,9 @@ CREATE TABLE IF NOT EXISTS user_widgets (
 INSERT INTO services (name, display_name, description, auth_type, is_active)
 VALUES 
     ('weather', 'Météo', 'Service de prévisions météorologiques en direct', 'none', TRUE),
-    ('rss', 'Flux RSS', 'Agrégateur de flux RSS d''actualités', 'none', TRUE)
+    ('rss', 'Flux RSS', 'Agrégateur de flux RSS d''actualités', 'none', TRUE),
+    ('custom', 'API Personnalisée', 'Interrogation et affichage de métriques d''APIs JSON', 'none', TRUE),
+    ('shortcuts', 'Raccourcis Web', 'Raccourcis et liens rapides vers des services externes', 'none', TRUE)
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
@@ -83,3 +85,21 @@ SELECT s.id, 'article_list', 'Liste d''articles', 'Affiche les derniers articles
        )
 FROM services s WHERE s.name = 'rss'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'custom_api', 'API JSON Universelle', 'Affiche une métrique extraite depuis une API JSON', 
+       JSON_ARRAY(
+           JSON_OBJECT('name', 'apiUrl', 'type', 'string'),
+           JSON_OBJECT('name', 'jsonPath', 'type', 'string')
+       )
+FROM services s WHERE s.name = 'custom'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'shortcut', 'Raccourci Web', 'Lien rapide vers un site ou service externe', 
+       JSON_ARRAY(
+           JSON_OBJECT('name', 'url', 'type', 'string')
+       )
+FROM services s WHERE s.name = 'shortcuts'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
