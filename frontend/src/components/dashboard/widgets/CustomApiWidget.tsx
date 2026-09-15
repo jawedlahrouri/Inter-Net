@@ -170,7 +170,7 @@ export function CustomApiWidget({
       <CardHeader className="flex flex-row items-start justify-between pb-2">
         <div className="space-y-0.5 min-w-0">
           <CardTitle className="text-base font-semibold flex items-center gap-1.5 text-card-foreground truncate">
-            <Activity className="size-4 text-cyan-500 shrink-0" />
+            <Activity className="size-4 text-muted-foreground shrink-0" />
             <span className="truncate">{title || 'API Metric'}</span>
           </CardTitle>
           {apiUrl ? (

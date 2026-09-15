@@ -99,6 +99,7 @@ export function CustomApiTab({
           }
         >
           🎮 Wishlist Steam
+          Wishlist Steam
         </Badge>
       </div>
 

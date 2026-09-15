@@ -207,6 +207,7 @@ export function AddWidgetDialog({
                   }
                 >
                   🎮 Wishlist Steam
+                  Wishlist Steam
                 </Badge>
               </div>
 

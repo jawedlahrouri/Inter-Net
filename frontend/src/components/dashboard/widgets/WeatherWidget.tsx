@@ -221,7 +221,7 @@ export function WeatherWidget({
       <CardHeader className="flex flex-row items-start justify-between pb-2">
         <div className="space-y-0.5 min-w-0">
           <CardTitle className="text-base font-semibold flex items-center gap-1.5 text-card-foreground truncate">
-            <MapPin className="size-4 text-cyan-500 shrink-0" />
+            <MapPin className="size-4 text-muted-foreground shrink-0" />
             <span className="truncate">{weather.locationName}</span>
           </CardTitle>
           <CardDescription className="text-xs text-muted-foreground">
@@ -251,7 +251,7 @@ export function WeatherWidget({
               °C
             </span>
           </div>
-          <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-center">
+          <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50 flex items-center justify-center">
             <WeatherIcon className={cn('size-9 sm:size-10', iconColor)} />
           </div>
         </div>
@@ -259,7 +259,7 @@ export function WeatherWidget({
         {/* Humidity and Wind Metrics */}
         <div className="grid grid-cols-2 gap-2.5">
           <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/40">
-            <Droplets className="size-4 text-cyan-400 shrink-0" />
+            <Droplets className="size-4 text-muted-foreground shrink-0" />
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
                 Humidity
@@ -270,7 +270,7 @@ export function WeatherWidget({
             </div>
           </div>
           <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/40">
-            <Wind className="size-4 text-teal-400 shrink-0" />
+            <Wind className="size-4 text-muted-foreground shrink-0" />
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
                 Wind

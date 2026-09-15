@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export function AuthCard() {
   const { login, register } = useAuth();
+
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -77,46 +79,50 @@ export function AuthCard() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto border-border/60 shadow-2xl bg-card/90 backdrop-blur-xl">
-      <CardHeader className="text-center pb-4">
-        <div className="mx-auto size-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 mb-2 shadow-lg shadow-indigo-500/20 flex items-center justify-center">
-          <div className="size-full bg-background rounded-[14px] flex items-center justify-center">
-            <Lock className="size-5 text-indigo-400" />
-          </div>
-        </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">Espace Authentification</CardTitle>
+    <Card className="w-full max-w-md mx-auto border border-border/80 bg-card rounded-lg shadow-xs">
+      <CardHeader className="text-center pb-4 pt-6">
+        <CardTitle className="text-xl font-semibold tracking-tight text-foreground">
+          {activeTab === 'login' ? 'Connexion' : 'Créer un compte'}
+        </CardTitle>
         <CardDescription className="text-xs text-muted-foreground">
-          Connectez-vous pour accéder et personnaliser votre Dashboard.
+          {activeTab === 'login'
+            ? 'Entrez vos identifiants pour accéder à votre espace.'
+            : 'Remplissez les informations ci-dessous pour vous inscrire.'}
         </CardDescription>
       </CardHeader>
 
-      <CardContent>
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="login" className="flex items-center gap-2">
-              <LogIn className="size-3.5" />
-              Connexion
+      <CardContent className="px-6 pb-6 pt-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => {
+            setActiveTab(val as 'login' | 'register');
+            setLoginError(null);
+            setRegError(null);
+          }}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-5 h-9 bg-muted/50 p-1 rounded-md border border-border/60">
+            <TabsTrigger value="login" className="text-xs font-medium cursor-pointer">
+              Se connecter
             </TabsTrigger>
-            <TabsTrigger value="register" className="flex items-center gap-2">
-              <UserPlus className="size-3.5" />
-              Inscription
+            <TabsTrigger value="register" className="text-xs font-medium cursor-pointer">
+              S'inscrire
             </TabsTrigger>
           </TabsList>
 
           {/* Onglet Connexion */}
-          <TabsContent value="login">
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <TabsContent value="login" className="space-y-4 focus-visible:outline-none">
+            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               {loginError && (
-                <div className="p-3 rounded-lg bg-destructive/15 border border-destructive/30 text-destructive text-xs flex items-start gap-2">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                  <AlertCircle className="size-3.5 shrink-0" />
                   <span>{loginError}</span>
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Mail className="size-3.5 text-indigo-400" />
-                  Email ou Nom d'utilisateur
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground/80 block">
+                  Email ou nom d'utilisateur
                 </label>
                 <Input
                   type="text"
@@ -124,13 +130,13 @@ export function AuthCard() {
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
                   disabled={loginLoading}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="size-3.5 text-indigo-400" />
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground/80 block">
                   Mot de passe
                 </label>
                 <Input
@@ -139,6 +145,7 @@ export function AuthCard() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   disabled={loginLoading}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
@@ -146,37 +153,33 @@ export function AuthCard() {
               <Button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full mt-2 bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-medium shadow-md shadow-indigo-500/20"
+                className="w-full h-9 mt-3 text-xs font-medium cursor-pointer"
               >
                 {loginLoading ? (
                   <>
-                    <Loader2 className="size-4 animate-spin mr-2" />
-                    Connexion en cours...
+                    <Loader2 className="size-3.5 animate-spin mr-2" />
+                    Connexion...
                   </>
                 ) : (
-                  <>
-                    <LogIn className="size-4 mr-2" />
-                    Se connecter
-                  </>
+                  'Se connecter'
                 )}
               </Button>
             </form>
           </TabsContent>
 
           {/* Onglet Inscription */}
-          <TabsContent value="register">
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <TabsContent value="register" className="space-y-4 focus-visible:outline-none">
+            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               {regError && (
-                <div className="p-3 rounded-lg bg-destructive/15 border border-destructive/30 text-destructive text-xs flex items-start gap-2">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                  <AlertCircle className="size-3.5 shrink-0" />
                   <span>{regError}</span>
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Mail className="size-3.5 text-indigo-400" />
-                  Adresse Email
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground/80 block">
+                  Adresse email
                 </label>
                 <Input
                   type="email"
@@ -184,29 +187,29 @@ export function AuthCard() {
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   disabled={regLoading}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <UserIcon className="size-3.5 text-indigo-400" />
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground/80 block">
                   Nom d'utilisateur
                 </label>
                 <Input
                   type="text"
-                  placeholder="mon_pseudo"
+                  placeholder="pseudo"
                   value={regUsername}
                   onChange={(e) => setRegUsername(e.target.value)}
                   disabled={regLoading}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="size-3.5 text-indigo-400" />
-                  Mot de passe (min 6 car.)
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground/80 block">
+                  Mot de passe (min 6 caractères)
                 </label>
                 <Input
                   type="password"
@@ -214,13 +217,13 @@ export function AuthCard() {
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
                   disabled={regLoading}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="size-3.5 text-indigo-400" />
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground/80 block">
                   Confirmer le mot de passe
                 </label>
                 <Input
@@ -229,6 +232,7 @@ export function AuthCard() {
                   value={regConfirmPassword}
                   onChange={(e) => setRegConfirmPassword(e.target.value)}
                   disabled={regLoading}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
@@ -236,18 +240,15 @@ export function AuthCard() {
               <Button
                 type="submit"
                 disabled={regLoading}
-                className="w-full mt-2 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white font-medium shadow-md shadow-cyan-500/20"
+                className="w-full h-9 mt-3 text-xs font-medium cursor-pointer"
               >
                 {regLoading ? (
                   <>
-                    <Loader2 className="size-4 animate-spin mr-2" />
+                    <Loader2 className="size-3.5 animate-spin mr-2" />
                     Création du compte...
                   </>
                 ) : (
-                  <>
-                    <UserPlus className="size-4 mr-2" />
-                    Créer mon compte
-                  </>
+                  'Créer mon compte'
                 )}
               </Button>
             </form>
@@ -257,3 +258,5 @@ export function AuthCard() {
     </Card>
   );
 }
+
+export default AuthCard;

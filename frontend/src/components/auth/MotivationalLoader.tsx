@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchRandomQuote, type QuoteResponse } from '@/services/api';
-import { Sparkles, ArrowRight, Quote } from 'lucide-react';
+import { Quote, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MotivationalLoaderProps {
@@ -16,14 +16,25 @@ export function MotivationalLoader({ onComplete }: MotivationalLoaderProps) {
 
   const completedRef = useRef(false);
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     if (completedRef.current) return;
     completedRef.current = true;
     setIsFinishing(true);
     setTimeout(() => {
       onComplete();
-    }, 400);
-  };
+    }, 300);
+  }, [onComplete]);
+
+  // Keyboard shortcut (Escape to skip)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleFinish();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleFinish]);
 
   useEffect(() => {
     let isMounted = true;
@@ -63,7 +74,7 @@ export function MotivationalLoader({ onComplete }: MotivationalLoaderProps) {
           return prev;
         }
       });
-    }, 150);
+    }, 140);
 
     return () => clearInterval(wordInterval);
   }, [quoteData]);
@@ -75,14 +86,15 @@ export function MotivationalLoader({ onComplete }: MotivationalLoaderProps) {
     if (displayedWordsCount > 0 && displayedWordsCount >= words.length) {
       const timerAuthor = setTimeout(() => {
         setShowAuthor(true);
-      }, 300);
+      }, 250);
 
       const timerMediter = setTimeout(() => {
         setShowMediter(true);
-      }, 900);
+      }, 600);
+
       const timerComplete = setTimeout(() => {
         handleFinish();
-      }, 2800);
+      }, 2600);
 
       return () => {
         clearTimeout(timerAuthor);
@@ -90,87 +102,95 @@ export function MotivationalLoader({ onComplete }: MotivationalLoaderProps) {
         clearTimeout(timerComplete);
       };
     }
-  }, [displayedWordsCount, quoteData]);
+  }, [displayedWordsCount, quoteData, handleFinish]);
 
   const words = quoteData?.quote ? quoteData.quote.trim().split(/\s+/) : [];
   const currentText = words.slice(0, displayedWordsCount).join(' ');
 
   return (
     <div
-      className={`fixed inset-0 z-50 bg-background/95 backdrop-blur-2xl flex flex-col items-center justify-center p-6 transition-opacity duration-500 ${isFinishing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-        }`}
+      className={`fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col items-center justify-between p-8 transition-opacity duration-300 ${
+        isFinishing ? 'opacity-0' : 'opacity-100'
+      }`}
     >
-      {/* Glow d'ambiance */}
-      <div className="absolute w-[500px] h-[500px] bg-indigo-500/15 rounded-full blur-[120px] pointer-events-none -z-10" />
-      <div className="absolute w-[300px] h-[300px] bg-cyan-500/15 rounded-full blur-[90px] pointer-events-none -z-10 translate-y-32" />
-
-      {/* Bouton passer discret */}
-      <div className="absolute top-6 right-6">
+      {/* Top action bar */}
+      <div className="w-full max-w-4xl flex items-center justify-between">
+        <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/60 select-none">
+          INTER-NET • Pause
+        </span>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleFinish}
-          className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+          className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-8 px-2.5 cursor-pointer"
         >
-          Passer
-          <ArrowRight className="size-3.5" />
+          <span>Passer</span>
+          <span className="text-[10px] font-mono bg-muted/60 px-1 py-0.5 rounded border border-border/50">
+            Esc
+          </span>
+          <X className="size-3.5 ml-0.5" />
         </Button>
       </div>
 
-      <div className="max-w-2xl w-full text-center space-y-6">
-        {/* Petite icône animée */}
-        <div className="inline-flex items-center justify-center size-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-2 shadow-lg shadow-indigo-500/10">
-          <Quote className="size-5 animate-pulse" />
+      {/* Main Quote Container */}
+      <div className="max-w-2xl w-full text-center space-y-6 my-auto px-4">
+        <div className="inline-flex items-center justify-center size-9 rounded-md border border-border/80 bg-muted/30 text-muted-foreground mb-1">
+          <Quote className="size-4" />
         </div>
 
-        {/* Citation mot par mot */}
-        <div className="min-h-[120px] flex items-center justify-center">
+        {/* Word by word quote display */}
+        <div className="min-h-[100px] flex items-center justify-center">
           {quoteData ? (
-            <h2 className="text-2xl sm:text-3xl font-medium tracking-tight leading-relaxed text-foreground/90 font-serif italic">
+            <h2 className="text-xl sm:text-2xl font-normal leading-relaxed text-foreground/95 tracking-tight">
               « {currentText}
               {displayedWordsCount < words.length && (
-                <span className="inline-block w-2 h-6 ml-1 bg-indigo-400 animate-pulse align-middle" />
+                <span className="inline-block w-1.5 h-5 ml-1 bg-primary/70 animate-pulse align-middle" />
               )}
               {displayedWordsCount >= words.length && ' »'}
             </h2>
           ) : (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Sparkles className="size-4 animate-spin text-indigo-400" />
+            <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono">
+              <div className="size-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               <span>Chargement de votre pensée du jour...</span>
             </div>
           )}
         </div>
 
-        {/* Auteur de la citation */}
+        {/* Author */}
         <div
-          className={`transition-all duration-700 ${showAuthor ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-2'
-            }`}
+          className={`transition-opacity duration-500 ${
+            showAuthor ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           {quoteData?.author && (
-            <p className="text-sm font-medium text-muted-foreground tracking-wide">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
               — {quoteData.author}
             </p>
           )}
         </div>
 
-        {/* Le fameux "- à méditer" en petit en dessous */}
+        {/* - à méditer */}
         <div
-          className={`transition-all duration-700 delay-150 pt-2 ${showMediter ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-            }`}
+          className={`transition-all duration-500 pt-1 ${
+            showMediter ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+          }`}
         >
-          <span className="inline-block text-xs italic tracking-widest text-indigo-400/90 font-mono bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full shadow-sm">
+          <span className="inline-block text-[11px] font-mono text-muted-foreground bg-muted/40 border border-border/60 px-3 py-1 rounded-md">
             - à méditer
           </span>
         </div>
       </div>
 
-      {/* Barre de progression discrète en bas */}
-      <div className="absolute bottom-10 max-w-xs w-full px-4">
-        <div className="h-1 w-full bg-secondary/50 rounded-full overflow-hidden">
+      {/* Discreet linear progress bar at the bottom */}
+      <div className="w-full max-w-xs px-4 pb-2">
+        <div className="h-[2px] w-full bg-muted/50 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-300"
+            className="h-full bg-foreground/70 transition-all duration-200"
             style={{
-              width: words.length > 0 ? `${(displayedWordsCount / words.length) * 100}%` : '20%',
+              width:
+                words.length > 0
+                  ? `${(displayedWordsCount / words.length) * 100}%`
+                  : '10%',
             }}
           />
         </div>
@@ -178,3 +198,5 @@ export function MotivationalLoader({ onComplete }: MotivationalLoaderProps) {
     </div>
   );
 }
+
+export default MotivationalLoader;

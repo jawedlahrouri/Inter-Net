@@ -1,76 +1,77 @@
 import { useAuth } from '@/context/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Shield, Calendar, LayoutDashboard, Layers } from 'lucide-react';
+import { LogOut, User, Shield, Calendar } from 'lucide-react';
 
 export function UserDashboardHeader() {
   const { user, logout } = useAuth();
 
   if (!user) return null;
 
+  const initials = user.username.slice(0, 2).toUpperCase();
+  const formattedDate = new Date(user.created_at).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
   return (
-    <div className="space-y-6">
-      <Card className="border-border/60 bg-card/70 backdrop-blur-md shadow-xl overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-32 bg-indigo-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="size-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-md shadow-indigo-500/20">
-              <div className="size-full bg-background rounded-[14px] flex items-center justify-center font-bold text-lg text-indigo-400">
-                {user.username.slice(0, 2).toUpperCase()}
-              </div>
+    <Card className="border border-border/80 bg-card rounded-lg shadow-xs">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {/* Minimalist Monochromatic Avatar */}
+            <div className="size-10 rounded-md bg-muted/80 border border-border flex items-center justify-center font-mono text-xs font-semibold text-foreground select-none">
+              {initials}
             </div>
-            <div>
+
+            <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-xl font-bold">{user.username}</CardTitle>
-                <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className="text-[10px]">
+                <span className="text-sm font-semibold tracking-tight text-foreground">
+                  {user.username}
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 font-normal tracking-wide text-muted-foreground border-border"
+                >
                   {user.role === 'admin' ? (
                     <span className="flex items-center gap-1">
-                      <Shield className="size-3" /> Admin
+                      <Shield className="size-2.5" /> Admin
                     </span>
                   ) : (
                     <span className="flex items-center gap-1">
-                      <User className="size-3" /> Membre
+                      <User className="size-2.5" /> Membre
                     </span>
                   )}
                 </Badge>
               </div>
-              <CardDescription className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground font-mono">
                 {user.email}
-              </CardDescription>
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-border/50">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Calendar className="size-3.5 text-muted-foreground/70" />
+              <span>Depuis le {formattedDate}</span>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
               onClick={logout}
-              className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+              className="h-8 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/10"
             >
-              <LogOut className="size-3.5" />
-              Déconnexion
+              <LogOut className="size-3" />
+              <span>Déconnexion</span>
             </Button>
           </div>
-        </CardHeader>
-
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-border/60 text-xs">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="size-4 text-indigo-400" />
-              <span>Membre depuis le {new Date(user.created_at).toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Layers className="size-4 text-cyan-400" />
-              <span>Services : Prêt à connecter</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <LayoutDashboard className="size-4 text-emerald-400" />
-              <span>Dashboard personnalisé actif</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
+
+export default UserDashboardHeader;
