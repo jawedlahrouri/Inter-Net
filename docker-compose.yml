@@ -39,7 +39,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./backend/storage:/app/storage
     networks:
+
       default:
         aliases:
           - server

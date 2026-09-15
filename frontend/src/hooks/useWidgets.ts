@@ -11,15 +11,16 @@ import {
 } from '@/services/api'
 
 function mapApiToWidget(uw: ApiUserWidget): Widget {
-  const defName = uw.widget_def?.name || ''
+  const rawType = uw.type || uw.widget_def?.name || ''
   let type: WidgetType = 'default'
-  if (defName === 'city_temperature' || defName === 'weather') {
+  if (rawType === 'city_temperature' || rawType === 'weather') {
     type = 'weather'
-  } else if (defName === 'custom_api') {
+  } else if (rawType === 'custom_api') {
     type = 'custom_api'
   } else {
     type = 'default'
   }
+
 
   const p = uw.params_values || {}
   return {

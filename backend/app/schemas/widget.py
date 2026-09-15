@@ -4,24 +4,26 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class WidgetDefinitionOut(BaseModel):
-    id: int
-    service_id: int
+    id: Optional[int] = 1
+    service_id: Optional[int] = 1
     name: str
     display_name: str
     description: Optional[str] = None
-    params_schema: Any
+    params_schema: Optional[Any] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserWidgetBase(BaseModel):
     title: Optional[str] = None
+    type: Optional[str] = None
     params_values: dict[str, Any] = Field(default_factory=dict)
     refresh_rate: int = Field(default=60, ge=5, le=86400)
     position_x: int = 0
     position_y: int = 0
     width: int = 1
     height: int = 1
+
 
 
 class UserWidgetCreate(UserWidgetBase):
@@ -42,12 +44,13 @@ class UserWidgetUpdate(BaseModel):
 class UserWidgetOut(UserWidgetBase):
     id: int
     user_id: int
-    widget_id: int
-    created_at: datetime
-    updated_at: datetime
+    widget_id: Optional[int] = 1
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     widget_def: Optional[WidgetDefinitionOut] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 
 class WidgetDeleteResponse(BaseModel):

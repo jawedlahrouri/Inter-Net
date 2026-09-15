@@ -142,9 +142,11 @@ export interface ApiWidgetDefinition {
 export interface ApiUserWidget {
   id: number;
   user_id: number;
-  widget_id: number;
+  widget_id?: number;
+  type?: string;
   title?: string;
   params_values: Record<string, any>;
+
   refresh_rate: number;
   position_x: number;
   position_y: number;

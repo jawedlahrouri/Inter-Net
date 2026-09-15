@@ -1,34 +1,7 @@
-import pytest
-from app.models.service import Service
-from app.models.widget import WidgetDefinition, UserWidget
+from app.services.widget_storage import JsonWidgetStorage
 
 
-@pytest.fixture
-def sample_service_and_widget_def(db_session):
-    service = Service(
-        name="weather_test",
-        display_name="Test Weather",
-        description="Service météo pour les tests",
-        auth_type="none",
-        is_active=True,
-    )
-    db_session.add(service)
-    db_session.flush()
-
-    widget_def = WidgetDefinition(
-        service_id=service.id,
-        name="city_temperature",
-        display_name="Température Ville",
-        description="Affiche la température",
-        params_schema=[{"name": "city", "type": "string"}],
-    )
-    db_session.add(widget_def)
-    db_session.commit()
-    db_session.refresh(widget_def)
-    return widget_def
-
-
-def test_delete_widget_success(client, sample_service_and_widget_def, db_session):
+def test_delete_widget_success(client):
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -38,23 +11,23 @@ def test_delete_widget_success(client, sample_service_and_widget_def, db_session
         },
     )
     token = reg_resp.json()["access_token"]
-    user_id = reg_resp.json()["user"]["id"]
+    headers = {"Authorization": f"Bearer {token}"}
 
-    widget = UserWidget(
-        user_id=user_id,
-        widget_id=sample_service_and_widget_def.id,
-        title="Ma Météo",
-        params_values={"city": "Paris"},
-        refresh_rate=30,
+    create_resp = client.post(
+        "/api/v1/widgets",
+        headers=headers,
+        json={
+            "type": "weather",
+            "title": "Ma Météo",
+            "params_values": {"city": "Paris"},
+            "refresh_rate": 30,
+        },
     )
-    db_session.add(widget)
-    db_session.commit()
-    db_session.refresh(widget)
-    widget_id = widget.id
+    widget_id = create_resp.json()["id"]
 
     response = client.delete(
         f"/api/v1/widgets/{widget_id}",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
 
     assert response.status_code == 200
@@ -62,8 +35,8 @@ def test_delete_widget_success(client, sample_service_and_widget_def, db_session
     assert data["id"] == widget_id
     assert "supprimé avec succès" in data["message"]
 
-    deleted = db_session.query(UserWidget).filter(UserWidget.id == widget_id).first()
-    assert deleted is None
+    list_resp = client.get("/api/v1/widgets", headers=headers)
+    assert not any(w["id"] == widget_id for w in list_resp.json())
 
 
 def test_delete_widget_not_found(client):
@@ -85,7 +58,7 @@ def test_delete_widget_not_found(client):
     assert "introuvable" in response.json()["detail"].lower()
 
 
-def test_delete_widget_forbidden_for_other_user(client, sample_service_and_widget_def, db_session):
+def test_delete_widget_forbidden_for_other_user(client):
     resp_user1 = client.post(
         "/api/v1/auth/register",
         json={
@@ -94,7 +67,7 @@ def test_delete_widget_forbidden_for_other_user(client, sample_service_and_widge
             "password": "password123",
         },
     )
-    user1_id = resp_user1.json()["user"]["id"]
+    token1 = resp_user1.json()["access_token"]
 
     resp_user2 = client.post(
         "/api/v1/auth/register",
@@ -104,28 +77,26 @@ def test_delete_widget_forbidden_for_other_user(client, sample_service_and_widge
             "password": "password123",
         },
     )
-    user2_token = resp_user2.json()["access_token"]
+    token2 = resp_user2.json()["access_token"]
 
-    widget_user1 = UserWidget(
-        user_id=user1_id,
-        widget_id=sample_service_and_widget_def.id,
-        title="Widget Utilisateur 1",
-        params_values={"city": "Lyon"},
-        refresh_rate=60,
+    create_resp = client.post(
+        "/api/v1/widgets",
+        headers={"Authorization": f"Bearer {token1}"},
+        json={
+            "type": "weather",
+            "title": "Widget Utilisateur 1",
+            "params_values": {"city": "Lyon"},
+            "refresh_rate": 60,
+        },
     )
-    db_session.add(widget_user1)
-    db_session.commit()
-    db_session.refresh(widget_user1)
+    widget_id = create_resp.json()["id"]
 
     response = client.delete(
-        f"/api/v1/widgets/{widget_user1.id}",
-        headers={"Authorization": f"Bearer {user2_token}"},
+        f"/api/v1/widgets/{widget_id}",
+        headers={"Authorization": f"Bearer {token2}"},
     )
     assert response.status_code == 403
     assert "autorisation" in response.json()["detail"].lower()
-
-    persisted = db_session.query(UserWidget).filter(UserWidget.id == widget_user1.id).first()
-    assert persisted is not None
 
 
 def test_delete_widget_unauthorized(client):
@@ -133,7 +104,7 @@ def test_delete_widget_unauthorized(client):
     assert response.status_code == 401
 
 
-def test_create_and_list_widgets(client, sample_service_and_widget_def):
+def test_create_and_list_widgets(client):
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -149,7 +120,7 @@ def test_create_and_list_widgets(client, sample_service_and_widget_def):
         "/api/v1/widgets",
         headers=headers,
         json={
-            "widget_id": sample_service_and_widget_def.id,
+            "type": "weather",
             "title": "Météo Marseille",
             "params_values": {"city": "Marseille"},
             "refresh_rate": 15,
@@ -167,8 +138,7 @@ def test_create_and_list_widgets(client, sample_service_and_widget_def):
     assert created_widget["refresh_rate"] == 15
 
 
-
-def test_update_widget_success(client, sample_service_and_widget_def):
+def test_update_widget_success(client):
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -184,7 +154,7 @@ def test_update_widget_success(client, sample_service_and_widget_def):
         "/api/v1/widgets",
         headers=headers,
         json={
-            "widget_id": sample_service_and_widget_def.id,
+            "type": "custom_api",
             "title": "Titre initial",
             "params_values": {"city": "Bordeaux"},
             "refresh_rate": 30,
@@ -208,7 +178,7 @@ def test_update_widget_success(client, sample_service_and_widget_def):
     assert data["params_values"]["city"] == "Toulouse"
 
 
-def test_create_widget_by_type(client, sample_service_and_widget_def):
+def test_create_widget_by_type(client):
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -231,5 +201,4 @@ def test_create_widget_by_type(client, sample_service_and_widget_def):
         },
     )
     assert create_resp.status_code == 201
-    assert create_resp.json()["widget_id"] == sample_service_and_widget_def.id
-
+    assert create_resp.json()["type"] == "weather"
