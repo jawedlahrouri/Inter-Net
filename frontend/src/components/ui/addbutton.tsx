@@ -18,18 +18,18 @@ export function AddButton({
       <button
         type="button"
         className={cn(
-          'min-h-[320px] w-full rounded-xl border-2 border-dashed border-border',
-          'hover:border-foreground/40 hover:bg-muted/30',
-          'flex flex-col items-center justify-center gap-3',
-          'text-muted-foreground transition-all cursor-pointer group',
+          'min-h-[320px] w-full rounded-lg border border-dashed border-border/80',
+          'hover:border-foreground/30 hover:bg-muted/20',
+          'flex flex-col items-center justify-center gap-2.5',
+          'text-muted-foreground transition-colors cursor-pointer group',
           className
         )}
         {...props}
       >
-        <div className="p-3 rounded-full bg-muted border border-border group-hover:scale-110 group-hover:border-foreground/40 transition-all">
-          <Plus className="size-5 text-foreground" />
+        <div className="size-8 rounded-md bg-muted/50 border border-border/60 flex items-center justify-center group-hover:border-foreground/30 transition-colors">
+          <Plus className="size-4 text-foreground/80" />
         </div>
-        <span className="text-sm font-medium group-hover:text-foreground transition-colors">
+        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           {label}
         </span>
       </button>
@@ -40,14 +40,14 @@ export function AddButton({
     <button
       type="button"
       className={cn(
-        'size-8 inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-all hover:scale-105 active:scale-95',
+        'size-8 inline-flex items-center justify-center rounded-md border border-border bg-background hover:bg-muted cursor-pointer transition-colors',
         className
       )}
       aria-label={label}
       title={label}
       {...props}
     >
-      <Plus className="size-4 text-foreground" />
+      <Plus className="size-3.5 text-foreground" />
     </button>
   )
 }

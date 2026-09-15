@@ -104,6 +104,7 @@ export function JsonPathPicker({
               className="h-7 text-[11px] gap-1 px-2 cursor-pointer"
             >
               <Zap className="size-3 text-amber-500" />
+              <Zap className="size-3 text-muted-foreground" />
               Sélection auto
             </Button>
           )}

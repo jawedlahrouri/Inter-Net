@@ -75,10 +75,10 @@ export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardPr
                 href={widget.url.startsWith('http') ? widget.url : `https://${widget.url}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-cyan-400 hover:underline inline-flex items-center gap-1 truncate max-w-[200px]"
+                className="text-xs text-foreground/80 hover:text-foreground hover:underline inline-flex items-center gap-1 truncate max-w-[200px]"
               >
                 <span className="truncate">{widget.url}</span>
-                <ExternalLink className="size-3 shrink-0" />
+                <ExternalLink className="size-3 shrink-0 text-muted-foreground" />
               </a>
             ) : (
               <CardDescription className="text-xs text-muted-foreground">Widget #{widget.id}</CardDescription>
