@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { SettingsProvider } from '@/context/SettingsContext';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { UserDashboardHeader } from '@/components/auth/UserDashboardHeader';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
+import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
 import { useWidgets } from '@/hooks/useWidgets';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Quote } from 'lucide-react';
+import { ExternalLink, Quote, Settings } from 'lucide-react';
 
 function DashboardContent() {
   const {
@@ -16,6 +18,8 @@ function DashboardContent() {
     setShowMotivationalTransition,
   } = useAuth();
 
+  const [isMeditating, setIsMeditating] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
@@ -34,9 +38,23 @@ function DashboardContent() {
     );
   }
 
+  // Écran de transition motivante lors de la connexion (sans vidéo de fond)
   if (showMotivationalTransition) {
     return (
-      <MotivationalLoader onComplete={() => setShowMotivationalTransition(false)} />
+      <MotivationalLoader
+        mode="login"
+        onComplete={() => setShowMotivationalTransition(false)}
+      />
+    );
+  }
+
+  // Écran de méditation immersive (avec vidéo de fond par défaut)
+  if (isMeditating) {
+    return (
+      <MotivationalLoader
+        mode="meditate"
+        onComplete={() => setIsMeditating(false)}
+      />
     );
   }
 
@@ -59,11 +77,20 @@ function DashboardContent() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowMotivationalTransition(true)}
+                  onClick={() => setIsMeditating(true)}
                   className="h-8 text-xs gap-1.5 px-3 cursor-pointer"
                 >
                   <Quote className="size-3 text-muted-foreground" />
                   <span>Méditer</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="h-8 text-xs gap-1.5 px-3 cursor-pointer"
+                >
+                  <Settings className="size-3 text-muted-foreground" />
+                  <span>Paramètres</span>
                 </Button>
                 <Button
                   variant={isEditing ? 'default' : 'outline'}
@@ -78,6 +105,7 @@ function DashboardContent() {
           </div>
         </div>
       </header>
+
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 space-y-10">
@@ -160,6 +188,13 @@ function DashboardContent() {
           </div>
         </div>
       </footer>
+
+      {/* Modale des paramètres de personnalisation */}
+      <SettingsDialog
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        onLaunchMeditation={() => setIsMeditating(true)}
+      />
     </div>
   );
 }
@@ -167,9 +202,12 @@ function DashboardContent() {
 export function App() {
   return (
     <AuthProvider>
-      <DashboardContent />
+      <SettingsProvider>
+        <DashboardContent />
+      </SettingsProvider>
     </AuthProvider>
   );
 }
 
 export default App;
+

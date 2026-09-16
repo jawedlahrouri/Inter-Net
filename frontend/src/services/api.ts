@@ -198,4 +198,49 @@ export async function deleteWidgetApi(widgetId: string | number): Promise<Delete
   });
 }
 
+export interface MeditationSettings {
+  video_enabled: boolean;
+  video_url: string;
+  sound_enabled: boolean;
+}
+
+export interface UserSettings {
+  meditation: MeditationSettings;
+}
+
+export interface VideoInfo {
+  id: string;
+  name: string;
+  filename: string;
+  url: string;
+  size: number;
+}
+
+export async function fetchUserSettings(): Promise<UserSettings> {
+  return apiFetch<UserSettings>('/api/v1/auth/me/settings');
+}
+
+export async function updateUserSettingsApi(payload: {
+  meditation?: Partial<MeditationSettings>;
+}): Promise<UserSettings> {
+  return apiFetch<UserSettings>('/api/v1/auth/me/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchCustomVideos(): Promise<VideoInfo[]> {
+  return apiFetch<VideoInfo[]>('/api/v1/customization/videos');
+}
+
+export async function uploadCustomVideoApi(file: File): Promise<VideoInfo> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiFetch<VideoInfo>('/api/v1/customization/videos/upload', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+
 

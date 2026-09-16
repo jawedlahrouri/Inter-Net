@@ -6,8 +6,10 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.models.user import User
 from app.models.widget import UserWidget, WidgetDefinition
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.settings import UserSettings, UserSettingsUpdate
 
 router = APIRouter()
+
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -93,3 +95,31 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.get("/me/settings", response_model=UserSettings)
+def get_user_settings(current_user: User = Depends(get_current_user)):
+    user_settings = current_user.settings or {}
+    return UserSettings.model_validate(user_settings)
+
+
+@router.patch("/me/settings", response_model=UserSettings)
+def update_user_settings(
+    settings_in: UserSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current = current_user.settings or {}
+    updated_dict = dict(current)
+
+    if settings_in.meditation is not None:
+        med_current = dict(updated_dict.get("meditation", {}))
+        med_updates = settings_in.meditation.model_dump(exclude_unset=True)
+        med_current.update(med_updates)
+        updated_dict["meditation"] = med_current
+
+    current_user.settings = updated_dict
+    db.commit()
+    db.refresh(current_user)
+    return UserSettings.model_validate(current_user.settings or {})
+
