@@ -34,6 +34,8 @@ export function EditWidgetDialog({
   const [unit, setUnit] = useState('')
   const [refreshInterval, setRefreshInterval] = useState<number>(30)
   const [url, setUrl] = useState('')
+  const [repoFullName, setRepoFullName] = useState('')
+  const [orgName, setOrgName] = useState('')
 
   useEffect(() => {
     if (widget) {
@@ -45,6 +47,8 @@ export function EditWidgetDialog({
       setUnit(widget.unit || '')
       setRefreshInterval(widget.refreshIntervalSeconds || 30)
       setUrl(widget.url || '')
+      setRepoFullName(widget.repoFullName || '')
+      setOrgName(widget.orgName || '')
     }
   }, [widget])
 
@@ -70,6 +74,11 @@ export function EditWidgetDialog({
     } else if (widget.type === 'steam') {
       updatedData.type = 'steam'
       updatedData.steamMetric = widget.steamMetric
+    } else if (widget.type === 'github') {
+      updatedData.type = 'github'
+      updatedData.githubMetric = widget.githubMetric
+      if (repoFullName.trim()) updatedData.repoFullName = repoFullName.trim()
+      if (orgName.trim()) updatedData.orgName = orgName.trim()
     } else {
       updatedData.type = 'default'
       updatedData.url = url.trim() || undefined
@@ -103,6 +112,26 @@ export function EditWidgetDialog({
             value={refreshInterval}
             onChange={(val) => setRefreshInterval(val)}
           />
+
+          {widget.type === 'github' && widget.githubMetric?.startsWith('repo_') && (
+            <InputField
+              label="Dépôt GitHub (owner/repo)"
+              placeholder="Ex: facebook/react ou octocat/Hello-World"
+              value={repoFullName}
+              onChange={(e) => setRepoFullName(e.target.value)}
+              description="Laissez vide pour utiliser votre dépôt le plus actif"
+            />
+          )}
+
+          {widget.type === 'github' && widget.githubMetric === 'org_overview' && (
+            <InputField
+              label="Organisation GitHub"
+              placeholder="Ex: vercel, facebook, microsoft..."
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              description="Nom de l'organisation GitHub à analyser"
+            />
+          )}
 
           {widget.type === 'weather' && (
             <InputField

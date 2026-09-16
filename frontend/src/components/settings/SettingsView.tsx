@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredToken, fetchSteamStatus, disconnectSteam } from '@/services/api';
+import {
+  getStoredToken,
+  fetchSteamStatus,
+  disconnectSteam,
+  fetchGithubStatus,
+  disconnectGithub,
+} from '@/services/api';
+import { GithubConnectDialog } from './GithubConnectDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +52,7 @@ const INTEGRATIONS: IntegrationItem[] = [
     category: 'Développement',
     description: 'Surveillance des repositories, pull requests, issues et activité de commits.',
     icon: GitBranch,
-    status: 'coming_soon',
+    status: 'disconnected',
   },
   {
     id: 'youtube',
@@ -84,11 +91,13 @@ const INTEGRATIONS: IntegrationItem[] = [
 export function SettingsView() {
   const { user, logout } = useAuth();
   const [integrations, setIntegrations] = useState<IntegrationItem[]>(INTEGRATIONS);
+  const [isGithubDialogOpen, setIsGithubDialogOpen] = useState<boolean>(false);
 
   if (!user) return null;
 
   useEffect(() => {
     async function checkConnectedServices() {
+      // 1. Statut Steam
       try {
         const steam = await fetchSteamStatus();
         if (steam.connected) {
@@ -107,6 +116,26 @@ export function SettingsView() {
       } catch (err) {
         console.error('Erreur lors de la vérification du statut Steam:', err);
       }
+
+      // 2. Statut GitHub
+      try {
+        const github = await fetchGithubStatus();
+        if (github.connected) {
+          setIntegrations((prev) =>
+            prev.map((item) =>
+              item.id === 'github'
+                ? {
+                    ...item,
+                    status: 'connected' as const,
+                    account: github.profile?.username || github.profile?.login || 'GitHub lié',
+                  }
+                : item
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Erreur lors de la vérification du statut GitHub:', err);
+      }
     }
 
     checkConnectedServices();
@@ -120,6 +149,11 @@ export function SettingsView() {
         ? `${apiUrl}/api/v1/auth/steam?token=${encodeURIComponent(token)}`
         : `${apiUrl}/api/v1/auth/steam`;
       window.location.href = redirectUrl;
+      return;
+    }
+
+    if (id === 'github') {
+      setIsGithubDialogOpen(true);
       return;
     }
 
@@ -142,6 +176,22 @@ export function SettingsView() {
       setIntegrations((prev) =>
         prev.map((item) =>
           item.id === 'steam'
+            ? { ...item, status: 'disconnected' as const, account: undefined }
+            : item
+        )
+      );
+      return;
+    }
+
+    if (id === 'github') {
+      try {
+        await disconnectGithub();
+      } catch (err) {
+        console.error('Erreur lors de la déconnexion GitHub:', err);
+      }
+      setIntegrations((prev) =>
+        prev.map((item) =>
+          item.id === 'github'
             ? { ...item, status: 'disconnected' as const, account: undefined }
             : item
         )
@@ -366,6 +416,24 @@ export function SettingsView() {
           })}
         </div>
       </div>
+
+      <GithubConnectDialog
+        open={isGithubDialogOpen}
+        onOpenChange={setIsGithubDialogOpen}
+        onSuccess={(profile) => {
+          setIntegrations((prev) =>
+            prev.map((item) =>
+              item.id === 'github'
+                ? {
+                    ...item,
+                    status: 'connected' as const,
+                    account: profile.username || profile.login || 'GitHub lié',
+                  }
+                : item
+            )
+          );
+        }}
+      />
     </div>
   );
 }

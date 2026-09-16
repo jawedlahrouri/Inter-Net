@@ -1,4 +1,4 @@
-export type WidgetType = 'weather' | 'custom_api' | 'default' | 'steam'
+export type WidgetType = 'weather' | 'custom_api' | 'default' | 'steam' | 'github'
 
 export type SteamMetricType =
   | 'last_played'
@@ -16,6 +16,36 @@ export type SteamMetricType =
   | 'unplayed_games'
   | 'avg_playtime_per_game'
   | 'recent_games_count'
+
+export type GithubMetricType =
+  | 'total_commits'
+  | 'lines_stats'
+  | 'avg_commit_size'
+  | 'commits_timeframes'
+  | 'lines_timeframes'
+  | 'active_days'
+  | 'active_repos_count'
+  | 'weekly_top_devs'
+  | 'pr_overview'
+  | 'pr_merge_rate'
+  | 'pr_created_total'
+  | 'code_reviews_done'
+  | 'projects_collaboration'
+  | 'avg_team_size'
+  | 'project_seniority'
+  | 'top_repos_by_commits'
+  | 'top_starred_repos'
+  | 'recent_repos_list'
+  | 'primary_language'
+  | 'languages_breakdown'
+  | 'profile_card'
+  | 'repo_overview'
+  | 'repo_recent_commits'
+  | 'repo_contributors'
+  | 'repo_languages'
+  | 'org_overview'
+  | 'orgs_list'
+  | 'repos_by_org'
 
 export interface Widget {
   id: string
@@ -37,7 +67,12 @@ export interface Widget {
   gaugeMax?: number
   // For Steam
   steamMetric?: SteamMetricType
+  // For GitHub
+  githubMetric?: GithubMetricType
+  repoFullName?: string
+  orgName?: string
 }
 
 export type NewWidgetData = Omit<Widget, 'id'>
+
 

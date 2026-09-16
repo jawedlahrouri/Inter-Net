@@ -182,6 +182,151 @@ def get_about(request: Request):
                             "params": []
                         }
                     ]
+                },
+                {
+                    "name": "github",
+                    "widgets": [
+                        {
+                            "name": "total_commits",
+                            "description": "Nombre total de commits cumulés",
+                            "params": []
+                        },
+                        {
+                            "name": "lines_stats",
+                            "description": "Lignes de code ajoutées, supprimées et ratio",
+                            "params": []
+                        },
+                        {
+                            "name": "avg_commit_size",
+                            "description": "Taille moyenne d'un commit en lignes",
+                            "params": []
+                        },
+                        {
+                            "name": "commits_timeframes",
+                            "description": "Commits sur 7, 30 et 90 jours",
+                            "params": []
+                        },
+                        {
+                            "name": "lines_timeframes",
+                            "description": "Lignes modifiées sur 7, 30 et 90 jours",
+                            "params": []
+                        },
+                        {
+                            "name": "active_days",
+                            "description": "Jours actifs avec commits sur 30 et 365 jours",
+                            "params": []
+                        },
+                        {
+                            "name": "active_repos_count",
+                            "description": "Nombre de dépôts avec au moins un commit",
+                            "params": []
+                        },
+                        {
+                            "name": "weekly_top_devs",
+                            "description": "Commits cette semaine - Top Développeurs",
+                            "params": []
+                        },
+                        {
+                            "name": "pr_overview",
+                            "description": "Pull requests ouvertes, mergées et fermées",
+                            "params": []
+                        },
+                        {
+                            "name": "pr_merge_rate",
+                            "description": "Taux de PR mergées et temps moyen",
+                            "params": []
+                        },
+                        {
+                            "name": "pr_created_total",
+                            "description": "Nombre total de PR créées",
+                            "params": []
+                        },
+                        {
+                            "name": "code_reviews_done",
+                            "description": "Relectures de code et validations effectuées",
+                            "params": []
+                        },
+                        {
+                            "name": "projects_collaboration",
+                            "description": "Projets rejoints, propriétaire ou contributeur",
+                            "params": []
+                        },
+                        {
+                            "name": "avg_team_size",
+                            "description": "Taille moyenne d'équipe sur les projets",
+                            "params": []
+                        },
+                        {
+                            "name": "project_seniority",
+                            "description": "Ancienneté moyenne et plus vieux projet",
+                            "params": []
+                        },
+                        {
+                            "name": "top_repos_by_commits",
+                            "description": "Classement des dépôts par nombre de commits",
+                            "params": []
+                        },
+                        {
+                            "name": "top_starred_repos",
+                            "description": "Podium des dépôts les plus étoilés",
+                            "params": []
+                        },
+                        {
+                            "name": "recent_repos_list",
+                            "description": "Derniers dépôts mis à jour",
+                            "params": []
+                        },
+                        {
+                            "name": "primary_language",
+                            "description": "Technologie et langage de prédilection",
+                            "params": []
+                        },
+                        {
+                            "name": "languages_breakdown",
+                            "description": "Répartition des 5 langages les plus utilisés",
+                            "params": []
+                        },
+                        {
+                            "name": "profile_card",
+                            "description": "Profil, bio, entreprise et followers",
+                            "params": []
+                        },
+                        {
+                            "name": "repo_overview",
+                            "description": "Fiche détaillée d'un dépôt (stars, forks, statut)",
+                            "params": [{"name": "repoFullName", "type": "string"}]
+                        },
+                        {
+                            "name": "repo_recent_commits",
+                            "description": "Flux des derniers commits sur un dépôt",
+                            "params": [{"name": "repoFullName", "type": "string"}]
+                        },
+                        {
+                            "name": "repo_contributors",
+                            "description": "Top contributeurs d'un dépôt sélectionné",
+                            "params": [{"name": "repoFullName", "type": "string"}]
+                        },
+                        {
+                            "name": "repo_languages",
+                            "description": "Répartition des langages d'un dépôt précis",
+                            "params": [{"name": "repoFullName", "type": "string"}]
+                        },
+                        {
+                            "name": "org_overview",
+                            "description": "Activité et métriques d'une organisation",
+                            "params": [{"name": "orgName", "type": "string"}]
+                        },
+                        {
+                            "name": "orgs_list",
+                            "description": "Liste des organisations et équipes de l'utilisateur",
+                            "params": []
+                        },
+                        {
+                            "name": "repos_by_org",
+                            "description": "Répartition des dépôts par organisation",
+                            "params": []
+                        }
+                    ]
                 }
             ]
         }
