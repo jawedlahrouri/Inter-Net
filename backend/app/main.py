@@ -1,7 +1,10 @@
+import os
 import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from app.api.v1.router import api_router
 from app.core.config import settings
 
@@ -12,6 +15,12 @@ async def lifespan(app: FastAPI):
         from app.db.session import engine, Base
         import app.models
         Base.metadata.create_all(bind=engine)
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN settings JSON DEFAULT NULL"))
+                conn.commit()
+        except Exception:
+            pass
     except Exception as e:
         print(f"DB Startup warning: {e}")
     yield
@@ -37,6 +46,15 @@ if settings.BACKEND_CORS_ORIGINS:
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Mount static files for uploaded and preset storage
+storage_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage")
+os.makedirs(os.path.join(storage_path, "custom_vids"), exist_ok=True)
+os.makedirs(os.path.join(storage_path, "widgets"), exist_ok=True)
+
+app.mount(f"{settings.API_V1_STR}/storage", StaticFiles(directory=storage_path), name="api_storage")
+app.mount("/storage", StaticFiles(directory=storage_path), name="storage")
+
 
 
 @app.get("/")
@@ -91,6 +109,40 @@ def get_about(request: Request):
                                 {
                                     "name": "number",
                                     "type": "integer"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "custom",
+                    "widgets": [
+                        {
+                            "name": "custom_api",
+                            "description": "Display a metric from an external JSON API",
+                            "params": [
+                                {
+                                    "name": "apiUrl",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "jsonPath",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "shortcuts",
+                    "widgets": [
+                        {
+                            "name": "shortcut",
+                            "description": "Quick external website shortcut",
+                            "params": [
+                                {
+                                    "name": "url",
+                                    "type": "string"
                                 }
                             ]
                         }

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { SettingsProvider } from '@/context/SettingsContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { UserDashboardHeader } from '@/components/auth/UserDashboardHeader';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
+import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { useWidgets } from '@/hooks/useWidgets';
@@ -20,6 +22,7 @@ import {
 import {
   ExternalLink,
   Quote,
+  Settings,
   LayoutDashboard,
   SlidersHorizontal,
   ChevronDown,
@@ -43,6 +46,8 @@ function DashboardContent() {
   } = useAuth();
   const { theme, setTheme } = useTheme();
 
+  const [isMeditating, setIsMeditating] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') === 'settings' ? 'settings' : 'dashboard';
@@ -51,7 +56,8 @@ function DashboardContent() {
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
   };
-  const { widgets, addWidget, removeWidget } = useWidgets();
+  const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
+
 
   if (authLoading) {
     return (
@@ -64,9 +70,23 @@ function DashboardContent() {
     );
   }
 
+  // Écran de transition motivante lors de la connexion (sans vidéo de fond)
   if (showMotivationalTransition) {
     return (
-      <MotivationalLoader onComplete={() => setShowMotivationalTransition(false)} />
+      <MotivationalLoader
+        mode="login"
+        onComplete={() => setShowMotivationalTransition(false)}
+      />
+    );
+  }
+
+  // Écran de méditation immersive (avec vidéo de fond par défaut)
+  if (isMeditating) {
+    return (
+      <MotivationalLoader
+        mode="meditate"
+        onComplete={() => setIsMeditating(false)}
+      />
     );
   }
 
@@ -111,12 +131,22 @@ function DashboardContent() {
                 <Button
                   variant="ghost"
                   size="default"
-                  onClick={() => setShowMotivationalTransition(true)}
+                  onClick={() => setIsMeditating(true)}
                   className="h-10 text-xs gap-1.5 px-3 cursor-pointer text-muted-foreground hover:text-foreground"
                   title="Pause méditation"
                 >
                   <Quote className="size-3.5 text-muted-foreground" />
                   <span className="hidden md:inline">Méditer</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="h-10 text-xs gap-1.5 px-3 cursor-pointer text-muted-foreground hover:text-foreground"
+                  title="Personnalisation ambiance"
+                >
+                  <Settings className="size-3.5 text-muted-foreground" />
+                  <span className="hidden md:inline">Ambiance</span>
                 </Button>
 
                 {currentTab === 'dashboard' && (
@@ -271,8 +301,10 @@ function DashboardContent() {
                 widgets={widgets}
                 isEditing={isEditing}
                 onAddWidget={addWidget}
+                onUpdateWidget={updateWidget}
                 onRemoveWidget={removeWidget}
               />
+
             </div>
           </div>
         )}
@@ -304,6 +336,13 @@ function DashboardContent() {
           </div>
         </div>
       </footer>
+
+      {/* Modale des paramètres de personnalisation */}
+      <SettingsDialog
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        onLaunchMeditation={() => setIsMeditating(true)}
+      />
     </div>
   );
 }
@@ -312,10 +351,13 @@ export function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="internet-theme">
       <AuthProvider>
-        <DashboardContent />
+        <SettingsProvider>
+          <DashboardContent />
+        </SettingsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
 }
 
 export default App;
+

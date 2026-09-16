@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
+from app.models.widget import UserWidget, WidgetDefinition
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.settings import UserSettings, UserSettingsUpdate
 
 router = APIRouter()
+
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -33,6 +36,32 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Initialisation des widgets par défaut en BDD pour le nouvel utilisateur
+    weather_def = db.query(WidgetDefinition).filter(WidgetDefinition.name == "city_temperature").first()
+    if weather_def:
+        db.add(UserWidget(
+            user_id=user.id,
+            widget_id=weather_def.id,
+            title="Météo locale",
+            params_values={"city": "Paris"},
+            refresh_rate=60,
+        ))
+    custom_def = db.query(WidgetDefinition).filter(WidgetDefinition.name == "custom_api").first()
+    if custom_def:
+        db.add(UserWidget(
+            user_id=user.id,
+            widget_id=custom_def.id,
+            title="Statut API Backend",
+            params_values={
+                "apiUrl": "http://127.0.0.1:8000/api/v1/health",
+                "jsonPath": "status",
+                "displayMode": "kpi",
+            },
+            refresh_rate=15,
+        ))
+    db.commit()
+
 
     access_token = create_access_token(subject=user.id)
     return Token(
@@ -66,3 +95,31 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.get("/me/settings", response_model=UserSettings)
+def get_user_settings(current_user: User = Depends(get_current_user)):
+    user_settings = current_user.settings or {}
+    return UserSettings.model_validate(user_settings)
+
+
+@router.patch("/me/settings", response_model=UserSettings)
+def update_user_settings(
+    settings_in: UserSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current = current_user.settings or {}
+    updated_dict = dict(current)
+
+    if settings_in.meditation is not None:
+        med_current = dict(updated_dict.get("meditation", {}))
+        med_updates = settings_in.meditation.model_dump(exclude_unset=True)
+        med_current.update(med_updates)
+        updated_dict["meditation"] = med_current
+
+    current_user.settings = updated_dict
+    db.commit()
+    db.refresh(current_user)
+    return UserSettings.model_validate(current_user.settings or {})
+
