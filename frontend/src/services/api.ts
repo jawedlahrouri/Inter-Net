@@ -220,8 +220,14 @@ export interface MeditationSettings {
   sound_enabled: boolean;
 }
 
+export interface DashboardPageInfo {
+  id: string;
+  name: string;
+}
+
 export interface UserSettings {
   meditation: MeditationSettings;
+  dashboards?: DashboardPageInfo[];
 }
 
 export interface VideoInfo {
@@ -238,6 +244,7 @@ export async function fetchUserSettings(): Promise<UserSettings> {
 
 export async function updateUserSettingsApi(payload: {
   meditation?: Partial<MeditationSettings>;
+  dashboards?: DashboardPageInfo[];
 }): Promise<UserSettings> {
   return apiFetch<UserSettings>('/api/v1/auth/me/settings', {
     method: 'PATCH',

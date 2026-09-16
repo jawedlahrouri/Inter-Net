@@ -46,12 +46,15 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
     githubMetric: p.githubMetric,
     repoFullName: p.repoFullName,
     orgName: p.orgName,
+    dashboardId: p.dashboardId || 'default',
   }
 }
 
 function mapWidgetToApiPayload(data: Partial<Widget>) {
   let type = 'default'
-  const params: Record<string, any> = {}
+  const params: Record<string, any> = {
+    dashboardId: data.dashboardId || 'default',
+  }
 
   if (data.type === 'weather') {
     type = 'weather'

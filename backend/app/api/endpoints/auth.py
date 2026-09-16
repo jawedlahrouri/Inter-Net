@@ -118,6 +118,9 @@ def update_user_settings(
         med_current.update(med_updates)
         updated_dict["meditation"] = med_current
 
+    if settings_in.dashboards is not None:
+        updated_dict["dashboards"] = [d.model_dump() for d in settings_in.dashboards]
+
     current_user.settings = updated_dict
     db.commit()
     db.refresh(current_user)

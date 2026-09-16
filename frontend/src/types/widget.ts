@@ -71,6 +71,12 @@ export interface Widget {
   githubMetric?: GithubMetricType
   repoFullName?: string
   orgName?: string
+  dashboardId?: string
+}
+
+export interface DashboardPage {
+  id: string
+  name: string
 }
 
 export type NewWidgetData = Omit<Widget, 'id'>

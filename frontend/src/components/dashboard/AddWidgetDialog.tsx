@@ -59,6 +59,7 @@ import { WeatherWidget } from './widgets/WeatherWidget'
 import { CustomApiWidget } from './widgets/CustomApiWidget'
 import { GithubWidget } from './widgets/GithubWidget'
 import { useGithubStats } from '@/hooks/useGithubStats'
+import { useSettings } from '@/context/SettingsContext'
 
 export interface AddWidgetDialogProps {
   open: boolean
@@ -439,6 +440,7 @@ export function AddWidgetDialog({
   onOpenChange,
   onAddWidget,
 }: AddWidgetDialogProps) {
+  const { activeDashboardId } = useSettings()
   const [selectedType, setSelectedType] = useState<WidgetType>('github')
   const [title, setTitle] = useState('Commits (total)')
   const [city, setCity] = useState('')
@@ -646,6 +648,7 @@ export function AddWidgetDialog({
         refreshIntervalSeconds: Math.max(300, refreshInterval || 300),
         repoFullName: selectedRepoFullName.trim() || undefined,
         orgName: selectedOrgName.trim() || undefined,
+        dashboardId: activeDashboardId,
       })
     } else if (selectedType === 'steam') {
       if (!steamConnected) return
@@ -654,12 +657,14 @@ export function AddWidgetDialog({
         type: 'steam',
         steamMetric: currentSteamPreset.id,
         refreshIntervalSeconds: Math.max(300, refreshInterval || 300),
+        dashboardId: activeDashboardId,
       })
     } else if (selectedType === 'weather') {
       onAddWidget({
         title: title.trim() || 'Météo locale',
         type: 'weather',
         city: city.trim() || undefined,
+        dashboardId: activeDashboardId,
       })
     } else if (selectedType === 'custom_api') {
       if (!apiUrl.trim() || !jsonPath.trim()) return
@@ -671,6 +676,7 @@ export function AddWidgetDialog({
         displayMode,
         unit: unit.trim() || undefined,
         refreshIntervalSeconds: refreshInterval || 30,
+        dashboardId: activeDashboardId,
       })
     }
 

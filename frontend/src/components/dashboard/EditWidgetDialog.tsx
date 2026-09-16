@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import type { Widget } from '@/types/widget'
+import { useSettings } from '@/context/SettingsContext'
 
 export interface EditWidgetDialogProps {
   open: boolean
@@ -26,6 +27,7 @@ export function EditWidgetDialog({
   widget,
   onUpdateWidget,
 }: EditWidgetDialogProps) {
+  const { dashboards } = useSettings()
   const [title, setTitle] = useState('')
   const [city, setCity] = useState('')
   const [apiUrl, setApiUrl] = useState('')
@@ -36,6 +38,7 @@ export function EditWidgetDialog({
   const [url, setUrl] = useState('')
   const [repoFullName, setRepoFullName] = useState('')
   const [orgName, setOrgName] = useState('')
+  const [dashboardId, setDashboardId] = useState<string>('default')
 
   useEffect(() => {
     if (widget) {
@@ -49,6 +52,7 @@ export function EditWidgetDialog({
       setUrl(widget.url || '')
       setRepoFullName(widget.repoFullName || '')
       setOrgName(widget.orgName || '')
+      setDashboardId(widget.dashboardId || 'default')
     }
   }, [widget])
 
@@ -60,6 +64,7 @@ export function EditWidgetDialog({
     const updatedData: Partial<Widget> = {
       title: title.trim() || widget.title,
       refreshIntervalSeconds: refreshInterval,
+      dashboardId: dashboardId || 'default',
     }
 
     if (widget.type === 'weather') {
@@ -106,6 +111,25 @@ export function EditWidgetDialog({
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+
+          {dashboards.length > 1 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Page de tableau de bord
+              </label>
+              <select
+                value={dashboardId}
+                onChange={(e) => setDashboardId(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {dashboards.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <RefreshField
             label="Timer de rafraîchissement"
