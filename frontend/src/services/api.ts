@@ -198,9 +198,12 @@ export interface SteamUserStats {
   top_3_played: SteamGameInfo[];
   top_3_recent: SteamGameInfo[];
   unplayed_games_count: number;
+  unplayed_games_list?: SteamGameInfo[];
   avg_hours_per_game: number;
   recent_games_count: number;
+  recent_games_list?: SteamGameInfo[];
 }
+
 
 export async function fetchSteamUserStats(forceRefresh: boolean = false): Promise<SteamUserStats> {
   const query = forceRefresh ? '?force_refresh=true' : '';

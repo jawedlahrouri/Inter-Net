@@ -13,6 +13,8 @@ import {
   BarChart3,
   Inbox,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,7 +33,34 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
   const refreshInterval = Math.max(300, widget.refreshIntervalSeconds || 300)
   const { stats, loading, error, lastUpdated, refresh } = useSteamStats(refreshInterval)
   const [secondsAgo, setSecondsAgo] = useState<number>(0)
+  const [backlogIndex, setBacklogIndex] = useState<number>(0)
 
+  // Carousel automatique pour le backlog (défilement toutes les 3.5 secondes)
+  useEffect(() => {
+    if (metric !== 'unplayed_games') return
+    const unplayed = stats?.unplayed_games_list
+    if (!unplayed || unplayed.length <= 1) return
+
+    const timer = setInterval(() => {
+      setBacklogIndex((prev) => (prev + 1) % unplayed.length)
+    }, 3500)
+
+    return () => clearInterval(timer)
+  }, [metric, stats?.unplayed_games_list])
+
+  const handlePrevBacklog = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const unplayed = stats?.unplayed_games_list || []
+    if (unplayed.length === 0) return
+    setBacklogIndex((prev) => (prev - 1 + unplayed.length) % unplayed.length)
+  }
+
+  const handleNextBacklog = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const unplayed = stats?.unplayed_games_list || []
+    if (unplayed.length === 0) return
+    setBacklogIndex((prev) => (prev + 1) % unplayed.length)
+  }
 
   // Timer for relative updated time
   useEffect(() => {
@@ -43,6 +72,7 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
       const diff = Math.max(0, Math.floor((Date.now() - lastUpdated.getTime()) / 1000))
       setSecondsAgo(diff)
     }
+
 
     updateRelativeTime()
     const timer = setInterval(updateRelativeTime, 1000)
@@ -451,28 +481,82 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 13. Backlog (Jeux jamais lancés)
+      // 13. Backlog (Jeux jamais lancés avec défilement des jaquettes)
       case 'unplayed_games': {
+        const unplayed = stats.unplayed_games_list || []
         const percent =
           stats.games_count > 0
             ? Math.round((stats.unplayed_games_count / stats.games_count) * 100)
             : 0
+        const currentGame = unplayed.length > 0 ? unplayed[backlogIndex % unplayed.length] : null
+
         return (
-          <div className="space-y-3 py-2 text-center">
-            <div className="inline-flex p-2.5 rounded-full bg-blue-500/10 text-blue-500 mb-1">
-              <Inbox className="size-6" />
-            </div>
-            <div>
-              <div className="text-3xl font-extrabold tracking-tight text-foreground">
-                {stats.unplayed_games_count} <span className="text-base font-normal text-muted-foreground">jeux</span>
+          <div className="space-y-2.5">
+            {/* Statistique & Contrôles */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-foreground">
+                  {stats.unplayed_games_count}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  jeux jamais lancés ({percent}%)
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Possédés mais jamais lancés (0h de jeu)
-              </p>
+              {unplayed.length > 0 && (
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground mr-1">
+                    {((backlogIndex % unplayed.length) + 1)}/{unplayed.length}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-muted-foreground hover:text-foreground cursor-pointer"
+                    onClick={handlePrevBacklog}
+                    title="Jeu précédent"
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-muted-foreground hover:text-foreground cursor-pointer"
+                    onClick={handleNextBacklog}
+                    title="Jeu suivant"
+                  >
+                    <ChevronRight className="size-3.5" />
+                  </Button>
+                </div>
+              )}
             </div>
-            <Badge variant="secondary" className="text-xs">
-              Représente {percent}% de votre bibliothèque
-            </Badge>
+
+            {/* Image et nom du jeu en défilement */}
+            {currentGame ? (
+              <div className="relative rounded-lg overflow-hidden border border-border/80 aspect-[460/215] bg-black/40 group">
+                <img
+                  key={currentGame.appid}
+                  src={currentGame.header_url}
+                  alt={currentGame.name}
+                  className="w-full h-full object-cover transition-all duration-300"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-2.5">
+                  <Badge className="w-fit mb-1 bg-blue-600/90 text-white text-[9px] border-0 py-0 px-1.5 h-4">
+                    Jamais lancé (0h)
+                  </Badge>
+                  <h5 className="text-xs font-bold text-white truncate drop-shadow" title={currentGame.name}>
+                    {currentGame.name}
+                  </h5>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground text-xs">
+                Aucun jeu trouvé dans le backlog.
+              </div>
+            )}
           </div>
         )
       }
@@ -496,24 +580,56 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 15. Nombre de jeux actifs récents
+      // 15. Nombre de jeux actifs récents avec liste des titres
       case 'recent_games_count': {
+        const recentList = stats.recent_games_list || []
         return (
-          <div className="space-y-3 py-2 text-center">
-            <div className="inline-flex p-2.5 rounded-full bg-rose-500/10 text-rose-500 mb-1">
-              <Flame className="size-6" />
-            </div>
-            <div>
-              <div className="text-4xl font-extrabold tracking-tight text-foreground">
-                {stats.recent_games_count}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between pb-1 border-b border-border/40">
+              <div className="flex items-center gap-1.5 text-xs">
+                <Flame className="size-4 text-rose-500" />
+                <span className="font-bold text-foreground">
+                  {stats.recent_games_count} jeux actifs
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Titres différents lancés ces 14 derniers jours
-              </p>
+              <Badge variant="outline" className="text-[10px] text-muted-foreground border-border">
+                14 derniers jours
+              </Badge>
+            </div>
+
+            {/* Liste scrollable des jeux récents avec noms et jaquettes */}
+            <div className="space-y-1.5 max-h-[175px] overflow-y-auto pr-1">
+              {recentList.length > 0 ? (
+                recentList.map((game) => (
+                  <div
+                    key={game.appid}
+                    className="flex items-center gap-2 p-1.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors border border-border/40 text-xs"
+                  >
+                    {game.icon_url ? (
+                      <img src={game.icon_url} alt="" className="size-6 rounded shrink-0 object-cover" />
+                    ) : (
+                      <Gamepad2 className="size-5 text-muted-foreground shrink-0" />
+                    )}
+                    <span className="font-medium text-foreground truncate flex-1" title={game.name}>
+                      {game.name}
+                    </span>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0 font-semibold text-rose-500">
+                      {game.playtime_2weeks_hours !== null && game.playtime_2weeks_hours !== undefined
+                        ? `${game.playtime_2weeks_hours}h`
+                        : `${game.playtime_forever_hours}h`}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center py-4 text-xs text-muted-foreground">
+                  Aucun jeu actif ces 14 derniers jours.
+                </p>
+              )}
             </div>
           </div>
         )
       }
+
 
       default:
         return null

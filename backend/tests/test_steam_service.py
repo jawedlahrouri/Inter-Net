@@ -130,3 +130,49 @@ async def test_fetch_steam_user_stats_mocked():
         assert stats["recent_playtime_hours"] == 2.0  # 120 min / 60
         assert stats["unplayed_games_count"] == 1
         assert stats["next_level_progress"]["percent"] == 50
+
+
+def test_compute_profile_summary():
+    from app.services.steam_service import compute_profile_summary
+    profile = compute_profile_summary({
+        "personaname": "Alice",
+        "avatar": "http://a.jpg",
+        "avatarfull": "http://afull.jpg",
+        "profileurl": "http://steam/alice",
+        "personastate": 1,
+        "gameextrainfo": "Portal 2",
+    })
+    assert profile["personaname"] == "Alice"
+    assert profile["is_in_game"] is True
+    assert profile["status_label"] == "En jeu : Portal 2"
+
+
+def test_compute_level_progress():
+    from app.services.steam_service import compute_level_progress
+    badges_count, xp_needed, progress = compute_level_progress(
+        player_xp=550,
+        badges_data={
+            "player_xp_needed_to_level_up": 50,
+            "player_xp_needed_current_level": 500,
+            "badges": [{"badgeid": 1}, {"badgeid": 2}],
+        },
+    )
+    assert badges_count == 2
+    assert xp_needed == 50
+    assert progress["percent"] == 50
+    assert progress["xp_in_level"] == 50
+
+
+def test_compute_library_statistics():
+    from app.services.steam_service import compute_library_statistics
+    stats = compute_library_statistics(
+        owned_games=[
+            {"appid": 1, "playtime_forever": 120},
+            {"appid": 2, "playtime_forever": 0},
+        ],
+        total_count=2,
+    )
+    assert stats["total_playtime_hours"] == 2.0
+    assert stats["unplayed_games_count"] == 1
+    assert stats["avg_hours_per_game"] == 1.0
+
