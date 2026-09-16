@@ -132,3 +132,41 @@ def test_get_me_authenticated(client):
 def test_get_me_unauthorized(client):
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 401
+
+
+def test_user_settings_dashboards(client):
+    reg_resp = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "dashuser@example.com",
+            "username": "dashuser",
+            "password": "password123",
+        },
+    )
+    token = reg_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Default settings has General dashboard
+    get_resp = client.get("/api/v1/auth/me/settings", headers=headers)
+    assert get_resp.status_code == 200
+    data = get_resp.json()
+    assert "dashboards" in data
+    assert len(data["dashboards"]) == 1
+    assert data["dashboards"][0]["id"] == "default"
+
+    # Update dashboards
+    patch_resp = client.patch(
+        "/api/v1/auth/me/settings",
+        headers=headers,
+        json={
+            "dashboards": [
+                {"id": "default", "name": "Principal"},
+                {"id": "dev", "name": "Développement"},
+            ]
+        },
+    )
+    assert patch_resp.status_code == 200
+    updated_data = patch_resp.json()
+    assert len(updated_data["dashboards"]) == 2
+    assert updated_data["dashboards"][1]["name"] == "Développement"
+

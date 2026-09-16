@@ -5,6 +5,7 @@ import { EditButton } from '@/components/ui/editbutton'
 import { WeatherWidget } from '@/components/dashboard/widgets/WeatherWidget'
 import { CustomApiWidget } from '@/components/dashboard/widgets/CustomApiWidget'
 import { SteamWidget } from '@/components/dashboard/widgets/SteamWidget'
+import { GithubWidget } from '@/components/dashboard/widgets/GithubWidget'
 import type { Widget } from '@/types/widget'
 
 export interface WidgetCardProps {
@@ -41,6 +42,16 @@ export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: Widg
       <div className="relative group h-full">
         {renderActions()}
         <SteamWidget widget={widget} className="h-full" />
+      </div>
+    )
+  }
+
+  // If GitHub Widget
+  if (widget.type === 'github') {
+    return (
+      <div className="relative group h-full">
+        {renderActions()}
+        <GithubWidget widget={widget} className="h-full" />
       </div>
     )
   }

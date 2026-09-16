@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.services.about_service import AboutService
 
 
 @asynccontextmanager
@@ -68,121 +69,5 @@ def root():
 
 @app.get("/about.json")
 def get_about(request: Request):
-    client_host = request.client.host if request.client else "127.0.0.1"
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        client_host = forwarded_for.split(",")[0].strip()
+    return AboutService.get_about_payload(request)
 
-    return {
-        "client": {
-            "host": client_host
-        },
-        "server": {
-            "current_time": int(time.time()),
-            "services": [
-                {
-                    "name": "weather",
-                    "widgets": [
-                        {
-                            "name": "city_temperature",
-                            "description": "Display temperature for a city",
-                            "params": [
-                                {
-                                    "name": "city",
-                                    "type": "string"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "name": "rss",
-                    "widgets": [
-                        {
-                            "name": "article_list",
-                            "description": "Displaying the list of the last articles",
-                            "params": [
-                                {
-                                    "name": "link",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "number",
-                                    "type": "integer"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "name": "custom",
-                    "widgets": [
-                        {
-                            "name": "custom_api",
-                            "description": "Display a metric from an external JSON API",
-                            "params": [
-                                {
-                                    "name": "apiUrl",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "jsonPath",
-                                    "type": "string"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "name": "shortcuts",
-                    "widgets": [
-                        {
-                            "name": "shortcut",
-                            "description": "Quick external website shortcut",
-                            "params": [
-                                {
-                                    "name": "url",
-                                    "type": "string"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "name": "steam",
-                    "widgets": [
-                        {
-                            "name": "last_played",
-                            "description": "Dernier jeu joué par l'utilisateur",
-                            "params": []
-                        },
-                        {
-                            "name": "most_played",
-                            "description": "Jeu avec le plus d'heures au compteur",
-                            "params": []
-                        },
-                        {
-                            "name": "games_count",
-                            "description": "Nombre total de jeux dans la bibliothèque",
-                            "params": []
-                        },
-                        {
-                            "name": "total_playtime",
-                            "description": "Nombre d'heures de jeu cumulées",
-                            "params": []
-                        },
-                        {
-                            "name": "recent_playtime",
-                            "description": "Temps de jeu sur les 14 derniers jours",
-                            "params": []
-                        },
-                        {
-                            "name": "steam_level",
-                            "description": "Niveau et profil Steam du joueur",
-                            "params": []
-                        }
-                    ]
-                }
-            ]
-        }
-    }

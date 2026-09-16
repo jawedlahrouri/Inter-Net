@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { SettingsProvider } from '@/context/SettingsContext';
+import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AuthCard } from '@/components/auth/AuthCard';
-import { UserDashboardHeader } from '@/components/auth/UserDashboardHeader';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
-import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
-import { SettingsView } from '@/components/settings/SettingsView';
+import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
+import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
 import { useWidgets } from '@/hooks/useWidgets';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   ExternalLink,
-  Quote,
   Settings,
   LayoutDashboard,
   SlidersHorizontal,
@@ -45,19 +43,108 @@ function DashboardContent() {
     logout,
   } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { activeDashboardId, setActiveDashboardId } = useSettings();
 
   const [isMeditating, setIsMeditating] = useState<boolean>(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
+    const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab') === 'settings' ? 'settings' : 'dashboard';
+    if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+      return 'settings';
+    }
+    return 'dashboard';
   });
+
+  const [settingsSubpage, setSettingsSubpage] = useState<SettingsSubpage>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sub = params.get('sub');
+    if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
+      return sub;
+    }
+    return 'account';
+  });
+
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
   };
   const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
 
+  // Navigation vers Dashboard avec synchronisation URL
+  const navigateToDashboard = useCallback((pageId?: string) => {
+    setCurrentTab('dashboard');
+    const targetPage = pageId || activeDashboardId;
+    const url = targetPage && targetPage !== 'default'
+      ? `/dashboard?page=${encodeURIComponent(targetPage)}`
+      : '/dashboard';
+    window.history.pushState({ tab: 'dashboard', page: targetPage }, '', url);
+  }, [activeDashboardId]);
+
+  // Navigation vers Settings avec sous-page et synchronisation URL
+  const navigateToSettings = useCallback((subpage: SettingsSubpage = 'account') => {
+    setCurrentTab('settings');
+    setSettingsSubpage(subpage);
+    const url = subpage && subpage !== 'account'
+      ? `/settings?sub=${encodeURIComponent(subpage)}`
+      : '/settings';
+    window.history.pushState({ tab: 'settings', sub: subpage }, '', url);
+  }, []);
+
+  // Changement de page de dashboard
+  const handleDashboardPageChange = useCallback((pageId: string) => {
+    const url = pageId && pageId !== 'default'
+      ? `/dashboard?page=${encodeURIComponent(pageId)}`
+      : '/dashboard';
+    window.history.replaceState({ tab: 'dashboard', page: pageId }, '', url);
+  }, []);
+
+  // Synchronisation avec l'historique du navigateur (boutons précédent / suivant)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+        setCurrentTab('settings');
+        const sub = params.get('sub');
+        if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
+          setSettingsSubpage(sub);
+        } else {
+          setSettingsSubpage('account');
+        }
+      } else {
+        setCurrentTab('dashboard');
+        const page = params.get('page');
+        if (page) {
+          setActiveDashboardId(page);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setActiveDashboardId]);
+
+  // Normalisation initiale de l'URL pour l'utilisateur connecté
+  useEffect(() => {
+    if (!user) return;
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+
+    if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+      setCurrentTab('settings');
+      const sub = params.get('sub') as SettingsSubpage;
+      if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
+        setSettingsSubpage(sub);
+      }
+      const url = sub && sub !== 'account' ? `/settings?sub=${encodeURIComponent(sub)}` : '/settings';
+      window.history.replaceState({ tab: 'settings', sub }, '', url);
+    } else {
+      setCurrentTab('dashboard');
+      const page = params.get('page') || activeDashboardId;
+      const url = page && page !== 'default' ? `/dashboard?page=${encodeURIComponent(page)}` : '/dashboard';
+      window.history.replaceState({ tab: 'dashboard', page }, '', url);
+    }
+  }, [user]); // Ne s'exécute qu'à l'authentification
 
   if (authLoading) {
     return (
@@ -90,6 +177,11 @@ function DashboardContent() {
     );
   }
 
+  // Filtrage des widgets par page de tableau de bord active
+  const displayedWidgets = widgets.filter(
+    (w) => (w.dashboardId || 'default') === activeDashboardId
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full">
       {/* Top Navbar Header - Full-Width Edge-to-Edge */}
@@ -99,7 +191,7 @@ function DashboardContent() {
           <div className="flex items-center gap-6">
             <button
               type="button"
-              onClick={() => setCurrentTab('dashboard')}
+              onClick={() => navigateToDashboard()}
               className="font-semibold text-sm tracking-widest text-foreground uppercase select-none cursor-pointer hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
             >
               INTER-NET
@@ -109,7 +201,7 @@ function DashboardContent() {
               <nav className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => setCurrentTab('dashboard')}
+                  onClick={() => navigateToDashboard()}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
                     currentTab === 'dashboard'
                       ? 'bg-muted text-foreground font-semibold'
@@ -127,28 +219,6 @@ function DashboardContent() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                {/* Secondary Actions */}
-                <Button
-                  variant="ghost"
-                  size="default"
-                  onClick={() => setIsMeditating(true)}
-                  className="h-10 text-xs gap-1.5 px-3 cursor-pointer text-muted-foreground hover:text-foreground"
-                  title="Pause méditation"
-                >
-                  <Quote className="size-3.5 text-muted-foreground" />
-                  <span className="hidden md:inline">Méditer</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="default"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="h-10 text-xs gap-1.5 px-3 cursor-pointer text-muted-foreground hover:text-foreground"
-                  title="Personnalisation ambiance"
-                >
-                  <Settings className="size-3.5 text-muted-foreground" />
-                  <span className="hidden md:inline">Ambiance</span>
-                </Button>
-
                 {currentTab === 'dashboard' && (
                   <Button
                     variant={isEditing ? 'default' : 'outline'}
@@ -194,7 +264,7 @@ function DashboardContent() {
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem
-                      onClick={() => setCurrentTab('settings')}
+                      onClick={() => navigateToSettings('account')}
                       className="cursor-pointer gap-2 text-xs py-2"
                     >
                       <SlidersHorizontal className="size-4 text-muted-foreground" />
@@ -261,7 +331,7 @@ function DashboardContent() {
       </header>
 
       {/* Main Full-Width Content Container */}
-      <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-8">
+      <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6">
         {!user ? (
           /* Non-authentifié : Formulaire Login/Register épuré */
           <div className="space-y-8 max-w-md mx-auto py-12">
@@ -277,34 +347,35 @@ function DashboardContent() {
             <AuthCard />
           </div>
         ) : currentTab === 'settings' ? (
-          /* Vue Profil & Intégrations / Paramètres */
-          <SettingsView />
+          /* Vue Profil & Intégrations / Paramètres avec Sidebar */
+          <SettingsView
+            initialSubpage={settingsSubpage}
+            onSubpageChange={(sub) => {
+              setSettingsSubpage(sub);
+              const url = sub !== 'account' ? `/settings?sub=${encodeURIComponent(sub)}` : '/settings';
+              window.history.replaceState({ tab: 'settings', sub }, '', url);
+            }}
+            onLaunchMeditation={() => setIsMeditating(true)}
+          />
         ) : (
-          /* Vue Dashboard Utilisateur & Widgets */
-          <div className="space-y-8 w-full">
-            <UserDashboardHeader />
+          /* Vue Dashboard Utilisateur & Widgets (Header retiré conformément à la demande) */
+          <div className="space-y-6 w-full">
+            {/* Onglets des pages de tableau de bord */}
+            <DashboardTabs
+              widgets={widgets}
+              onDashboardChange={handleDashboardPageChange}
+            />
 
             {/* Widgets Grid Section */}
             <div className="space-y-4 w-full">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                <div className="space-y-0.5">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    Mes Widgets
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Flux d'informations et métriques en direct (<span className="tabular-nums font-mono">{widgets.length}</span> {widgets.length > 1 ? 'panneaux' : 'panneau'}).
-                  </p>
-                </div>
-              </div>
-
               <WidgetGrid
-                widgets={widgets}
+                widgets={displayedWidgets}
                 isEditing={isEditing}
-                onAddWidget={addWidget}
+                onAddWidget={(data) => addWidget({ ...data, dashboardId: activeDashboardId })}
                 onUpdateWidget={updateWidget}
                 onRemoveWidget={removeWidget}
+                onToggleEdit={() => setIsEditing(true)}
               />
-
             </div>
           </div>
         )}
@@ -336,13 +407,6 @@ function DashboardContent() {
           </div>
         </div>
       </footer>
-
-      {/* Modale des paramètres de personnalisation */}
-      <SettingsDialog
-        open={isSettingsOpen}
-        onOpenChange={setIsSettingsOpen}
-        onLaunchMeditation={() => setIsMeditating(true)}
-      />
     </div>
   );
 }
@@ -360,4 +424,3 @@ export function App() {
 }
 
 export default App;
-

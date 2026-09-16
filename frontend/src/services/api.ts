@@ -59,6 +59,14 @@ export function getSteamAuthRedirectUrl(): string {
     : `${API_BASE_URL}/api/v1/auth/steam`;
 }
 
+export function getGithubAuthRedirectUrl(): string {
+  const token = getStoredToken();
+  return token
+    ? `${API_BASE_URL}/api/v1/auth/github?token=${encodeURIComponent(token)}`
+    : `${API_BASE_URL}/api/v1/auth/github`;
+}
+
+
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
@@ -212,8 +220,14 @@ export interface MeditationSettings {
   sound_enabled: boolean;
 }
 
+export interface DashboardPageInfo {
+  id: string;
+  name: string;
+}
+
 export interface UserSettings {
   meditation: MeditationSettings;
+  dashboards?: DashboardPageInfo[];
 }
 
 export interface VideoInfo {
@@ -230,6 +244,7 @@ export async function fetchUserSettings(): Promise<UserSettings> {
 
 export async function updateUserSettingsApi(payload: {
   meditation?: Partial<MeditationSettings>;
+  dashboards?: DashboardPageInfo[];
 }): Promise<UserSettings> {
   return apiFetch<UserSettings>('/api/v1/auth/me/settings', {
     method: 'PATCH',
@@ -325,4 +340,218 @@ export async function fetchSteamUserStats(forceRefresh: boolean = false): Promis
   const query = forceRefresh ? '?force_refresh=true' : '';
   return apiFetch<SteamUserStats>(`/api/v1/auth/steam/user/stats${query}`);
 }
+
+export interface GithubProfileInfo {
+  github_id?: string;
+  login?: string;
+  name?: string;
+  username?: string;
+  avatar?: string;
+  avatar_url?: string;
+  profile_url?: string;
+  html_url?: string;
+  bio?: string;
+  location?: string;
+  company?: string;
+  blog?: string;
+  public_repos?: number;
+  followers?: number;
+  following?: number;
+}
+
+export interface GithubStatusResponse {
+  connected: boolean;
+  access_token?: string;
+  profile?: GithubProfileInfo;
+  connected_at?: string;
+}
+
+export async function fetchGithubStatus(): Promise<GithubStatusResponse> {
+  return apiFetch<GithubStatusResponse>('/api/v1/auth/github/status');
+}
+
+export async function disconnectGithub(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/github/disconnect', {
+    method: 'POST',
+  });
+}
+
+export async function connectGithubToken(token: string): Promise<{ message: string; profile: GithubProfileInfo }> {
+  return apiFetch<{ message: string; profile: GithubProfileInfo }>('/api/v1/auth/github/token', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+export interface GithubRepoInfo {
+  id: number;
+  name: string;
+  full_name: string;
+  html_url: string;
+  description: string;
+  language: string;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  updated_at: string;
+  is_private: boolean;
+}
+
+export interface WeeklyTopDev {
+  rank: number;
+  login: string;
+  username: string;
+  avatar: string;
+  commits: number;
+  percentage: number;
+}
+
+export interface GithubUserStats {
+  profile: GithubProfileInfo;
+  // Volume & Lignes
+  total_commits: number;
+  lines_added: number;
+  lines_deleted: number;
+  lines_ratio: number;
+  avg_commit_size: number;
+  // Fenêtres temporelles & Jours actifs
+  commits_7d: number;
+  commits_30d: number;
+  commits_90d: number;
+  lines_added_7d: number;
+  lines_added_30d: number;
+  lines_added_90d: number;
+  lines_deleted_7d: number;
+  lines_deleted_30d: number;
+  lines_deleted_90d: number;
+  active_days_30d: number;
+  active_days_365d: number;
+  active_repos_count: number;
+  // Semaine
+  weekly_top_devs: WeeklyTopDev[];
+  // Pull Requests & Reviews
+  pr_open_count: number;
+  pr_merged_count: number;
+  pr_closed_unmerged: number;
+  pr_merge_rate: number;
+  pr_created_total: number;
+  code_reviews_done: number;
+  // Projets & Collaboration
+  joined_projects_count: number;
+  owned_projects_count: number;
+  collab_projects_count: number;
+  avg_team_size: number;
+  avg_seniority_days: number;
+  oldest_project_age_days: number;
+  // Organisations & Ventilation
+  organisations?: GithubOrgInfo[];
+  org_count?: number;
+  repos_by_owner?: GithubRepoByOwner[];
+  // Repos & Notoriété
+  total_stars: number;
+  total_forks: number;
+  total_open_issues: number;
+  public_repos_count: number;
+  public_gists_count: number;
+  followers_count: number;
+  following_count: number;
+  recent_repos: GithubRepoInfo[];
+  top_starred_repo: GithubRepoInfo | null;
+  top_starred_repos: GithubRepoInfo[];
+  top_repos_by_commits: GithubRepoInfo[];
+  primary_language: string;
+  top_languages: Array<{ name: string; count: number; percentage?: number }>;
+  last_updated: number;
+}
+
+export async function fetchGithubUserStats(forceRefresh: boolean = false): Promise<GithubUserStats> {
+  const query = forceRefresh ? '?force_refresh=true' : '';
+  return apiFetch<GithubUserStats>(`/api/v1/auth/github/user/stats${query}`);
+}
+
+export interface GithubOrgInfo {
+  id: number;
+  login: string;
+  avatar_url: string;
+  description: string;
+}
+
+export interface GithubRepoByOwner {
+  owner: string;
+  count: number;
+  stars: number;
+  forks: number;
+  is_user: boolean;
+  repos: string[];
+}
+
+export interface GithubCommitItem {
+  sha: string;
+  message: string;
+  author: string;
+  author_login: string;
+  author_avatar: string;
+  date: string;
+  html_url: string;
+}
+
+export interface GithubContributorItem {
+  login: string;
+  avatar_url: string;
+  contributions: number;
+  html_url: string;
+}
+
+export interface GithubLanguageItem {
+  name: string;
+  bytes: number;
+  percentage: number;
+}
+
+export interface GithubRepoDetailedStats {
+  repo: GithubRepoInfo;
+  commits: GithubCommitItem[];
+  contributors: GithubContributorItem[];
+  languages: GithubLanguageItem[];
+  last_updated: number;
+}
+
+export interface GithubOrgDetailedStats {
+  org: {
+    id: number;
+    login: string;
+    name: string;
+    description: string;
+    avatar_url: string;
+    html_url: string;
+    public_repos: number;
+    followers: number;
+    created_at?: string;
+    blog?: string;
+    location?: string;
+  };
+  total_stars: number;
+  total_forks: number;
+  repos_count: number;
+  repos: GithubRepoInfo[];
+  top_languages: Array<{ name: string; count: number; percentage: number }>;
+  primary_language: string;
+  last_updated: number;
+}
+
+export async function fetchGithubUserOrgs(): Promise<GithubOrgInfo[]> {
+  return apiFetch<GithubOrgInfo[]>('/api/v1/auth/github/user/orgs');
+}
+
+export async function fetchGithubOrgStats(org: string, forceRefresh: boolean = false): Promise<GithubOrgDetailedStats> {
+  const query = forceRefresh ? '?force_refresh=true' : '';
+  return apiFetch<GithubOrgDetailedStats>(`/api/v1/auth/github/orgs/${encodeURIComponent(org)}/stats${query}`);
+}
+
+export async function fetchGithubRepoStats(owner: string, repo: string, forceRefresh: boolean = false): Promise<GithubRepoDetailedStats> {
+  const query = forceRefresh ? '?force_refresh=true' : '';
+  return apiFetch<GithubRepoDetailedStats>(`/api/v1/auth/github/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stats${query}`);
+}
+
+
 

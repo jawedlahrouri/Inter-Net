@@ -146,6 +146,9 @@ class JsonWidgetStorage:
         elif widget_type == "steam":
             def_name = "steam"
             display_name = "Steam"
+        elif widget_type == "github":
+            def_name = "github"
+            display_name = "GitHub"
         else:
             def_name = "custom_api"
             display_name = "API JSON Universelle"

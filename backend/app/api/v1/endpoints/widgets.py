@@ -61,6 +61,14 @@ STANDARD_DEFINITIONS = [
         description="Statistiques et métriques de profil Steam",
         params_schema=[{"name": "steamMetric", "type": "string"}],
     ),
+    WidgetDefinitionOut(
+        id=6,
+        service_id=6,
+        name="github",
+        display_name="GitHub",
+        description="Statistiques, repositories et activité de code GitHub",
+        params_schema=[{"name": "githubMetric", "type": "string"}],
+    ),
 ]
 
 

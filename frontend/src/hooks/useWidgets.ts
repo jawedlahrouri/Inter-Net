@@ -19,6 +19,8 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
     type = 'custom_api'
   } else if (rawType === 'steam') {
     type = 'steam'
+  } else if (rawType === 'github') {
+    type = 'github'
   } else {
     type = 'default'
   }
@@ -41,12 +43,18 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
     gaugeMax: p.gaugeMax,
     url: p.url,
     steamMetric: p.steamMetric,
+    githubMetric: p.githubMetric,
+    repoFullName: p.repoFullName,
+    orgName: p.orgName,
+    dashboardId: p.dashboardId || 'default',
   }
 }
 
 function mapWidgetToApiPayload(data: Partial<Widget>) {
   let type = 'default'
-  const params: Record<string, any> = {}
+  const params: Record<string, any> = {
+    dashboardId: data.dashboardId || 'default',
+  }
 
   if (data.type === 'weather') {
     type = 'weather'
@@ -64,6 +72,11 @@ function mapWidgetToApiPayload(data: Partial<Widget>) {
   } else if (data.type === 'steam') {
     type = 'steam'
     if (data.steamMetric) params.steamMetric = data.steamMetric
+  } else if (data.type === 'github') {
+    type = 'github'
+    if (data.githubMetric) params.githubMetric = data.githubMetric
+    if (data.repoFullName) params.repoFullName = data.repoFullName
+    if (data.orgName) params.orgName = data.orgName
   } else {
     type = 'default'
     if (data.url) params.url = data.url

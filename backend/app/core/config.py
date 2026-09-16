@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "super_secret_jwt_key_inter_net_dashboard_change_in_prod"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+
+    STEAM_API_KEY: Optional[str] = None
+    GITHUB_CLIENT_ID: Optional[str] = None
+    GITHUB_CLIENT_SECRET: Optional[str] = None
+    GITHUB_API_KEY: Optional[str] = None
+    BASE_URL: str = "http://localhost:8080"
+    FRONTEND_URL: str = "http://localhost:3000"
+
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

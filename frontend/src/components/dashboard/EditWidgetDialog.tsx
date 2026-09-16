@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import type { Widget } from '@/types/widget'
+import { useSettings } from '@/context/SettingsContext'
 
 export interface EditWidgetDialogProps {
   open: boolean
@@ -26,6 +27,7 @@ export function EditWidgetDialog({
   widget,
   onUpdateWidget,
 }: EditWidgetDialogProps) {
+  const { dashboards } = useSettings()
   const [title, setTitle] = useState('')
   const [city, setCity] = useState('')
   const [apiUrl, setApiUrl] = useState('')
@@ -34,6 +36,9 @@ export function EditWidgetDialog({
   const [unit, setUnit] = useState('')
   const [refreshInterval, setRefreshInterval] = useState<number>(30)
   const [url, setUrl] = useState('')
+  const [repoFullName, setRepoFullName] = useState('')
+  const [orgName, setOrgName] = useState('')
+  const [dashboardId, setDashboardId] = useState<string>('default')
 
   useEffect(() => {
     if (widget) {
@@ -45,6 +50,9 @@ export function EditWidgetDialog({
       setUnit(widget.unit || '')
       setRefreshInterval(widget.refreshIntervalSeconds || 30)
       setUrl(widget.url || '')
+      setRepoFullName(widget.repoFullName || '')
+      setOrgName(widget.orgName || '')
+      setDashboardId(widget.dashboardId || 'default')
     }
   }, [widget])
 
@@ -56,6 +64,7 @@ export function EditWidgetDialog({
     const updatedData: Partial<Widget> = {
       title: title.trim() || widget.title,
       refreshIntervalSeconds: refreshInterval,
+      dashboardId: dashboardId || 'default',
     }
 
     if (widget.type === 'weather') {
@@ -70,6 +79,11 @@ export function EditWidgetDialog({
     } else if (widget.type === 'steam') {
       updatedData.type = 'steam'
       updatedData.steamMetric = widget.steamMetric
+    } else if (widget.type === 'github') {
+      updatedData.type = 'github'
+      updatedData.githubMetric = widget.githubMetric
+      if (repoFullName.trim()) updatedData.repoFullName = repoFullName.trim()
+      if (orgName.trim()) updatedData.orgName = orgName.trim()
     } else {
       updatedData.type = 'default'
       updatedData.url = url.trim() || undefined
@@ -98,11 +112,50 @@ export function EditWidgetDialog({
             required
           />
 
+          {dashboards.length > 1 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Page de tableau de bord
+              </label>
+              <select
+                value={dashboardId}
+                onChange={(e) => setDashboardId(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {dashboards.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <RefreshField
             label="Timer de rafraîchissement"
             value={refreshInterval}
             onChange={(val) => setRefreshInterval(val)}
           />
+
+          {widget.type === 'github' && widget.githubMetric?.startsWith('repo_') && (
+            <InputField
+              label="Dépôt GitHub (owner/repo)"
+              placeholder="Ex: facebook/react ou octocat/Hello-World"
+              value={repoFullName}
+              onChange={(e) => setRepoFullName(e.target.value)}
+              description="Laissez vide pour utiliser votre dépôt le plus actif"
+            />
+          )}
+
+          {widget.type === 'github' && widget.githubMetric === 'org_overview' && (
+            <InputField
+              label="Organisation GitHub"
+              placeholder="Ex: vercel, facebook, microsoft..."
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              description="Nom de l'organisation GitHub à analyser"
+            />
+          )}
 
           {widget.type === 'weather' && (
             <InputField
