@@ -121,6 +121,12 @@ def update_user_settings(
     if settings_in.dashboards is not None:
         updated_dict["dashboards"] = [d.model_dump() for d in settings_in.dashboards]
 
+    if settings_in.customization is not None:
+        custom_current = dict(updated_dict.get("customization", {}))
+        custom_updates = settings_in.customization.model_dump(exclude_unset=True)
+        custom_current.update(custom_updates)
+        updated_dict["customization"] = custom_current
+
     current_user.settings = updated_dict
     db.commit()
     db.refresh(current_user)

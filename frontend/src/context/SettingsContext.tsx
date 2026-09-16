@@ -1,18 +1,29 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-export type { UserSettings, VideoInfo, DashboardPageInfo } from '@/services/api';
+export type { UserSettings, VideoInfo, DashboardPageInfo, ThemeCustomization, BackgroundInfo } from '@/services/api';
 import {
   type UserSettings,
   type VideoInfo,
   type DashboardPageInfo,
+  type ThemeCustomization,
+  type BackgroundInfo,
   fetchUserSettings,
   updateUserSettingsApi,
   fetchCustomVideos,
   uploadCustomVideoApi,
+  fetchCustomBackgrounds,
+  uploadCustomBackgroundApi,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 const SETTINGS_STORAGE_KEY = 'dashboard_user_settings';
 const ACTIVE_DASHBOARD_STORAGE_KEY = 'dashboard_active_page_id';
+
+export const DEFAULT_CUSTOMIZATION: ThemeCustomization = {
+  primary_color: '#0b0f19',
+  secondary_color: '#131b2e',
+  tertiary_color: '#38bdf8',
+  background_image: null,
+};
 
 const DEFAULT_SETTINGS: UserSettings = {
   meditation: {
@@ -21,21 +32,28 @@ const DEFAULT_SETTINGS: UserSettings = {
     sound_enabled: false,
   },
   dashboards: [{ id: 'default', name: 'Général' }],
+  customization: DEFAULT_CUSTOMIZATION,
 };
 
 interface SettingsContextType {
   settings: UserSettings;
   loading: boolean;
   availableVideos: VideoInfo[];
+  availableBackgrounds: BackgroundInfo[];
   dashboards: DashboardPageInfo[];
   activeDashboardId: string;
+  customization: ThemeCustomization;
   setActiveDashboardId: (id: string) => void;
   createDashboard: (name: string) => Promise<string>;
   renameDashboard: (id: string, newName: string) => Promise<void>;
   deleteDashboard: (id: string) => Promise<void>;
   refreshVideos: () => Promise<void>;
+  refreshBackgrounds: () => Promise<void>;
   updateMeditationSettings: (updates: Partial<UserSettings['meditation']>) => Promise<void>;
+  updateCustomization: (updates: Partial<ThemeCustomization>) => Promise<void>;
+  removeBackgroundImage: () => Promise<void>;
   uploadVideo: (file: File) => Promise<VideoInfo>;
+  uploadBackground: (file: File) => Promise<BackgroundInfo>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -51,6 +69,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           ...DEFAULT_SETTINGS,
           ...parsed,
           dashboards: parsed.dashboards?.length ? parsed.dashboards : DEFAULT_SETTINGS.dashboards,
+          customization: {
+            ...DEFAULT_CUSTOMIZATION,
+            ...(parsed.customization || {}),
+          },
         };
       }
     } catch {
@@ -81,6 +103,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       size: 1465991,
     },
   ]);
+  const [availableBackgrounds, setAvailableBackgrounds] = useState<BackgroundInfo[]>([]);
 
   const refreshVideos = useCallback(async () => {
     try {
@@ -93,9 +116,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshBackgrounds = useCallback(async () => {
+    try {
+      const bgs = await fetchCustomBackgrounds();
+      if (bgs) {
+        setAvailableBackgrounds(bgs);
+      }
+    } catch {
+    }
+  }, []);
+
   useEffect(() => {
     refreshVideos();
-  }, [refreshVideos]);
+    refreshBackgrounds();
+  }, [refreshVideos, refreshBackgrounds]);
 
   // Synchronise les réglages avec le compte connecté
   useEffect(() => {
@@ -111,6 +145,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             dashboards: serverSettings.dashboards?.length
               ? serverSettings.dashboards
               : (settings.dashboards?.length ? settings.dashboards : DEFAULT_SETTINGS.dashboards),
+            customization: {
+              ...DEFAULT_CUSTOMIZATION,
+              ...(settings.customization || {}),
+              ...(serverSettings.customization || {}),
+            },
           };
           setSettings(merged);
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
@@ -194,11 +233,46 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateCustomization = async (updates: Partial<ThemeCustomization>) => {
+    const currentCustom = settings.customization || DEFAULT_CUSTOMIZATION;
+    const newCustom: ThemeCustomization = {
+      ...currentCustom,
+      ...updates,
+    };
+    const newSettings: UserSettings = {
+      ...settings,
+      customization: newCustom,
+    };
+    setSettings(newSettings);
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+
+    if (user) {
+      try {
+        await updateUserSettingsApi({ customization: updates });
+      } catch (err) {
+        console.error('Erreur lors de la sauvegarde du thème côté serveur:', err);
+      }
+    }
+  };
+
+  const removeBackgroundImage = async () => {
+    await updateCustomization({ background_image: null });
+  };
+
   const uploadVideo = async (file: File): Promise<VideoInfo> => {
     const uploaded = await uploadCustomVideoApi(file);
     await refreshVideos();
     return uploaded;
   };
+
+  const uploadBackground = async (file: File): Promise<BackgroundInfo> => {
+    const uploaded = await uploadCustomBackgroundApi(file);
+    await refreshBackgrounds();
+    await updateCustomization({ background_image: uploaded.url });
+    return uploaded;
+  };
+
+  const customization = settings.customization || DEFAULT_CUSTOMIZATION;
 
   return (
     <SettingsContext.Provider
@@ -206,15 +280,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         settings,
         loading,
         availableVideos,
+        availableBackgrounds,
         dashboards,
         activeDashboardId,
+        customization,
         setActiveDashboardId,
         createDashboard,
         renameDashboard,
         deleteDashboard,
         refreshVideos,
+        refreshBackgrounds,
         updateMeditationSettings,
+        updateCustomization,
+        removeBackgroundImage,
         uploadVideo,
+        uploadBackground,
       }}
     >
       {children}
