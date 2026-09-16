@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { getStoredToken, fetchSteamStatus, disconnectSteam } from '@/services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +26,7 @@ interface IntegrationItem {
   category: string;
   description: string;
   icon: typeof GitBranch;
-  status: 'coming_soon';
+  status: 'coming_soon' | 'connected' | 'disconnected';
   account?: string;
 }
 
@@ -35,7 +37,7 @@ const INTEGRATIONS: IntegrationItem[] = [
     category: 'Gaming',
     description: 'Suivi de la Wishlist, temps de jeu et statistiques de bibliothèque.',
     icon: Gamepad2,
-    status: 'coming_soon',
+    status: 'disconnected',
   },
   {
     id: 'github',
@@ -81,8 +83,80 @@ const INTEGRATIONS: IntegrationItem[] = [
 
 export function SettingsView() {
   const { user, logout } = useAuth();
+  const [integrations, setIntegrations] = useState<IntegrationItem[]>(INTEGRATIONS);
 
   if (!user) return null;
+
+  useEffect(() => {
+    async function checkConnectedServices() {
+      try {
+        const steam = await fetchSteamStatus();
+        if (steam.connected) {
+          setIntegrations((prev) =>
+            prev.map((item) =>
+              item.id === 'steam'
+                ? {
+                    ...item,
+                    status: 'connected' as const,
+                    account: steam.profile?.username || steam.steam_id || 'Steam lié',
+                  }
+                : item
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Erreur lors de la vérification du statut Steam:', err);
+      }
+    }
+
+    checkConnectedServices();
+  }, []);
+
+  const handleConnect = (id: string) => {
+    if (id === 'steam') {
+      const token = getStoredToken();
+      const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
+      const redirectUrl = token
+        ? `${apiUrl}/api/v1/auth/steam?token=${encodeURIComponent(token)}`
+        : `${apiUrl}/api/v1/auth/steam`;
+      window.location.href = redirectUrl;
+      return;
+    }
+
+    setIntegrations((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, status: 'connected' as const, account: `${user.username}` }
+          : item
+      )
+    );
+  };
+
+  const handleDisconnect = async (id: string) => {
+    if (id === 'steam') {
+      try {
+        await disconnectSteam();
+      } catch (err) {
+        console.error('Erreur lors de la déconnexion Steam:', err);
+      }
+      setIntegrations((prev) =>
+        prev.map((item) =>
+          item.id === 'steam'
+            ? { ...item, status: 'disconnected' as const, account: undefined }
+            : item
+        )
+      );
+      return;
+    }
+
+    setIntegrations((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, status: 'disconnected' as const, account: undefined }
+          : item
+      )
+    );
+  };
 
   const initials = user.username.slice(0, 2).toUpperCase();
   const formattedDate = new Date(user.created_at).toLocaleDateString('fr-FR', {
@@ -192,7 +266,7 @@ export function SettingsView() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-          {INTEGRATIONS.map((item) => {
+          {integrations.map((item) => {
             const IconComponent = item.icon;
             return (
               <Card
@@ -218,26 +292,74 @@ export function SettingsView() {
                       </div>
                     </div>
 
-                    <Badge variant="secondary" className="text-[10px] text-muted-foreground shrink-0 border border-border/60">
-                      <Clock className="size-2.5 mr-1" />
-                      Bientôt
-                    </Badge>
+                    {item.status === 'connected' && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] text-emerald-500 border-emerald-500/30 bg-emerald-500/10 shrink-0"
+                      >
+                        <CheckCircle2 className="size-2.5 mr-1" />
+                        Connecté
+                      </Badge>
+                    )}
+                    {item.status === 'disconnected' && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] text-muted-foreground shrink-0 border-border/60"
+                      >
+                        Non lié
+                      </Badge>
+                    )}
+                    {item.status === 'coming_soon' && (
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] text-muted-foreground shrink-0 border border-border/60"
+                      >
+                        <Clock className="size-2.5 mr-1" />
+                        Bientôt
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
 
                 <CardContent className="pt-0 border-t border-border/50 p-4 flex items-center justify-between text-xs mt-auto">
                   <span className="text-muted-foreground text-[11px] font-mono truncate">
-                    Intégration à venir
+                    {item.status === 'connected' && (item.account || 'Compte actif')}
+                    {item.status === 'disconnected' && 'Prêt à être associé'}
+                    {item.status === 'coming_soon' && 'Intégration à venir'}
                   </span>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled
-                    className="h-9 text-xs px-3 opacity-50 cursor-not-allowed text-muted-foreground border border-border/40"
-                  >
-                    Bientôt
-                  </Button>
+                  {item.status === 'connected' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDisconnect(item.id)}
+                      className="h-9 text-xs px-3 text-muted-foreground hover:text-destructive hover:border-destructive/40 cursor-pointer"
+                    >
+                      Déconnecter
+                    </Button>
+                  )}
+
+                  {item.status === 'disconnected' && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleConnect(item.id)}
+                      className="h-9 text-xs px-3 cursor-pointer"
+                    >
+                      Se connecter
+                    </Button>
+                  )}
+
+                  {item.status === 'coming_soon' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="h-9 text-xs px-3 opacity-50 cursor-not-allowed text-muted-foreground border border-border/40"
+                    >
+                      Bientôt
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );

@@ -35,7 +35,7 @@ export function AddButton({
             {label}
           </span>
           <span className="text-xs text-muted-foreground block">
-            Météo, API REST JSON ou raccourci
+            {/* Météo, API REST JSON ou raccourci */}
           </span>
         </div>
       </button>

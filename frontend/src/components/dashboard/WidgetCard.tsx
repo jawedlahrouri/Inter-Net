@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { RemoveButton } from '@/components/ui/removebutton'
 import { WeatherWidget } from '@/components/dashboard/widgets/WeatherWidget'
 import { CustomApiWidget } from '@/components/dashboard/widgets/CustomApiWidget'
+import { SteamWidget } from '@/components/dashboard/widgets/SteamWidget'
 import type { Widget } from '@/types/widget'
 
 export interface WidgetCardProps {
@@ -12,6 +13,21 @@ export interface WidgetCardProps {
 }
 
 export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardProps) {
+  // If Steam Widget
+  if (widget.type === 'steam') {
+    return (
+      <div className="relative group h-full">
+        {isEditing && onRemove && (
+          <RemoveButton
+            onClick={() => onRemove(widget.id)}
+            className="absolute top-2 right-2 z-30"
+          />
+        )}
+        <SteamWidget widget={widget} className="h-full" />
+      </div>
+    )
+  }
+
   // If Weather Widget
   if (widget.type === 'weather') {
     return (
@@ -58,6 +74,7 @@ export function WidgetCard({ widget, isEditing = false, onRemove }: WidgetCardPr
   }
 
   // Default / Shortcut Widget
+
   return (
     <div className="relative group h-full">
       {isEditing && onRemove && (

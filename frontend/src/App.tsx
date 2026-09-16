@@ -43,7 +43,10 @@ function DashboardContent() {
   } = useAuth();
   const { theme, setTheme } = useTheme();
 
-  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
+  const [currentTab, setCurrentTab] = useState<NavTab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') === 'settings' ? 'settings' : 'dashboard';
+  });
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
