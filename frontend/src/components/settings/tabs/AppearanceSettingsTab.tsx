@@ -1,4 +1,4 @@
-import { Palette, Moon, Sun, Laptop, Check } from 'lucide-react'
+import { Palette, Moon, Sun, Laptop, Check, Sparkles } from 'lucide-react'
 
 interface AppearanceSettingsTabProps {
   theme: 'dark' | 'light' | 'system'
@@ -7,11 +7,11 @@ interface AppearanceSettingsTabProps {
 
 export function AppearanceSettingsTab({ theme, onSetTheme }: AppearanceSettingsTabProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
           <Palette className="size-4 text-sky-500" />
-          Apparence & Thème
+          Apparence & Mode Global
         </h2>
         <p className="text-xs text-muted-foreground mt-0.5">
           Choisissez le mode d'affichage adapté à votre environnement de travail.
@@ -82,7 +82,23 @@ export function AppearanceSettingsTab({ theme, onSetTheme }: AppearanceSettingsT
           </div>
         </div>
       </div>
+
+      <div className="p-4 rounded-xl border border-border/80 bg-muted/20 flex items-start gap-3">
+        <Sparkles className="size-4 text-primary shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <h4 className="text-xs font-semibold text-foreground">
+            Personnalisation des couleurs et arrière-plans par page
+          </h4>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Vous pouvez désormais personnaliser chaque page de tableau de bord individuellement (couleur primaire, secondaire, ternaire et image de fond avec repli sur la couleur primaire) directement depuis le Dashboard en activant le mode <strong className="text-foreground">« Éditer les widgets »</strong>.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
+
+export default AppearanceSettingsTab
+
+
 

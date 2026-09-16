@@ -44,7 +44,7 @@ function DashboardContent() {
     logout,
   } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { activeDashboardId, setActiveDashboardId } = useSettings();
+  const { activeDashboardId, setActiveDashboardId, customization } = useSettings();
 
   const [isMeditating, setIsMeditating] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
@@ -183,10 +183,35 @@ function DashboardContent() {
     (w) => (w.dashboardId || 'default') === activeDashboardId
   );
 
+  const isDashboardTab = currentTab === 'dashboard';
+  const hasBgImage = Boolean(customization?.background_image);
+
+  const containerStyle: React.CSSProperties = user && isDashboardTab ? {
+    backgroundColor: hasBgImage ? undefined : (customization?.primary_color || '#0b0f19'),
+    backgroundImage: hasBgImage
+      ? `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url("${customization?.background_image}")`
+      : undefined,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+    ['--card' as string]: customization?.secondary_color || '#131b2e',
+    ['--card-foreground' as string]: '#f8fafc',
+    ['--secondary' as string]: customization?.secondary_color || '#131b2e',
+    ['--primary' as string]: customization?.tertiary_color || '#38bdf8',
+    ['--ring' as string]: customization?.tertiary_color || '#38bdf8',
+    ['--border' as string]: `${customization?.tertiary_color || '#38bdf8'}33`,
+    ['--user-primary' as string]: customization?.primary_color || '#0b0f19',
+    ['--user-secondary' as string]: customization?.secondary_color || '#131b2e',
+    ['--user-tertiary' as string]: customization?.tertiary_color || '#38bdf8',
+  } : {};
+
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full">
+    <div
+      className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full transition-colors duration-200"
+      style={containerStyle}
+    >
       {/* Top Navbar Header - Full-Width Edge-to-Edge */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
         <div className="w-full px-6 sm:px-8 lg:px-12 h-14 flex items-center justify-between gap-4">
           {/* Brand & Main Nav Links (Far Left) */}
           <div className="flex items-center gap-6">
@@ -203,11 +228,10 @@ function DashboardContent() {
                 <button
                   type="button"
                   onClick={() => navigateToDashboard()}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-                    currentTab === 'dashboard'
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${currentTab === 'dashboard'
                       ? 'bg-muted text-foreground font-semibold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                  }`}
+                    }`}
                 >
                   <LayoutDashboard className="size-3.5" />
                   <span>Dashboard</span>
@@ -375,6 +399,7 @@ function DashboardContent() {
             {/* Onglets des pages de tableau de bord */}
             <DashboardTabs
               widgets={widgets}
+              isEditing={isEditing}
               onDashboardChange={handleDashboardPageChange}
             />
 

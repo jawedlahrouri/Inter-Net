@@ -223,14 +223,34 @@ export interface MeditationSettings {
 export interface DashboardPageInfo {
   id: string;
   name: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tertiary_color?: string;
+  background_image?: string | null;
+}
+
+export interface ThemeCustomization {
+  primary_color: string;
+  secondary_color: string;
+  tertiary_color: string;
+  background_image?: string | null;
 }
 
 export interface UserSettings {
   meditation: MeditationSettings;
   dashboards?: DashboardPageInfo[];
+  customization?: ThemeCustomization;
 }
 
 export interface VideoInfo {
+  id: string;
+  name: string;
+  filename: string;
+  url: string;
+  size: number;
+}
+
+export interface BackgroundInfo {
   id: string;
   name: string;
   filename: string;
@@ -245,6 +265,7 @@ export async function fetchUserSettings(): Promise<UserSettings> {
 export async function updateUserSettingsApi(payload: {
   meditation?: Partial<MeditationSettings>;
   dashboards?: DashboardPageInfo[];
+  customization?: Partial<ThemeCustomization>;
 }): Promise<UserSettings> {
   return apiFetch<UserSettings>('/api/v1/auth/me/settings', {
     method: 'PATCH',
@@ -260,6 +281,19 @@ export async function uploadCustomVideoApi(file: File): Promise<VideoInfo> {
   const formData = new FormData();
   formData.append('file', file);
   return apiFetch<VideoInfo>('/api/v1/customization/videos/upload', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export async function fetchCustomBackgrounds(): Promise<BackgroundInfo[]> {
+  return apiFetch<BackgroundInfo[]>('/api/v1/customization/backgrounds');
+}
+
+export async function uploadCustomBackgroundApi(file: File): Promise<BackgroundInfo> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiFetch<BackgroundInfo>('/api/v1/customization/backgrounds/upload', {
     method: 'POST',
     body: formData,
   });

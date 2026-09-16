@@ -19,10 +19,19 @@ else:
 STORAGE_VIDS_DIR = storage_dir / "custom_vids"
 STORAGE_VIDS_DIR.mkdir(parents=True, exist_ok=True)
 
-
+STORAGE_BG_DIR = storage_dir / "custom_bg"
+STORAGE_BG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class VideoInfo(BaseModel):
+    id: str
+    name: str
+    filename: str
+    url: str
+    size: int
+
+
+class BackgroundInfo(BaseModel):
     id: str
     name: str
     filename: str
@@ -85,3 +94,61 @@ async def upload_custom_video(file: UploadFile = File(...)) -> VideoInfo:
         url=f"/api/v1/storage/custom_vids/{safe_filename}",
         size=len(content),
     )
+
+
+@router.get("/backgrounds", response_model=List[BackgroundInfo])
+def list_custom_backgrounds() -> List[BackgroundInfo]:
+    backgrounds: List[BackgroundInfo] = []
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg"}
+
+    if STORAGE_BG_DIR.exists():
+        for file in STORAGE_BG_DIR.iterdir():
+            if file.is_file() and file.suffix.lower() in allowed_extensions:
+                formatted_name = file.stem.replace("_", " ").replace("-", " ").title()
+                backgrounds.append(
+                    BackgroundInfo(
+                        id=file.name,
+                        name=formatted_name,
+                        filename=file.name,
+                        url=f"/api/v1/storage/custom_bg/{file.name}",
+                        size=file.stat().st_size,
+                    )
+                )
+
+    backgrounds.sort(key=lambda b: b.name)
+    return backgrounds
+
+
+@router.post("/backgrounds/upload", response_model=BackgroundInfo, status_code=status.HTTP_201_CREATED)
+async def upload_custom_background(file: UploadFile = File(...)) -> BackgroundInfo:
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg"}
+    file_ext = Path(file.filename or "").suffix.lower()
+    if file_ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format d'image non pris en charge. Formats acceptés : .jpg, .jpeg, .png, .webp, .avif, .svg",
+        )
+
+    base_name = re.sub(r"[^\w\-.]", "_", Path(file.filename or "background").stem)
+    safe_filename = f"{base_name}{file_ext}"
+    target_path = STORAGE_BG_DIR / safe_filename
+
+    content = await file.read()
+    if len(content) > 15 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Le fichier dépasse la taille maximale autorisée (15 Mo).",
+        )
+
+    with open(target_path, "wb") as f:
+        f.write(content)
+
+    formatted_name = target_path.stem.replace("_", " ").replace("-", " ").title()
+    return BackgroundInfo(
+        id=safe_filename,
+        name=formatted_name,
+        filename=safe_filename,
+        url=f"/api/v1/storage/custom_bg/{safe_filename}",
+        size=len(content),
+    )
+
