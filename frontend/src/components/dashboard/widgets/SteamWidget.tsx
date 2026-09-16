@@ -636,8 +636,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
     }
   }
 
-  const isLiveActive = stats?.profile?.personastate !== 0
-
   return (
     <Card className={`min-h-[320px] h-full bg-card border-border flex flex-col justify-between ${className}`}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -649,38 +647,19 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
             </CardTitle>
           </div>
           <CardDescription className="text-xs text-muted-foreground truncate">
-            {stats?.profile?.personaname ? `${stats.profile.personaname}` : 'Steam Live'}
+            {stats?.profile?.personaname || 'Steam'}
           </CardDescription>
         </div>
 
-        {/* Real-time status indicator & refresh button */}
-        <div className="flex items-center gap-1 shrink-0">
-          <span
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${
-              isLiveActive
-                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-                : 'bg-muted text-muted-foreground border-border'
-            }`}
-            title="Mise à jour en temps réel active"
-          >
-            <span
-              className={`size-1.5 rounded-full ${
-                isLiveActive ? 'bg-emerald-500 animate-ping' : 'bg-muted-foreground'
-              }`}
-            />
-            Live
-          </span>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
-            onClick={() => refresh()}
-            title="Rafraîchir maintenant"
-          >
-            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+          onClick={() => refresh()}
+          title="Rafraîchir maintenant"
+        >
+          <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
+        </Button>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col justify-center px-4 py-2">

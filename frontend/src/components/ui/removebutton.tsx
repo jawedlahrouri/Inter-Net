@@ -5,13 +5,15 @@ import { cn } from '@/lib/utils'
 
 export interface RemoveButtonProps extends React.ComponentProps<typeof Button> {
   label?: string
+  showLabel?: boolean
 }
 
 export function RemoveButton({
   className,
-  variant = 'ghost',
-  size = 'icon',
-  label = 'Supprimer le widget',
+  variant = 'outline',
+  size = 'sm',
+  label = 'Supprimer',
+  showLabel = true,
   ...props
 }: RemoveButtonProps) {
   return (
@@ -20,14 +22,17 @@ export function RemoveButton({
       variant={variant}
       size={size}
       className={cn(
-        'size-9 min-w-[36px] min-h-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer',
+        showLabel
+          ? 'h-8 px-2.5 text-xs gap-1.5 font-medium text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 hover:border-destructive/60 cursor-pointer transition-colors bg-card shadow-2xs'
+          : 'size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer',
         className
       )}
       aria-label={label}
       title={label}
       {...props}
     >
-      <Trash2 className="size-4" />
+      <Trash2 className="size-3.5" />
+      {showLabel && <span>{label}</span>}
     </Button>
   )
 }

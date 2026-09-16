@@ -19,63 +19,45 @@ export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: Widg
   const renderActions = () => {
     if (!isEditing) return null
     return (
-      <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
+      <div className="mt-2.5 flex items-center justify-end gap-2 px-0.5">
         {onEdit && (
           <EditButton
             onClick={() => onEdit(widget)}
-            label="Modifier le widget"
+            label="Modifier"
           />
         )}
         {onRemove && (
           <RemoveButton
             onClick={() => onRemove(widget.id)}
-            label="Supprimer le widget"
+            label="Supprimer"
           />
         )}
       </div>
     )
   }
 
-  // If Steam Widget
-  if (widget.type === 'steam') {
-    return (
-      <div className="relative group h-full">
-        {renderActions()}
-        <SteamWidget widget={widget} className="h-full" />
-      </div>
-    )
-  }
+  const renderContent = () => {
+    if (widget.type === 'steam') {
+      return <SteamWidget widget={widget} className="h-full" />
+    }
 
-  // If GitHub Widget
-  if (widget.type === 'github') {
-    return (
-      <div className="relative group h-full">
-        {renderActions()}
-        <GithubWidget widget={widget} className="h-full" />
-      </div>
-    )
-  }
+    if (widget.type === 'github') {
+      return <GithubWidget widget={widget} className="h-full" />
+    }
 
-  // If Weather Widget
-  if (widget.type === 'weather') {
-    return (
-      <div className="relative group h-full">
-        {renderActions()}
+    if (widget.type === 'weather') {
+      return (
         <WeatherWidget
           city={widget.city}
           lat={widget.lat}
           lon={widget.lon}
           className="h-full"
         />
-      </div>
-    )
-  }
+      )
+    }
 
-  // If Custom API Widget
-  if (widget.type === 'custom_api' && widget.apiUrl && widget.jsonPath) {
-    return (
-      <div className="relative group h-full">
-        {renderActions()}
+    if (widget.type === 'custom_api' && widget.apiUrl && widget.jsonPath) {
+      return (
         <CustomApiWidget
           apiUrl={widget.apiUrl}
           jsonPath={widget.jsonPath}
@@ -87,17 +69,12 @@ export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: Widg
           title={widget.title}
           className="h-full"
         />
-      </div>
-    )
-  }
+      )
+    }
 
-  // Default / Shortcut Widget
-
-  return (
-    <div className="relative group h-full">
-      {renderActions()}
+    // Default / Shortcut Widget
+    return (
       <Card className="min-h-[320px] h-full bg-card border-border flex flex-col justify-between">
-
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle className="text-lg text-card-foreground">{widget.title}</CardTitle>
@@ -120,6 +97,15 @@ export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: Widg
           Contenu du widget
         </CardContent>
       </Card>
+    )
+  }
+
+  return (
+    <div className={`relative group h-full flex flex-col justify-between ${isEditing ? 'transition-all' : ''}`}>
+      <div className="flex-1 min-h-0 flex flex-col">
+        {renderContent()}
+      </div>
+      {renderActions()}
     </div>
   )
 }

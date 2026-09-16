@@ -144,29 +144,19 @@ export function GithubWidget({ widget, className = '' }: GithubWidgetProps) {
             </CardTitle>
           </div>
           <CardDescription className="text-xs text-muted-foreground truncate">
-            {stats?.profile?.login ? `@${stats.profile.login}` : 'GitHub Live'}
+            {stats?.profile?.login ? `@${stats.profile.login}` : 'GitHub'}
           </CardDescription>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-            title="Mise à jour en direct active"
-          >
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
-            Live
-          </span>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
-            onClick={() => refresh()}
-            title="Rafraîchir maintenant"
-          >
-            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+          onClick={() => refresh()}
+          title="Rafraîchir maintenant"
+        >
+          <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
+        </Button>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col justify-center px-4 py-2">

@@ -30,6 +30,7 @@ import {
   LogOut,
   Check,
   Plus,
+  Sparkles,
 } from 'lucide-react';
 
 type NavTab = 'dashboard' | 'settings';
@@ -219,6 +220,17 @@ function DashboardContent() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setIsMeditating(true)}
+                  className="h-10 text-xs gap-1.5 px-3.5 cursor-pointer font-medium border-border/80 hover:bg-muted/60"
+                  title="Pause méditation"
+                >
+                  <Sparkles className="size-3.5 text-primary" />
+                  <span>Méditation</span>
+                </Button>
+
                 {currentTab === 'dashboard' && (
                   <Button
                     variant={isEditing ? 'default' : 'outline'}
