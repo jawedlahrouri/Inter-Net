@@ -124,3 +124,24 @@ export async function fetchRandomQuote(): Promise<QuoteResponse> {
 export async function fetchRoot(): Promise<RootResponse> {
   return apiFetch<RootResponse>('/');
 }
+
+export interface SteamStatusResponse {
+  connected: boolean;
+  steam_id?: string;
+  profile?: {
+    steam_id: string;
+    username: string;
+    avatar: string;
+    profile_url: string;
+  };
+}
+
+export async function fetchSteamStatus(): Promise<SteamStatusResponse> {
+  return apiFetch<SteamStatusResponse>('/api/v1/auth/steam/status');
+}
+
+export async function disconnectSteam(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/steam/disconnect', {
+    method: 'POST',
+  });
+}
