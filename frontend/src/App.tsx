@@ -399,6 +399,7 @@ function DashboardContent() {
             {/* Onglets des pages de tableau de bord */}
             <DashboardTabs
               widgets={widgets}
+              isEditing={isEditing}
               onDashboardChange={handleDashboardPageChange}
             />
 

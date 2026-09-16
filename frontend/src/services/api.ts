@@ -223,6 +223,10 @@ export interface MeditationSettings {
 export interface DashboardPageInfo {
   id: string;
   name: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tertiary_color?: string;
+  background_image?: string | null;
 }
 
 export interface ThemeCustomization {

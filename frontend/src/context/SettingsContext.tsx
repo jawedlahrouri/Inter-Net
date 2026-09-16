@@ -31,7 +31,16 @@ const DEFAULT_SETTINGS: UserSettings = {
     video_url: '/custom_vids/la_peace.mp4',
     sound_enabled: false,
   },
-  dashboards: [{ id: 'default', name: 'Général' }],
+  dashboards: [
+    {
+      id: 'default',
+      name: 'Général',
+      primary_color: DEFAULT_CUSTOMIZATION.primary_color,
+      secondary_color: DEFAULT_CUSTOMIZATION.secondary_color,
+      tertiary_color: DEFAULT_CUSTOMIZATION.tertiary_color,
+      background_image: null,
+    },
+  ],
   customization: DEFAULT_CUSTOMIZATION,
 };
 
@@ -42,6 +51,7 @@ interface SettingsContextType {
   availableBackgrounds: BackgroundInfo[];
   dashboards: DashboardPageInfo[];
   activeDashboardId: string;
+  activeDashboard: DashboardPageInfo;
   customization: ThemeCustomization;
   setActiveDashboardId: (id: string) => void;
   createDashboard: (name: string) => Promise<string>;
@@ -51,9 +61,12 @@ interface SettingsContextType {
   refreshBackgrounds: () => Promise<void>;
   updateMeditationSettings: (updates: Partial<UserSettings['meditation']>) => Promise<void>;
   updateCustomization: (updates: Partial<ThemeCustomization>) => Promise<void>;
+  updateDashboardCustomization: (dashboardId: string, updates: Partial<ThemeCustomization>) => Promise<void>;
   removeBackgroundImage: () => Promise<void>;
+  removeDashboardBackgroundImage: (dashboardId: string) => Promise<void>;
   uploadVideo: (file: File) => Promise<VideoInfo>;
   uploadBackground: (file: File) => Promise<BackgroundInfo>;
+  uploadBackgroundForDashboard: (dashboardId: string, file: File) => Promise<BackgroundInfo>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -168,7 +181,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const dashboards = settings.dashboards && settings.dashboards.length > 0
     ? settings.dashboards
-    : [{ id: 'default', name: 'Général' }];
+    : DEFAULT_SETTINGS.dashboards!;
 
   const saveDashboards = async (newDashboards: DashboardPageInfo[]) => {
     const newSettings: UserSettings = {
@@ -191,7 +204,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const trimmed = name.trim();
     if (!trimmed) return activeDashboardId;
     const newId = `dash-${Date.now()}`;
-    const newDashboards = [...dashboards, { id: newId, name: trimmed }];
+    const newDashboards = [
+      ...dashboards,
+      {
+        id: newId,
+        name: trimmed,
+        primary_color: DEFAULT_CUSTOMIZATION.primary_color,
+        secondary_color: DEFAULT_CUSTOMIZATION.secondary_color,
+        tertiary_color: DEFAULT_CUSTOMIZATION.tertiary_color,
+        background_image: null,
+      },
+    ];
     await saveDashboards(newDashboards);
     setActiveDashboardId(newId);
     return newId;
@@ -211,6 +234,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (activeDashboardId === id) {
       setActiveDashboardId(newDashboards[0]?.id || 'default');
     }
+  };
+
+  const updateDashboardCustomization = async (dashboardId: string, updates: Partial<ThemeCustomization>) => {
+    const newDashboards = dashboards.map((d) => {
+      if (d.id === dashboardId) {
+        return {
+          ...d,
+          ...(updates.primary_color !== undefined ? { primary_color: updates.primary_color } : {}),
+          ...(updates.secondary_color !== undefined ? { secondary_color: updates.secondary_color } : {}),
+          ...(updates.tertiary_color !== undefined ? { tertiary_color: updates.tertiary_color } : {}),
+          ...(updates.background_image !== undefined ? { background_image: updates.background_image } : {}),
+        };
+      }
+      return d;
+    });
+    await saveDashboards(newDashboards);
   };
 
   const updateMeditationSettings = async (updates: Partial<UserSettings['meditation']>) => {
@@ -234,29 +273,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCustomization = async (updates: Partial<ThemeCustomization>) => {
-    const currentCustom = settings.customization || DEFAULT_CUSTOMIZATION;
-    const newCustom: ThemeCustomization = {
-      ...currentCustom,
-      ...updates,
-    };
-    const newSettings: UserSettings = {
-      ...settings,
-      customization: newCustom,
-    };
-    setSettings(newSettings);
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
-
-    if (user) {
-      try {
-        await updateUserSettingsApi({ customization: updates });
-      } catch (err) {
-        console.error('Erreur lors de la sauvegarde du thème côté serveur:', err);
-      }
-    }
+    await updateDashboardCustomization(activeDashboardId, updates);
   };
 
   const removeBackgroundImage = async () => {
-    await updateCustomization({ background_image: null });
+    await updateDashboardCustomization(activeDashboardId, { background_image: null });
+  };
+
+  const removeDashboardBackgroundImage = async (dashboardId: string) => {
+    await updateDashboardCustomization(dashboardId, { background_image: null });
   };
 
   const uploadVideo = async (file: File): Promise<VideoInfo> => {
@@ -266,13 +291,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   const uploadBackground = async (file: File): Promise<BackgroundInfo> => {
+    return uploadBackgroundForDashboard(activeDashboardId, file);
+  };
+
+  const uploadBackgroundForDashboard = async (dashboardId: string, file: File): Promise<BackgroundInfo> => {
     const uploaded = await uploadCustomBackgroundApi(file);
     await refreshBackgrounds();
-    await updateCustomization({ background_image: uploaded.url });
+    await updateDashboardCustomization(dashboardId, { background_image: uploaded.url });
     return uploaded;
   };
 
-  const customization = settings.customization || DEFAULT_CUSTOMIZATION;
+  // Tableau de bord actif et ses couleurs / fond personnalisés
+  const activeDashboard = dashboards.find((d) => d.id === activeDashboardId) || dashboards[0];
+
+  const customization: ThemeCustomization = {
+    primary_color: activeDashboard?.primary_color || DEFAULT_CUSTOMIZATION.primary_color,
+    secondary_color: activeDashboard?.secondary_color || DEFAULT_CUSTOMIZATION.secondary_color,
+    tertiary_color: activeDashboard?.tertiary_color || DEFAULT_CUSTOMIZATION.tertiary_color,
+    background_image: activeDashboard?.background_image !== undefined ? activeDashboard.background_image : DEFAULT_CUSTOMIZATION.background_image,
+  };
 
   return (
     <SettingsContext.Provider
@@ -283,6 +320,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         availableBackgrounds,
         dashboards,
         activeDashboardId,
+        activeDashboard,
         customization,
         setActiveDashboardId,
         createDashboard,
@@ -292,9 +330,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         refreshBackgrounds,
         updateMeditationSettings,
         updateCustomization,
+        updateDashboardCustomization,
         removeBackgroundImage,
+        removeDashboardBackgroundImage,
         uploadVideo,
         uploadBackground,
+        uploadBackgroundForDashboard,
       }}
     >
       {children}
@@ -309,3 +350,4 @@ export function useSettings(): SettingsContextType {
   }
   return ctx;
 }
+

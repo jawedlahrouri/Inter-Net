@@ -18,17 +18,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Pencil, Trash2, Layout } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Layout, Palette } from 'lucide-react';
+import { CustomizePageDialog } from '@/components/dashboard/CustomizePageDialog';
+import type { DashboardPageInfo } from '@/services/api';
 
 interface DashboardTabsProps {
   widgets: Widget[];
+  isEditing?: boolean;
   onDashboardChange?: (dashboardId: string) => void;
 }
 
-export function DashboardTabs({ widgets, onDashboardChange }: DashboardTabsProps) {
+export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }: DashboardTabsProps) {
   const {
     dashboards,
     activeDashboardId,
+    activeDashboard,
     setActiveDashboardId,
     createDashboard,
     renameDashboard,
@@ -42,6 +46,9 @@ export function DashboardTabs({ widgets, onDashboardChange }: DashboardTabsProps
   const [renameValue, setRenameValue] = useState<string>('');
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const [customizeTarget, setCustomizeTarget] = useState<DashboardPageInfo | null>(null);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState<boolean>(false);
 
   const handleSelectTab = (id: string) => {
     setActiveDashboardId(id);
@@ -131,6 +138,17 @@ export function DashboardTabs({ widgets, onDashboardChange }: DashboardTabsProps
                 <DropdownMenuContent align="start" className="w-44 text-xs">
                   <DropdownMenuItem
                     onClick={() => {
+                      setCustomizeTarget(dash);
+                      setIsCustomizeOpen(true);
+                    }}
+                    className="gap-2 cursor-pointer text-xs"
+                  >
+                    <Palette className="size-3.5 text-primary" />
+                    <span>Personnaliser le thème</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => {
                       setRenameTarget(dash);
                       setRenameValue(dash.name);
                     }}
@@ -173,6 +191,23 @@ export function DashboardTabs({ widgets, onDashboardChange }: DashboardTabsProps
           <Plus className="size-3.5 text-primary" />
           <span>Nouvelle page</span>
         </Button>
+
+        {/* En mode édition : bouton dédié pour personnaliser la page active */}
+        {isEditing && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCustomizeTarget(activeDashboard);
+              setIsCustomizeOpen(true);
+            }}
+            className="h-8 text-xs gap-1.5 px-3 border-primary/50 bg-primary/10 text-foreground hover:bg-primary/20 cursor-pointer shrink-0 font-medium"
+          >
+            <Palette className="size-3.5 text-primary" />
+            <span>Personnaliser cette page</span>
+          </Button>
+        )}
       </div>
 
       {/* Boîte de dialogue Création d'une page */}
@@ -283,6 +318,13 @@ export function DashboardTabs({ widgets, onDashboardChange }: DashboardTabsProps
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Boîte de dialogue Personnalisation du thème de la page */}
+      <CustomizePageDialog
+        open={isCustomizeOpen}
+        onOpenChange={setIsCustomizeOpen}
+        targetDashboard={customizeTarget}
+      />
     </div>
   );
 }

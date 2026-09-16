@@ -154,13 +154,20 @@ def test_user_settings_dashboards(client):
     assert len(data["dashboards"]) == 1
     assert data["dashboards"][0]["id"] == "default"
 
-    # Update dashboards
+    # Update dashboards with per-page customization
     patch_resp = client.patch(
         "/api/v1/auth/me/settings",
         headers=headers,
         json={
             "dashboards": [
-                {"id": "default", "name": "Principal"},
+                {
+                    "id": "default",
+                    "name": "Principal",
+                    "primary_color": "#112233",
+                    "secondary_color": "#223344",
+                    "tertiary_color": "#334455",
+                    "background_image": "/api/v1/storage/custom_bg/bg1.png",
+                },
                 {"id": "dev", "name": "Développement"},
             ]
         },
@@ -168,5 +175,9 @@ def test_user_settings_dashboards(client):
     assert patch_resp.status_code == 200
     updated_data = patch_resp.json()
     assert len(updated_data["dashboards"]) == 2
+    assert updated_data["dashboards"][0]["primary_color"] == "#112233"
+    assert updated_data["dashboards"][0]["background_image"] == "/api/v1/storage/custom_bg/bg1.png"
     assert updated_data["dashboards"][1]["name"] == "Développement"
+    assert updated_data["dashboards"][1]["primary_color"] == "#0b0f19"
+
 
