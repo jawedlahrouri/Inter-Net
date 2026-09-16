@@ -53,6 +53,14 @@ STANDARD_DEFINITIONS = [
         description="Lien externe",
         params_schema=[{"name": "url", "type": "string"}],
     ),
+    WidgetDefinitionOut(
+        id=5,
+        service_id=5,
+        name="steam",
+        display_name="Steam",
+        description="Statistiques et métriques de profil Steam",
+        params_schema=[{"name": "steamMetric", "type": "string"}],
+    ),
 ]
 
 

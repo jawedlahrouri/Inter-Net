@@ -143,6 +143,9 @@ class JsonWidgetStorage:
         elif widget_type in ["default", "shortcut"]:
             def_name = "shortcut"
             display_name = "Raccourci Web"
+        elif widget_type == "steam":
+            def_name = "steam"
+            display_name = "Steam"
         else:
             def_name = "custom_api"
             display_name = "API JSON Universelle"

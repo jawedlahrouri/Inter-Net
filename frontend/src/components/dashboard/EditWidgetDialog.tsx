@@ -59,13 +59,19 @@ export function EditWidgetDialog({
     }
 
     if (widget.type === 'weather') {
+      updatedData.type = 'weather'
       updatedData.city = city.trim() || undefined
     } else if (widget.type === 'custom_api') {
+      updatedData.type = 'custom_api'
       updatedData.apiUrl = apiUrl.trim()
       updatedData.jsonPath = jsonPath.trim()
       updatedData.displayMode = displayMode
       updatedData.unit = unit.trim() || undefined
+    } else if (widget.type === 'steam') {
+      updatedData.type = 'steam'
+      updatedData.steamMetric = widget.steamMetric
     } else {
+      updatedData.type = 'default'
       updatedData.url = url.trim() || undefined
     }
 

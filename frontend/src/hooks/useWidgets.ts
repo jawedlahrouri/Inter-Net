@@ -17,6 +17,8 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
     type = 'weather'
   } else if (rawType === 'custom_api') {
     type = 'custom_api'
+  } else if (rawType === 'steam') {
+    type = 'steam'
   } else {
     type = 'default'
   }
@@ -38,6 +40,7 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
     gaugeMin: p.gaugeMin,
     gaugeMax: p.gaugeMax,
     url: p.url,
+    steamMetric: p.steamMetric,
   }
 }
 
@@ -58,6 +61,9 @@ function mapWidgetToApiPayload(data: Partial<Widget>) {
     if (data.unit) params.unit = data.unit
     if (data.gaugeMin !== undefined) params.gaugeMin = data.gaugeMin
     if (data.gaugeMax !== undefined) params.gaugeMax = data.gaugeMax
+  } else if (data.type === 'steam') {
+    type = 'steam'
+    if (data.steamMetric) params.steamMetric = data.steamMetric
   } else {
     type = 'default'
     if (data.url) params.url = data.url
