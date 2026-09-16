@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { useState, useEffect } from 'react'
 import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { InputField } from '@/components/ui/input-field'
@@ -9,9 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import {
   CloudSun,
@@ -53,7 +50,6 @@ interface SteamPreset {
   title: string
   description: string
   category: string
-  icon: any
   icon: React.ComponentType<{ className?: string }>
   defaultInterval: number
 }
@@ -186,23 +182,15 @@ export function AddWidgetDialog({
   onOpenChange,
   onAddWidget,
 }: AddWidgetDialogProps) {
-  // Steam par défaut
   const [selectedType, setSelectedType] = useState<WidgetType>('steam')
-
-  // Common
   const [title, setTitle] = useState('Dernier jeu joué')
-
-  // Weather
   const [city, setCity] = useState('')
-
-  // Custom API
   const [apiUrl, setApiUrl] = useState('')
   const [jsonPath, setJsonPath] = useState('')
   const [displayMode, setDisplayMode] = useState<'kpi' | 'gauge'>('kpi')
   const [unit, setUnit] = useState('')
   const [refreshInterval, setRefreshInterval] = useState<number>(300)
 
-  // Steam
   const [steamConnected, setSteamConnected] = useState<boolean>(false)
   const [steamLoading, setSteamLoading] = useState<boolean>(true)
   const [steamProfile, setSteamProfile] = useState<{
@@ -215,7 +203,6 @@ export function AddWidgetDialog({
   const [selectedCategory, setSelectedCategory] = useState<string>('Tous')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
-  // Vérification statut Steam à l'ouverture
   useEffect(() => {
     if (open) {
       setSteamLoading(true)
@@ -304,19 +291,14 @@ export function AddWidgetDialog({
     onOpenChange(false)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
     if (selectedType === 'steam') {
       if (!steamConnected) return
-      const preset = STEAM_PRESETS.find((p) => p.id === selectedSteamPreset) || STEAM_PRESETS[0]
       onAddWidget({
-        title: title.trim() || preset.title,
         title: title.trim() || currentSteamPreset.title,
         type: 'steam',
-        steamMetric: preset.id,
         steamMetric: currentSteamPreset.id,
         refreshIntervalSeconds: Math.max(300, refreshInterval || 300),
       })
@@ -354,9 +336,6 @@ export function AddWidgetDialog({
     { label: 'Niveau', count: 1 },
   ]
 
-  const filteredPresets = selectedCategory === 'Tous'
-    ? STEAM_PRESETS
-    : STEAM_PRESETS.filter((p) => p.category === selectedCategory)
   const filteredSteamPresets = useMemo(() => {
     return STEAM_PRESETS.filter((p) => {
       const matchCategory = selectedCategory === 'Tous' || p.category === selectedCategory
@@ -371,14 +350,6 @@ export function AddWidgetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[760px] md:max-w-[820px] max-h-[88vh] flex flex-col p-6">
-        <DialogHeader className="space-y-1">
-          <div className="flex items-center gap-2">
-            <PlusCircle className="size-5 text-primary" />
-            <DialogTitle className="text-xl font-bold">Ajouter un widget</DialogTitle>
-          </div>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Choisissez un service ou connectez une source de données pour enrichir votre tableau de bord.
       <DialogContent
         showCloseButton={false}
         className="w-[98vw] max-w-[1540px] h-[94vh] max-h-[94vh] p-0 flex flex-col overflow-hidden sm:max-w-none gap-0 border-border/80 shadow-2xl bg-background"
@@ -390,30 +361,6 @@ export function AddWidgetDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2 flex-1 flex flex-col min-h-0">
-          <Tabs
-            value={selectedType}
-            onValueChange={(val) => {
-              const nextType = val as WidgetType
-              setSelectedType(nextType)
-              if (nextType === 'steam') {
-                const preset = STEAM_PRESETS.find((p) => p.id === selectedSteamPreset) || STEAM_PRESETS[0]
-                setTitle(preset.title)
-                setRefreshInterval(preset.defaultInterval || 300)
-              } else if (nextType === 'weather') {
-                setTitle('Météo locale')
-              } else if (nextType === 'custom_api') {
-                setTitle('Métrique API')
-                setRefreshInterval(30)
-              }
-            }}
-            className="w-full flex-1 flex flex-col min-h-0"
-          >
-            {/* 3 Onglets : Steam (15) en 1er, Météo en 2e, API JSON en dernier */}
-            <TabsList className="grid grid-cols-3 w-full h-12 p-1 bg-muted/60 rounded-xl border border-border/60 shrink-0">
-              <TabsTrigger
-                value="steam"
-                className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold cursor-pointer data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg transition-all"
         {/* TOP BAR STYLE GRAFANA */}
         <header className="h-14 px-5 border-b border-border/70 flex items-center justify-between bg-card/80 shrink-0 select-none">
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
@@ -764,19 +711,13 @@ export function AddWidgetDialog({
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Gamepad2 className="size-4 text-primary" />
                 <Gamepad2 className="size-3.5 text-primary" />
                 <span>Steam</span>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 ml-0.5 font-bold">
                 <Badge variant="secondary" className="text-[9px] px-1 py-0 h-3.5 font-bold">
                   15
                 </Badge>
-              </TabsTrigger>
               </button>
 
-              <TabsTrigger
-                value="weather"
-                className="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium cursor-pointer data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg transition-all"
               <button
                 type="button"
                 onClick={() => handleSelectType('weather')}
@@ -786,15 +727,10 @@ export function AddWidgetDialog({
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <CloudSun className="size-4 text-sky-500" />
                 <CloudSun className="size-3.5 text-sky-500" />
                 <span>Météo</span>
-              </TabsTrigger>
               </button>
 
-              <TabsTrigger
-                value="custom_api"
-                className="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium cursor-pointer data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg transition-all"
               <button
                 type="button"
                 onClick={() => handleSelectType('custom_api')}
@@ -804,20 +740,11 @@ export function AddWidgetDialog({
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Activity className="size-4 text-amber-500" />
                 <Activity className="size-3.5 text-amber-500" />
                 <span>API JSON</span>
-              </TabsTrigger>
-            </TabsList>
               </button>
             </div>
 
-            {/* 1. ONGLET STEAM (15 PRESETS) */}
-            <TabsContent value="steam" className="space-y-3.5 pt-3 flex-1 overflow-y-auto pr-1">
-              {steamLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-2 text-muted-foreground">
-                  <RefreshCw className="size-6 animate-spin text-primary" />
-                  <span className="text-xs">Vérification de votre compte Steam...</span>
             {/* CONTENU CATALOGUE SELON TYPE SÉLECTIONNÉ */}
             {selectedType === 'steam' && (
               <div className="flex-1 min-h-0 flex flex-col space-y-2.5 overflow-hidden">
@@ -832,61 +759,7 @@ export function AddWidgetDialog({
                     className="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-muted/40 border border-border/70 focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
-              ) : !steamConnected ? (
-                // Compte NON connecté : Alerte & blocage propre
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 flex items-start gap-3.5">
-                    <div className="p-2.5 rounded-full bg-amber-500/20 text-amber-500 shrink-0">
-                      <Lock className="size-5" />
-                    </div>
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-foreground">Compte Steam non lié</h4>
-                        <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-600 dark:text-amber-400">
-                          Connexion requise
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Pour ajouter vos widgets Steam personnalisés, associez d'abord votre profil Steam à INTER-NET via l'authentification officielle de Valve.
-                      </p>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="gap-2 bg-amber-600 hover:bg-amber-700 text-white cursor-pointer mt-1"
-                        onClick={() => {
-                          window.location.href = getSteamAuthRedirectUrl()
-                        }}
-                      >
-                        <Gamepad2 className="size-4" />
-                        Lier mon compte Steam
-                      </Button>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                      Aperçu des 15 widgets disponibles après connexion :
-                    </span>
-                    <div className="grid grid-cols-2 gap-2 opacity-50 pointer-events-none">
-                      {STEAM_PRESETS.slice(0, 6).map((preset) => {
-                        const Icon = preset.icon
-                        return (
-                          <div
-                            key={preset.id}
-                            className="p-3 rounded-lg border border-border bg-muted/20 flex items-start gap-2.5"
-                          >
-                            <div className="p-2 rounded-md bg-muted text-muted-foreground shrink-0">
-                              <Icon className="size-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-xs text-foreground truncate">{preset.title}</p>
-                              <p className="text-[11px] text-muted-foreground truncate">{preset.description}</p>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
                 {/* Filtres par catégories (pilules horizontales) */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs shrink-0 no-scrollbar">
                   {categories.map((cat) => (
@@ -905,47 +778,7 @@ export function AddWidgetDialog({
                     </button>
                   ))}
                 </div>
-              ) : (
-                // Compte CONNECTÉ : Choix ergonomique parmi les 15 widgets
-                <div className="space-y-3">
-                  {/* Bandeau profil Steam connecté */}
-                  <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {steamProfile?.avatar ? (
-                        <img
-                          src={steamProfile.avatar}
-                          alt=""
-                          className="size-8 rounded-full border-2 border-emerald-500 shrink-0"
-                        />
-                      ) : (
-                        <Gamepad2 className="size-6 text-emerald-500 shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <span className="text-[11px] text-muted-foreground block leading-tight">
-                          Compte Steam actif
-                        </span>
-                        <span className="font-bold text-sm text-foreground truncate block">
-                          {steamProfile?.username || 'Joueur Steam'}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-[11px] border-emerald-500/40 text-emerald-600 dark:text-emerald-400 gap-1.5 py-1 px-2.5 font-medium">
-                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Connecté & Prêt
-                    </Badge>
-                  </div>
 
-                  {/* Filtres par catégories */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat.label}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat.label)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                          selectedCategory === cat.label
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                 {/* Liste des cartes de visualisations Steam (défilable) */}
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
                   {filteredSteamPresets.map((preset) => {
@@ -961,58 +794,13 @@ export function AddWidgetDialog({
                             : 'border-border/70 bg-card hover:bg-muted/40 hover:border-border'
                         }`}
                       >
-                        <span>{cat.label}</span>
-                        <span
-                          className={`text-[10px] px-1 py-0 rounded ${
-                            selectedCategory === cat.label
-                              ? 'bg-primary-foreground/20 text-primary-foreground'
-                              : 'bg-background/80 text-muted-foreground'
-                          }`}
-                        >
-                          {cat.count}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Grille des presets Steam */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto pr-1">
-                    {filteredPresets.map((preset) => {
-                      const Icon = preset.icon
-                      const isSelected = selectedSteamPreset === preset.id
-                      return (
                         <div
-                          key={preset.id}
-                          onClick={() => handleSelectSteamPreset(preset)}
-                          className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 text-left relative group ${
                           className={`p-2 rounded-lg shrink-0 transition-colors ${
                             isSelected
-                              ? 'border-primary bg-primary/10 ring-1 ring-primary shadow-sm'
-                              : 'border-border/80 bg-card hover:bg-muted/40 hover:border-border'
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted text-muted-foreground group-hover:text-foreground'
                           }`}
                         >
-                          <div
-                            className={`p-2 rounded-lg shrink-0 transition-colors ${
-                              isSelected
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground group-hover:text-foreground'
-                            }`}
-                          >
-                            <Icon className="size-4" />
-                          </div>
-                          <div className="min-w-0 flex-1 pr-4">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className="font-semibold text-xs sm:text-sm text-foreground truncate">
-                                {preset.title}
-                              </p>
-                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
-                                {preset.category}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-snug">
-                              {preset.description}
                           <Icon className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1 pr-4">
@@ -1024,42 +812,15 @@ export function AddWidgetDialog({
                               {preset.category}
                             </Badge>
                           </div>
-                          {isSelected && (
-                            <div className="absolute top-3 right-3 text-primary">
-                              <Check className="size-4" />
-                            </div>
-                          )}
                           <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
                             {preset.description}
                           </p>
                         </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Configuration avancée du preset sélectionné */}
-                  <div className="p-3 rounded-xl bg-muted/20 border border-border/70 space-y-2.5">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="col-span-2">
-                        <InputField
-                          label="Titre personnalisé sur le dashboard"
-                          placeholder="Ex: Mon dernier jeu"
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          required
-                        />
                         {isSelected && (
                           <div className="absolute top-3 right-3 text-primary">
                             <Check className="size-4" />
                           </div>
                         )}
-                      </div>
-                      <div>
-                        <RefreshField
-                          label="Cycle (secondes)"
-                          value={refreshInterval}
-                          onChange={(val) => setRefreshInterval(Math.max(300, val))}
-                        />
                       </div>
                     )
                   })}
@@ -1067,10 +828,6 @@ export function AddWidgetDialog({
                     <div className="py-8 text-center text-xs text-muted-foreground">
                       Aucune métrique ne correspond à votre recherche.
                     </div>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                      <Shield className="size-3.5 text-primary shrink-0" />
-                      Protection des quotas Steam : cycle minimum de 5 minutes (300s) avec cache automatique.
-                    </p>
                   )}
                 </div>
               </div>
@@ -1087,20 +844,7 @@ export function AddWidgetDialog({
                     Visualisez les conditions météo en direct : température, vent, humidité et prévisions horaires.
                   </p>
                 </div>
-              )}
-            </TabsContent>
 
-            {/* 2. ONGLET MÉTÉO */}
-            <TabsContent value="weather" className="space-y-4 pt-3 flex-1 overflow-y-auto pr-1">
-              <div className="p-4 rounded-xl bg-muted/20 border border-border/70 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-500">
-                    <CloudSun className="size-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground">Widget Météo en direct</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Affiche la température, l'humidité, le vent et les prévisions locales.
                 <div className="space-y-2">
                   <span className="font-semibold text-foreground uppercase tracking-wider text-[10px] block">
                     Fonctionnalités incluses
@@ -1120,63 +864,9 @@ export function AddWidgetDialog({
                     </p>
                   </div>
                 </div>
-
-                <InputField
-                  label="Nom du panneau"
-                  placeholder="Ex: Météo locale, Bureau, Maison..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-
-                <InputField
-                  label="Ville spécifique (optionnel)"
-                  placeholder="Ex: Paris, Lyon, Bordeaux, Marseille..."
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  description="Laissez vide pour détecter automatiquement votre position géographique par IP/GPS."
-                />
               </div>
-            </TabsContent>
             )}
 
-            {/* 3. ONGLET API JSON (EN DERNIER) */}
-            <TabsContent value="custom_api" className="space-y-3.5 pt-3 flex-1 overflow-y-auto pr-1">
-              {/* Presets rapides */}
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-muted-foreground font-medium text-xs">Modèles rapides :</span>
-                <Badge
-                  variant="outline"
-                  className="cursor-pointer hover:bg-muted text-xs py-1 px-2.5"
-                  onClick={() =>
-                    handleApplyApiPreset({
-                      title: 'Statut Serveur Backend',
-                      apiUrl: 'http://127.0.0.1:8000/api/v1/health',
-                      refresh: 15,
-                      jsonPath: 'status',
-                      displayMode: 'kpi',
-                      unit: '',
-                    })
-                  }
-                >
-                  ⚡ Santé API FastAPI
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="cursor-pointer hover:bg-muted text-xs py-1 px-2.5"
-                  onClick={() =>
-                    handleApplyApiPreset({
-                      title: 'Wishlist Steam',
-                      apiUrl: 'https://api.steampowered.com/IWishlistService/GetWishlist/v1/?steamid=76561199802292886',
-                      jsonPath: 'response.items.length',
-                      displayMode: 'kpi',
-                      refresh: 60,
-                      unit: 'jeux',
-                    })
-                  }
-                >
-                  🎮 Wishlist Steam
-                </Badge>
-              </div>
             {selectedType === 'custom_api' && (
               <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 text-xs">
                 <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2">
@@ -1189,64 +879,6 @@ export function AddWidgetDialog({
                   </p>
                 </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <InputField
-                  label="Nom du panneau"
-                  placeholder="Ex: Santé API"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-                <InputField
-                  label="URL de l'API (GET)"
-                  placeholder="https://api.example.com/data"
-                  value={apiUrl}
-                  onChange={(e) => setApiUrl(e.target.value)}
-                  required
-                />
-              </div>
-
-              {apiUrl.trim().length > 5 && (
-                <JsonPathPicker
-                  apiUrl={apiUrl}
-                  selectedPath={jsonPath}
-                  onSelectPath={handleSelectPath}
-                  className="p-3 rounded-xl border border-border bg-muted/20"
-                />
-              )}
-
-              <InputField
-                label="Chemin JSON (Path)"
-                placeholder="status ou response.data.count"
-                value={jsonPath}
-                onChange={(e) => setJsonPath(e.target.value)}
-                required
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <InputField
-                  label="Unité affichée (optionnelle)"
-                  placeholder="Ex: ms, %, €, FPS..."
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                />
-                <RefreshField
-                  label="Rafraîchissement (sec)"
-                  value={refreshInterval}
-                  onChange={(val) => setRefreshInterval(val)}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs font-medium text-foreground">
-                  Mode d'affichage
-                </span>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <Button
-                    type="button"
-                    variant={displayMode === 'kpi' ? 'default' : 'outline'}
-                    size="sm"
-                    className="cursor-pointer text-xs h-9"
                 <div className="space-y-2">
                   <span className="font-semibold text-foreground uppercase tracking-wider text-[10px] block">
                     Styles d'affichage supportés
@@ -1259,13 +891,6 @@ export function AddWidgetDialog({
                         : 'border-border/70 bg-card hover:bg-muted/40'
                     }`}
                   >
-                    Chiffre clé (KPI)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={displayMode === 'gauge' ? 'default' : 'outline'}
-                    size="sm"
-                    className="cursor-pointer text-xs h-9"
                     <p className="font-semibold text-foreground">Chiffre Clé (KPI)</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       Affichage numérique en grand format avec statut et unité personnalisée.
@@ -1280,8 +905,6 @@ export function AddWidgetDialog({
                         : 'border-border/70 bg-card hover:bg-muted/40'
                     }`}
                   >
-                    Jauge Radiale (0-100%)
-                  </Button>
                     <p className="font-semibold text-foreground">Jauge Radiale (0 - 100%)</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       Visualisation d'un pourcentage ou niveau sur une jauge semi-circulaire colorée.
@@ -1289,28 +912,6 @@ export function AddWidgetDialog({
                   </div>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="pt-3 border-t border-border/50 shrink-0 flex items-center justify-between sm:justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              className="cursor-pointer"
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={selectedType === 'steam' && !steamConnected}
-              className="cursor-pointer gap-1.5 font-semibold"
-            >
-              <PlusCircle className="size-4" />
-              Ajouter au tableau de bord
-            </Button>
-          </DialogFooter>
-        </form>
             )}
           </div>
         </div>
