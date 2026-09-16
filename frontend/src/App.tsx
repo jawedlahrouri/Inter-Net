@@ -408,7 +408,7 @@ function DashboardContent() {
               <ExternalLink className="size-3.5" />
             </a>
             <a
-              href="http://localhost:8080/api/docs"
+              href="http://localhost:8080/api/v1/docs"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
