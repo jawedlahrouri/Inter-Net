@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+export type { UserSettings, VideoInfo, DashboardPageInfo } from '@/services/api';
 import {
   type UserSettings,
   type VideoInfo,
