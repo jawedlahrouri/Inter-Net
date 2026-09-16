@@ -228,7 +228,7 @@ function DashboardContent() {
                   title="Pause méditation"
                 >
                   <Sparkles className="size-3.5 text-primary" />
-                  <span>Méditation</span>
+                  <span>Méditer</span>
                 </Button>
 
                 {currentTab === 'dashboard' && (
