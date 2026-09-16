@@ -70,7 +70,8 @@ VALUES
     ('weather', 'Météo', 'Service de prévisions météorologiques en direct', 'none', TRUE),
     ('rss', 'Flux RSS', 'Agrégateur de flux RSS d''actualités', 'none', TRUE),
     ('custom', 'API Personnalisée', 'Interrogation et affichage de métriques d''APIs JSON', 'none', TRUE),
-    ('shortcuts', 'Raccourcis Web', 'Raccourcis et liens rapides vers des services externes', 'none', TRUE)
+    ('shortcuts', 'Raccourcis Web', 'Raccourcis et liens rapides vers des services externes', 'none', TRUE),
+    ('steam', 'Steam', 'Service Steam Gaming et statistiques de joueur', 'oauth2', TRUE)
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
@@ -105,3 +106,27 @@ SELECT s.id, 'shortcut', 'Raccourci Web', 'Lien rapide vers un site ou service e
 FROM services s WHERE s.name = 'shortcuts'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'last_played', 'Dernier jeu joué', 'Affiche le dernier jeu lancé par le joueur', JSON_ARRAY()
+FROM services s WHERE s.name = 'steam'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'most_played', 'Jeu le plus joué', 'Affiche le jeu avec le plus d''heures au compteur', JSON_ARRAY()
+FROM services s WHERE s.name = 'steam'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'games_count', 'Nombre de jeux', 'Nombre total de jeux dans la bibliothèque', JSON_ARRAY()
+FROM services s WHERE s.name = 'steam'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'total_playtime', 'Heures de jeu cumulées', 'Nombre total d''heures de jeu sur Steam', JSON_ARRAY()
+FROM services s WHERE s.name = 'steam'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO widget_definitions (service_id, name, display_name, description, params_schema)
+SELECT s.id, 'steam_level', 'Niveau et profil Steam', 'Affiche le niveau Steam et l''avatar du joueur', JSON_ARRAY()
+FROM services s WHERE s.name = 'steam'
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);

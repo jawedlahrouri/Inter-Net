@@ -147,6 +147,41 @@ def get_about(request: Request):
                             ]
                         }
                     ]
+                },
+                {
+                    "name": "steam",
+                    "widgets": [
+                        {
+                            "name": "last_played",
+                            "description": "Dernier jeu joué par l'utilisateur",
+                            "params": []
+                        },
+                        {
+                            "name": "most_played",
+                            "description": "Jeu avec le plus d'heures au compteur",
+                            "params": []
+                        },
+                        {
+                            "name": "games_count",
+                            "description": "Nombre total de jeux dans la bibliothèque",
+                            "params": []
+                        },
+                        {
+                            "name": "total_playtime",
+                            "description": "Nombre d'heures de jeu cumulées",
+                            "params": []
+                        },
+                        {
+                            "name": "recent_playtime",
+                            "description": "Temps de jeu sur les 14 derniers jours",
+                            "params": []
+                        },
+                        {
+                            "name": "steam_level",
+                            "description": "Niveau et profil Steam du joueur",
+                            "params": []
+                        }
+                    ]
                 }
             ]
         }

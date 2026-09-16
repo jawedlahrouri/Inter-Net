@@ -66,7 +66,7 @@ function getWeatherIconColor(iconName: string): string {
     case 'CloudLightning':
       return 'text-yellow-400 dark:text-yellow-300'
     default:
-      return 'text-slate-400 dark:text-slate-300'
+      return 'text-neutral-400 dark:text-neutral-300'
   }
 }
 
@@ -110,7 +110,6 @@ export function WeatherWidget({
       let targetLon = lon
       let targetLocation = city
 
-      // If coordinates are missing, resolve from city or navigator geolocation
       if (targetLat === undefined || targetLon === undefined) {
         if (city && city.trim().length > 0) {
           const geo = await fetchCoordinatesForCity(city)
@@ -138,7 +137,7 @@ export function WeatherWidget({
       setError(
         err instanceof Error
           ? err.message
-          : 'Unable to retrieve meteorological forecast'
+          : 'Impossible de récupérer les prévisions météo'
       )
     } finally {
       setLoading(false)
@@ -149,7 +148,6 @@ export function WeatherWidget({
     loadWeather()
   }, [loadWeather])
 
-  // Initial loading state before data is received
   if (loading && !weather) {
     return (
       <Card
@@ -158,23 +156,22 @@ export function WeatherWidget({
           className
         )}
       >
-        <RefreshCw className="size-6 animate-spin text-primary mb-3" />
+        <RefreshCw className="size-6 animate-spin text-foreground mb-3" />
         <p className="text-sm font-medium text-card-foreground">
-          Loading weather forecast...
+          Chargement de la météo...
         </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Fetching data from Open-Meteo
+        <p className="text-xs text-muted-foreground mt-1 font-mono">
+          Open-Meteo API
         </p>
       </Card>
     )
   }
 
-  // Error state with retry action
   if (error && !weather) {
     return (
       <Card
         className={cn(
-          'min-h-[320px] bg-card border-border flex flex-col items-center justify-center p-6 text-center space-y-3 shadow-xs',
+          'min-h-[320px] bg-card border-border flex flex-col items-center justify-center p-6 text-center space-y-4 shadow-xs',
           className
         )}
       >
@@ -183,7 +180,7 @@ export function WeatherWidget({
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium text-destructive">
-            Unable to load weather
+            Erreur météo
           </p>
           <p className="text-xs text-muted-foreground max-w-[220px]">
             {error}
@@ -193,18 +190,16 @@ export function WeatherWidget({
           variant="outline"
           size="sm"
           onClick={loadWeather}
-          className="gap-1.5 cursor-pointer mt-1"
+          className="gap-2 cursor-pointer h-9 px-3"
         >
           <RefreshCw className="size-3.5" />
-          Retry
+          Réessayer
         </Button>
       </Card>
     )
   }
 
-  if (!weather) {
-    return null
-  }
+  if (!weather) return null
 
   const WeatherIcon = getWeatherIconComponent(weather.iconName)
   const iconColor = getWeatherIconColor(weather.iconName)
@@ -218,9 +213,9 @@ export function WeatherWidget({
         className
       )}
     >
-      <CardHeader className="flex flex-row items-start justify-between pb-2">
-        <div className="space-y-0.5 min-w-0">
-          <CardTitle className="text-base font-semibold flex items-center gap-1.5 text-card-foreground truncate">
+      <CardHeader className="flex flex-row items-start justify-between pb-2 p-6">
+        <div className="space-y-1 min-w-0">
+          <CardTitle className="text-base font-semibold flex items-center gap-2 text-card-foreground truncate">
             <MapPin className="size-4 text-muted-foreground shrink-0" />
             <span className="truncate">{weather.locationName}</span>
           </CardTitle>
@@ -230,64 +225,65 @@ export function WeatherWidget({
         </div>
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
           onClick={loadWeather}
           disabled={loading}
-          aria-label="Refresh forecast"
+          aria-label="Actualiser les prévisions"
           className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
         >
-          <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
+          <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
         </Button>
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-1 flex-1 flex flex-col justify-between">
-        {/* Main Temperature and Condition Display */}
+      <CardContent className="space-y-4 px-6 pb-6 pt-0 flex-1 flex flex-col justify-between">
+        {/* Main Temperature and Weather Icon */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl sm:text-5xl font-bold tracking-tight text-card-foreground tabular-nums">
+            <span className="text-4xl sm:text-5xl font-bold tracking-tight text-card-foreground tabular-nums font-mono">
               {weather.temperature.toFixed(1)}
             </span>
-            <span className="text-xl sm:text-2xl font-light text-muted-foreground">
+            <span className="text-xl sm:text-2xl font-light text-muted-foreground font-mono">
               °C
             </span>
           </div>
-          <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50 flex items-center justify-center">
+          <div className="p-3 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center">
             <WeatherIcon className={cn('size-9 sm:size-10', iconColor)} />
           </div>
         </div>
 
-        {/* Humidity and Wind Metrics */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/40">
-            <Droplets className="size-4 text-muted-foreground shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
-                Humidity
-              </span>
-              <span className="text-xs font-semibold tabular-nums text-foreground">
-                {weather.humidity}%
+        {/* Humidity and Wind Metrics (Strict alignment: Label left, Number right) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/40">
+            <div className="flex items-center gap-2 min-w-0">
+              <Droplets className="size-4 text-muted-foreground shrink-0" />
+              <span className="text-[11px] uppercase tracking-wide font-medium text-muted-foreground text-left">
+                Humidité
               </span>
             </div>
+            <span className="text-xs font-semibold tabular-nums font-mono text-foreground text-right pl-2">
+              {weather.humidity}%
+            </span>
           </div>
-          <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/40">
-            <Wind className="size-4 text-muted-foreground shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
-                Wind
-              </span>
-              <span className="text-xs font-semibold tabular-nums text-foreground">
-                {weather.windSpeed} km/h
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/40">
+            <div className="flex items-center gap-2 min-w-0">
+              <Wind className="size-4 text-muted-foreground shrink-0" />
+              <span className="text-[11px] uppercase tracking-wide font-medium text-muted-foreground text-left">
+                Vent
               </span>
             </div>
+            <span className="text-xs font-semibold tabular-nums font-mono text-foreground text-right pl-2 truncate">
+              {weather.windSpeed} km/h
+            </span>
           </div>
         </div>
 
         {/* 24h Temperature Trend Sparkline */}
         {weather.hourlyTemps.length > 1 && (
-          <div className="space-y-1.5 pt-2 border-t border-border/50">
+          <div className="space-y-2 pt-2 border-t border-border/50">
             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-              <span className="font-medium">24h Temperature Trend</span>
-              <span className="tabular-nums font-mono">
+              <span className="font-medium text-left">Tendance 24h</span>
+              <span className="tabular-nums font-mono text-right text-foreground/80">
                 {minTemp.toFixed(0)}° / {maxTemp.toFixed(0)}°C
               </span>
             </div>
