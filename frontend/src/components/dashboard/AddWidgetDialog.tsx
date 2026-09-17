@@ -47,6 +47,7 @@ import { SteamPresetCatalog } from './dialogs/SteamPresetCatalog'
 import { GithubParamsForm } from './dialogs/GithubParamsForm'
 import { CustomApiParamsForm } from './dialogs/CustomApiParamsForm'
 import { GithubPatForm } from './dialogs/GithubPatForm'
+import { WidgetDimensionSelector } from './WidgetDimensionSelector'
 
 export interface AddWidgetDialogProps {
   open: boolean
@@ -68,6 +69,8 @@ export function AddWidgetDialog({
   const [displayMode, setDisplayMode] = useState<'kpi' | 'gauge'>('kpi')
   const [unit, setUnit] = useState('')
   const [refreshInterval, setRefreshInterval] = useState<number>(300)
+  const [width, setWidth] = useState<number>(1)
+  const [height, setHeight] = useState<number>(1)
 
   // Steam State
   const [steamConnected, setSteamConnected] = useState<boolean>(false)
@@ -142,45 +145,34 @@ export function AddWidgetDialog({
     }
   }, [open])
 
-  const currentSteamPreset = useMemo(() => {
-    return STEAM_PRESETS.find((p) => p.id === selectedSteamPreset) || STEAM_PRESETS[0]
-  }, [selectedSteamPreset])
-
-  const currentGithubPreset = useMemo(() => {
-    return GITHUB_PRESETS.find((p) => p.id === selectedGithubPreset) || GITHUB_PRESETS[0]
+  const currentGithubPreset = useMemo<GithubPreset>(() => {
+    return (
+      GITHUB_PRESETS.find((p) => p.id === selectedGithubPreset) ||
+      GITHUB_PRESETS[0]
+    )
   }, [selectedGithubPreset])
 
-  const handleApplyApiPreset = (preset: ApiPreset) => {
-    setTitle(preset.title)
-    setApiUrl(preset.apiUrl)
-    setJsonPath(preset.jsonPath)
-    setRefreshInterval(preset.refresh)
-    setDisplayMode(preset.displayMode)
-    setUnit(preset.unit)
-  }
+  const currentSteamPreset = useMemo<SteamPreset>(() => {
+    return (
+      STEAM_PRESETS.find((p) => p.id === selectedSteamPreset) ||
+      STEAM_PRESETS[0]
+    )
+  }, [selectedSteamPreset])
 
-  const handleSelectPath = (path: string, _previewValue: any, suggestedMode?: 'kpi' | 'gauge') => {
-    setJsonPath(path)
-    if (suggestedMode) {
-      setDisplayMode(suggestedMode)
-    }
-    if (!title.trim()) {
-      const parts = path.split('.')
-      const name = parts[parts.length - 1]
-      setTitle(name.charAt(0).toUpperCase() + name.slice(1))
+  const handleSelectGithubPreset = (preset: GithubPreset) => {
+    setSelectedGithubPreset(preset.id)
+    setTitle(preset.title)
+    if (preset.defaultInterval) {
+      setRefreshInterval(preset.defaultInterval)
     }
   }
 
   const handleSelectSteamPreset = (preset: SteamPreset) => {
     setSelectedSteamPreset(preset.id)
     setTitle(preset.title)
-    setRefreshInterval(preset.defaultInterval || 300)
-  }
-
-  const handleSelectGithubPreset = (preset: GithubPreset) => {
-    setSelectedGithubPreset(preset.id)
-    setTitle(preset.title)
-    setRefreshInterval(preset.defaultInterval || 300)
+    if (preset.defaultInterval) {
+      setRefreshInterval(preset.defaultInterval)
+    }
   }
 
   const handleSelectType = (type: WidgetType) => {
@@ -193,9 +185,26 @@ export function AddWidgetDialog({
       setRefreshInterval(currentSteamPreset.defaultInterval || 300)
     } else if (type === 'weather') {
       setTitle('Météo locale')
+      setRefreshInterval(60)
     } else if (type === 'custom_api') {
-      setTitle('Métrique API')
+      setTitle('API REST JSON')
       setRefreshInterval(30)
+    }
+  }
+
+  const handleApplyApiPreset = (preset: ApiPreset) => {
+    setTitle(preset.title)
+    setApiUrl(preset.apiUrl)
+    setJsonPath(preset.jsonPath)
+    setDisplayMode(preset.displayMode)
+    setUnit(preset.unit || '')
+    setRefreshInterval(preset.refresh || 30)
+  }
+
+  const handleSelectPath = (path: string, sampleValue?: any) => {
+    setJsonPath(path)
+    if (typeof sampleValue === 'number') {
+      setDisplayMode('kpi')
     }
   }
 
@@ -216,6 +225,8 @@ export function AddWidgetDialog({
     setSelectedRepoFullName('')
     setSelectedOrgName('')
     setSelectedType('github')
+    setWidth(1)
+    setHeight(1)
   }
 
   const handleCancel = () => {
@@ -236,6 +247,8 @@ export function AddWidgetDialog({
         repoFullName: selectedRepoFullName.trim() || undefined,
         orgName: selectedOrgName.trim() || undefined,
         dashboardId: activeDashboardId,
+        width,
+        height,
       })
     } else if (selectedType === 'steam') {
       if (!steamConnected) return
@@ -245,6 +258,8 @@ export function AddWidgetDialog({
         steamMetric: currentSteamPreset.id,
         refreshIntervalSeconds: Math.max(300, refreshInterval || 300),
         dashboardId: activeDashboardId,
+        width,
+        height,
       })
     } else if (selectedType === 'weather') {
       onAddWidget({
@@ -252,6 +267,8 @@ export function AddWidgetDialog({
         type: 'weather',
         city: city.trim() || undefined,
         dashboardId: activeDashboardId,
+        width,
+        height,
       })
     } else if (selectedType === 'custom_api') {
       if (!apiUrl.trim() || !jsonPath.trim()) return
@@ -264,6 +281,8 @@ export function AddWidgetDialog({
         unit: unit.trim() || undefined,
         refreshIntervalSeconds: refreshInterval || 30,
         dashboardId: activeDashboardId,
+        width,
+        height,
       })
     }
 
@@ -570,6 +589,19 @@ export function AddWidgetDialog({
                   onSelectPath={handleSelectPath}
                 />
               )}
+
+              {/* Dimensions de départ du widget (Largeur & Longueur) */}
+              <div className="pt-3 border-t border-border/60">
+                <WidgetDimensionSelector
+                  width={width}
+                  height={height}
+                  onChange={(w, h) => {
+                    setWidth(w)
+                    setHeight(h)
+                  }}
+                  showPreview={false}
+                />
+              </div>
             </div>
           </div>
 

@@ -81,7 +81,7 @@ export function WidgetGrid({
         </div>
       ) : (
         /* Grille des widgets avec le bouton d'ajout visible uniquement en mode édition */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full auto-rows-[minmax(280px,auto)] grid-flow-dense items-stretch">
           {widgets.map((widget) => (
             <WidgetCard
               key={widget.id}
@@ -89,11 +89,18 @@ export function WidgetGrid({
               isEditing={isEditing}
               onEdit={(w) => setEditingWidget(w)}
               onRemove={onRemoveWidget}
+              onResize={(width, height) => {
+                if (onUpdateWidget) {
+                  onUpdateWidget(widget.id, { width, height })
+                }
+              }}
             />
           ))}
 
           {isEditing && (
-            <AddButton onClick={() => setIsDialogOpen(true)} />
+            <div className="col-span-1 min-h-[280px] flex items-center justify-center">
+              <AddButton onClick={() => setIsDialogOpen(true)} />
+            </div>
           )}
         </div>
       )}

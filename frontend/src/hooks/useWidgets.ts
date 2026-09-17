@@ -47,6 +47,8 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
     repoFullName: p.repoFullName,
     orgName: p.orgName,
     dashboardId: p.dashboardId || 'default',
+    width: uw.width || 1,
+    height: uw.height || 1,
   }
 }
 
@@ -87,6 +89,8 @@ function mapWidgetToApiPayload(data: Partial<Widget>) {
     title: data.title,
     params_values: params,
     refresh_rate: data.refreshIntervalSeconds || 60,
+    width: data.width || 1,
+    height: data.height || 1,
   }
 }
 

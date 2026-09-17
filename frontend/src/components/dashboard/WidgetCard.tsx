@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Scaling } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { RemoveButton } from '@/components/ui/removebutton'
 import { EditButton } from '@/components/ui/editbutton'
@@ -6,6 +6,15 @@ import { WeatherWidget } from '@/components/dashboard/widgets/WeatherWidget'
 import { CustomApiWidget } from '@/components/dashboard/widgets/CustomApiWidget'
 import { SteamWidget } from '@/components/dashboard/widgets/SteamWidget'
 import { GithubWidget } from '@/components/dashboard/widgets/GithubWidget'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { getWidgetSpanClasses } from '@/lib/widgetLayout'
+import { cn } from '@/lib/utils'
 import type { Widget } from '@/types/widget'
 
 export interface WidgetCardProps {
@@ -13,25 +22,106 @@ export interface WidgetCardProps {
   isEditing?: boolean
   onEdit?: (widget: Widget) => void
   onRemove?: (id: string) => void
+  onResize?: (width: number, height: number) => void
+  className?: string
 }
 
-export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: WidgetCardProps) {
+export function WidgetCard({
+  widget,
+  isEditing = false,
+  onEdit,
+  onRemove,
+  onResize,
+  className,
+}: WidgetCardProps) {
+  const currentWidth = widget.width || 1
+  const currentHeight = widget.height || 1
+
   const renderActions = () => {
     if (!isEditing) return null
     return (
-      <div className="mt-2.5 flex items-center justify-end gap-2 px-0.5">
-        {onEdit && (
-          <EditButton
-            onClick={() => onEdit(widget)}
-            label="Modifier"
-          />
-        )}
-        {onRemove && (
-          <RemoveButton
-            onClick={() => onRemove(widget.id)}
-            label="Supprimer"
-          />
-        )}
+      <div className="mt-2.5 flex items-center justify-between gap-2 px-0.5">
+        {/* Menu de redimensionnement rapide 1-clic */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px] gap-1 px-2 border-border/80 hover:border-primary/50 text-muted-foreground hover:text-foreground cursor-pointer font-mono"
+              title="Modifier la taille (largeur × longueur)"
+            >
+              <Scaling className="size-3 text-primary" />
+              <span>
+                {currentWidth === 6 ? 'Full' : `${currentWidth}c`} × {currentHeight}l
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 p-2 text-xs">
+            <div className="px-2 py-1 text-[11px] font-semibold text-foreground flex items-center justify-between border-b border-border/50 mb-1.5 pb-1.5">
+              <span>Taille du widget</span>
+              <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 border-primary/40 text-primary">
+                {currentWidth} × {currentHeight}
+              </Badge>
+            </div>
+
+            {/* Largeur rapide */}
+            <div className="px-1 py-1 space-y-1">
+              <span className="text-[10px] text-muted-foreground font-medium">Largeur :</span>
+              <div className="grid grid-cols-5 gap-1">
+                {[1, 2, 3, 4, 6].map((w) => (
+                  <button
+                    key={`w-${w}`}
+                    type="button"
+                    onClick={() => onResize?.(w, currentHeight)}
+                    className={`py-1 rounded text-[10px] font-mono border cursor-pointer transition-colors ${
+                      currentWidth === w
+                        ? 'bg-primary text-primary-foreground border-primary font-bold'
+                        : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60'
+                    }`}
+                  >
+                    {w === 6 ? 'Max' : `${w}c`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Longueur / Hauteur rapide */}
+            <div className="px-1 py-1.5 space-y-1">
+              <span className="text-[10px] text-muted-foreground font-medium">Longueur (Hauteur) :</span>
+              <div className="grid grid-cols-3 gap-1">
+                {[1, 2, 3].map((h) => (
+                  <button
+                    key={`h-${h}`}
+                    type="button"
+                    onClick={() => onResize?.(currentWidth, h)}
+                    className={`py-1 rounded text-[10px] font-mono border cursor-pointer transition-colors ${
+                      currentHeight === h
+                        ? 'bg-primary text-primary-foreground border-primary font-bold'
+                        : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60'
+                    }`}
+                  >
+                    {h === 1 ? '1 ligne' : `${h} lignes`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex items-center gap-1.5">
+          {onEdit && (
+            <EditButton
+              onClick={() => onEdit(widget)}
+              label="Modifier"
+            />
+          )}
+          {onRemove && (
+            <RemoveButton
+              onClick={() => onRemove(widget.id)}
+              label="Supprimer"
+            />
+          )}
+        </div>
       </div>
     )
   }
@@ -101,7 +191,14 @@ export function WidgetCard({ widget, isEditing = false, onEdit, onRemove }: Widg
   }
 
   return (
-    <div className={`relative group h-full flex flex-col justify-between ${isEditing ? 'transition-all' : ''}`}>
+    <div
+      className={cn(
+        'relative group flex flex-col justify-between transition-all',
+        getWidgetSpanClasses(widget.width, widget.height),
+        isEditing ? 'ring-1 ring-border/50 hover:ring-primary/40 rounded-xl p-1 bg-card/10' : '',
+        className
+      )}
+    >
       <div className="flex-1 min-h-0 flex flex-col">
         {renderContent()}
       </div>

@@ -202,3 +202,48 @@ def test_create_widget_by_type(client):
     )
     assert create_resp.status_code == 201
     assert create_resp.json()["type"] == "weather"
+
+
+def test_widget_dimensions_customization(client):
+    reg_resp = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "dimensions_user@example.com",
+            "username": "dimensions_user",
+            "password": "password123",
+        },
+    )
+    token = reg_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_resp = client.post(
+        "/api/v1/widgets",
+        headers=headers,
+        json={
+            "type": "custom_api",
+            "title": "Widget Dimensions",
+            "params_values": {"apiUrl": "https://api.example.com", "jsonPath": "data"},
+            "refresh_rate": 30,
+            "width": 2,
+            "height": 2,
+        },
+    )
+    assert create_resp.status_code == 201
+    widget = create_resp.json()
+    assert widget["width"] == 2
+    assert widget["height"] == 2
+    widget_id = widget["id"]
+
+    update_resp = client.put(
+        f"/api/v1/widgets/{widget_id}",
+        headers=headers,
+        json={
+            "width": 3,
+            "height": 1,
+        },
+    )
+    assert update_resp.status_code == 200
+    updated = update_resp.json()
+    assert updated["width"] == 3
+    assert updated["height"] == 1
+

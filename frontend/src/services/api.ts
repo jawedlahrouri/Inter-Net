@@ -185,6 +185,8 @@ export async function createUserWidget(payload: {
   refresh_rate?: number;
   position_x?: number;
   position_y?: number;
+  width?: number;
+  height?: number;
 }): Promise<ApiUserWidget> {
   return apiFetch<ApiUserWidget>('/api/v1/widgets', {
     method: 'POST',
@@ -200,6 +202,8 @@ export async function updateUserWidget(
     refresh_rate?: number;
     position_x?: number;
     position_y?: number;
+    width?: number;
+    height?: number;
   }
 ): Promise<ApiUserWidget> {
   return apiFetch<ApiUserWidget>(`/api/v1/widgets/${widgetId}`, {
