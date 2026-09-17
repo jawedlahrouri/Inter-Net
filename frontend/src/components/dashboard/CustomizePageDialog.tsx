@@ -11,6 +11,10 @@ import {
   CheckCircle2,
   Loader2,
   Info,
+  Music,
+  Play,
+  Pause,
+  Radio,
 } from 'lucide-react'
 import {
   useSettings,
@@ -18,6 +22,7 @@ import {
   type DashboardPageInfo,
   type ThemeCustomization,
 } from '@/context/SettingsContext'
+import { MUSIC_PRESETS, type MusicPreset } from '@/config/musicPresets'
 import {
   Dialog,
   DialogContent,
@@ -113,18 +118,30 @@ export function CustomizePageDialog({
   const {
     updateDashboardCustomization,
     uploadBackgroundForDashboard,
+    uploadMusicForDashboard,
     availableBackgrounds,
+    availableMusic,
   } = useSettings()
 
   const [primaryColor, setPrimaryColor] = useState<string>(DEFAULT_CUSTOMIZATION.primary_color)
   const [secondaryColor, setSecondaryColor] = useState<string>(DEFAULT_CUSTOMIZATION.secondary_color)
   const [tertiaryColor, setTertiaryColor] = useState<string>(DEFAULT_CUSTOMIZATION.tertiary_color)
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
+  const [backgroundMusic, setBackgroundMusic] = useState<string | null>(null)
+  const [backgroundMusicName, setBackgroundMusicName] = useState<string | null>(null)
 
   const [customUrlInput, setCustomUrlInput] = useState<string>('')
   const [isUploading, setIsUploading] = useState<boolean>(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [customMusicUrlInput, setCustomMusicUrlInput] = useState<string>('')
+  const [isUploadingMusic, setIsUploadingMusic] = useState<boolean>(false)
+  const [musicUploadError, setMusicUploadError] = useState<string | null>(null)
+  const musicFileInputRef = useRef<HTMLInputElement>(null)
+
+  const [previewingTrackUrl, setPreviewingTrackUrl] = useState<string | null>(null)
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     if (targetDashboard) {
@@ -132,8 +149,20 @@ export function CustomizePageDialog({
       setSecondaryColor(targetDashboard.secondary_color || DEFAULT_CUSTOMIZATION.secondary_color)
       setTertiaryColor(targetDashboard.tertiary_color || DEFAULT_CUSTOMIZATION.tertiary_color)
       setBackgroundImage(targetDashboard.background_image ?? null)
+      setBackgroundMusic(targetDashboard.background_music ?? null)
+      setBackgroundMusicName(targetDashboard.background_music_name ?? null)
       setCustomUrlInput('')
+      setCustomMusicUrlInput('')
       setUploadError(null)
+      setMusicUploadError(null)
+    }
+
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause()
+        previewAudioRef.current = null
+      }
+      setPreviewingTrackUrl(null)
     }
   }, [targetDashboard, open])
 
@@ -150,6 +179,8 @@ export function CustomizePageDialog({
     setSecondaryColor(DEFAULT_CUSTOMIZATION.secondary_color)
     setTertiaryColor(DEFAULT_CUSTOMIZATION.tertiary_color)
     setBackgroundImage(null)
+    setBackgroundMusic(null)
+    setBackgroundMusicName(null)
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +199,23 @@ export function CustomizePageDialog({
     }
   }
 
+  const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploadingMusic(true)
+    setMusicUploadError(null)
+    try {
+      const uploaded = await uploadMusicForDashboard(targetDashboard.id, file)
+      setBackgroundMusic(uploaded.url)
+      setBackgroundMusicName(uploaded.name)
+    } catch (err: any) {
+      setMusicUploadError(err?.message || "Erreur lors de l'envoi du fichier audio")
+    } finally {
+      setIsUploadingMusic(false)
+      if (musicFileInputRef.current) musicFileInputRef.current.value = ''
+    }
+  }
+
   const handleApplyUrl = () => {
     const trimmed = customUrlInput.trim()
     if (!trimmed) return
@@ -175,18 +223,48 @@ export function CustomizePageDialog({
     setCustomUrlInput('')
   }
 
+  const handleApplyMusicUrl = () => {
+    const trimmed = customMusicUrlInput.trim()
+    if (!trimmed) return
+    setBackgroundMusic(trimmed)
+    setBackgroundMusicName('Flux audio personnalisé')
+    setCustomMusicUrlInput('')
+  }
+
+  const handleTogglePreview = (url: string) => {
+    if (previewingTrackUrl === url) {
+      previewAudioRef.current?.pause()
+      setPreviewingTrackUrl(null)
+    } else {
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio()
+      }
+      previewAudioRef.current.src = url
+      previewAudioRef.current.volume = 0.5
+      previewAudioRef.current.play().catch(() => {})
+      setPreviewingTrackUrl(url)
+    }
+  }
+
   const handleSave = async () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause()
+      previewAudioRef.current = null
+    }
     const updates: Partial<ThemeCustomization> = {
       primary_color: primaryColor,
       secondary_color: secondaryColor,
       tertiary_color: tertiaryColor,
       background_image: backgroundImage,
+      background_music: backgroundMusic,
+      background_music_name: backgroundMusicName,
     }
     await updateDashboardCustomization(targetDashboard.id, updates)
     onOpenChange(false)
   }
 
   const hasBg = Boolean(backgroundImage)
+  const hasMusic = Boolean(backgroundMusic)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -502,7 +580,166 @@ export function CustomizePageDialog({
 
           <div className="h-px bg-border/60 w-full" />
 
-          {/* 3. Live Preview de la page */}
+          {/* 3. Musique d'ambiance de cette page */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Music className="size-3.5 text-purple-500" />
+                Musique d'ambiance de cette page
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {hasMusic ? 'Musique active' : 'Aucune musique (silence)'}
+              </span>
+            </div>
+
+            {/* Statut de la musique pour cette page */}
+            <div className="p-3 rounded-lg border border-border bg-muted/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-10 rounded-md border border-border bg-card flex items-center justify-center shrink-0 text-purple-400">
+                  <Music className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-medium text-foreground block truncate">
+                    {hasMusic ? (backgroundMusicName || 'Piste audio active') : 'Aucune musique configurée'}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    {hasMusic ? backgroundMusic : 'La page restera silencieuse sans musique de fond.'}
+                  </span>
+                </div>
+              </div>
+
+              {hasMusic && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setBackgroundMusic(null)
+                    setBackgroundMusicName(null)
+                  }}
+                  className="h-7 text-[11px] gap-1 px-2.5 cursor-pointer shrink-0"
+                >
+                  <Trash2 className="size-3" />
+                  <span>Retirer la musique</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Options Upload Audio & URL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="space-y-1.5">
+                <input
+                  ref={musicFileInputRef}
+                  type="file"
+                  accept="audio/mp3,audio/wav,audio/ogg,audio/m4a,audio/aac,audio/flac,audio/mpeg"
+                  onChange={handleMusicUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => musicFileInputRef.current?.click()}
+                  disabled={isUploadingMusic}
+                  className="w-full h-8 text-xs gap-1.5 cursor-pointer"
+                >
+                  {isUploadingMusic ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>Téléversement audio...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="size-3.5 text-purple-400" />
+                      <span>Importer un fichier audio</span>
+                    </>
+                  )}
+                </Button>
+                {musicUploadError && <p className="text-[10px] text-rose-500">{musicUploadError}</p>}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="url"
+                  placeholder="URL audio HTTPS https://..."
+                  value={customMusicUrlInput}
+                  onChange={(e) => setCustomMusicUrlInput(e.target.value)}
+                  className="h-8 text-xs"
+                />
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleApplyMusicUrl}
+                  disabled={!customMusicUrlInput.trim()}
+                  className="h-8 px-2.5 text-xs shrink-0 cursor-pointer"
+                >
+                  Lier
+                </Button>
+              </div>
+            </div>
+
+            {/* Galerie de pistes prédéfinies */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                <Radio className="size-3" />
+                Morceaux suggérés (avec aperçu audio) :
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {MUSIC_PRESETS.map((preset) => {
+                  const isSelected = backgroundMusic === preset.url
+                  const isPreviewing = previewingTrackUrl === preset.url
+                  return (
+                    <div
+                      key={preset.id}
+                      className={`p-2.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 shadow-xs'
+                          : 'border-border/80 bg-card hover:border-border'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePreview(preset.url)}
+                          className={`size-7 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+                            isPreviewing
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted/80 text-foreground'
+                          }`}
+                          title={isPreviewing ? 'Arrêter l’écoute' : 'Écouter un extrait'}
+                        >
+                          {isPreviewing ? <Pause className="size-3.5" /> : <Play className="size-3.5 ml-0.5" />}
+                        </button>
+                        <div className="min-w-0">
+                          <span className="text-xs font-semibold text-foreground block truncate">
+                            {preset.title}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground block truncate">
+                            {preset.genre} • {preset.artist}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant={isSelected ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setBackgroundMusic(preset.url)
+                          setBackgroundMusicName(preset.title)
+                        }}
+                        className="h-6 text-[10px] px-2 cursor-pointer shrink-0"
+                      >
+                        {isSelected ? 'Sélectionné' : 'Choisir'}
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px bg-border/60 w-full" />
+
+          {/* 4. Live Preview de la page */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">

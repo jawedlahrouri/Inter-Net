@@ -231,6 +231,8 @@ export interface DashboardPageInfo {
   secondary_color?: string;
   tertiary_color?: string;
   background_image?: string | null;
+  background_music?: string | null;
+  background_music_name?: string | null;
 }
 
 export interface ThemeCustomization {
@@ -238,6 +240,8 @@ export interface ThemeCustomization {
   secondary_color: string;
   tertiary_color: string;
   background_image?: string | null;
+  background_music?: string | null;
+  background_music_name?: string | null;
 }
 
 export interface UserSettings {
@@ -255,6 +259,14 @@ export interface VideoInfo {
 }
 
 export interface BackgroundInfo {
+  id: string;
+  name: string;
+  filename: string;
+  url: string;
+  size: number;
+}
+
+export interface MusicInfo {
   id: string;
   name: string;
   filename: string;
@@ -298,6 +310,19 @@ export async function uploadCustomBackgroundApi(file: File): Promise<BackgroundI
   const formData = new FormData();
   formData.append('file', file);
   return apiFetch<BackgroundInfo>('/api/v1/customization/backgrounds/upload', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export async function fetchCustomMusic(): Promise<MusicInfo[]> {
+  return apiFetch<MusicInfo[]>('/api/v1/customization/music');
+}
+
+export async function uploadCustomMusicApi(file: File): Promise<MusicInfo> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiFetch<MusicInfo>('/api/v1/customization/music/upload', {
     method: 'POST',
     body: formData,
   });
