@@ -10,7 +10,7 @@ import {
   getStoredToken,
 } from '@/services/api'
 
-function mapApiToWidget(uw: ApiUserWidget): Widget {
+export function mapApiToWidget(uw: ApiUserWidget): Widget {
   const rawType = uw.type || uw.widget_def?.name || ''
   let type: WidgetType = 'default'
   if (rawType === 'city_temperature' || rawType === 'weather') {
@@ -50,7 +50,7 @@ function mapApiToWidget(uw: ApiUserWidget): Widget {
   }
 }
 
-function mapWidgetToApiPayload(data: Partial<Widget>) {
+export function mapWidgetToApiPayload(data: Partial<Widget>) {
   let type = 'default'
   const params: Record<string, any> = {
     dashboardId: data.dashboardId || 'default',

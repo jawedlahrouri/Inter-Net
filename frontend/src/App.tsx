@@ -8,7 +8,19 @@ import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
 import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
-import { useWidgets } from '@/hooks/useWidgets';
+import { AdminPanel } from '@/components/admin/AdminPanel';
+import { AdminSupervisionBanner } from '@/components/admin/AdminSupervisionBanner';
+import { DashboardContentDialog } from '@/components/admin/DashboardContentDialog';
+import { useWidgets, mapApiToWidget, mapWidgetToApiPayload } from '@/hooks/useWidgets';
+import {
+  fetchAdminDashboardDetail,
+  createAdminWidget,
+  updateAdminWidget,
+  deleteAdminWidget,
+  type AdminDashboardSummary,
+  type ApiUserWidget,
+} from '@/services/api';
+import type { Widget, NewWidgetData } from '@/types/widget';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,7 +32,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   ExternalLink,
-  Settings,
   LayoutDashboard,
   SlidersHorizontal,
   ChevronDown,
@@ -31,9 +42,23 @@ import {
   Check,
   Plus,
   Sparkles,
+  Shield,
 } from 'lucide-react';
 
-type NavTab = 'dashboard' | 'settings';
+type NavTab = 'dashboard' | 'settings' | 'admin';
+
+interface SupervisedContext {
+  userId: number;
+  dashboardId: string;
+  userUsername: string;
+  userEmail: string;
+  dashboardName: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  tertiaryColor?: string;
+  backgroundImage?: string | null;
+  widgets: ApiUserWidget[];
+}
 
 function DashboardContent() {
   const {
@@ -50,6 +75,9 @@ function DashboardContent() {
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
+    if (path.startsWith('/admin') || params.get('tab') === 'admin') {
+      return 'admin';
+    }
     if (path.startsWith('/settings') || params.get('tab') === 'settings') {
       return 'settings';
     }
@@ -65,6 +93,11 @@ function DashboardContent() {
     return 'account';
   });
 
+  const [adminSubtab, setAdminSubtab] = useState<'users' | 'dashboards'>('users');
+  const [supervisedContext, setSupervisedContext] = useState<SupervisedContext | null>(null);
+  const [adminDialogSummary, setAdminDialogSummary] = useState<AdminDashboardSummary | null>(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState<boolean>(false);
+
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
@@ -73,6 +106,7 @@ function DashboardContent() {
 
   // Navigation vers Dashboard avec synchronisation URL
   const navigateToDashboard = useCallback((pageId?: string) => {
+    setSupervisedContext(null);
     setCurrentTab('dashboard');
     const targetPage = pageId || activeDashboardId;
     const url = targetPage && targetPage !== 'default'
@@ -83,12 +117,22 @@ function DashboardContent() {
 
   // Navigation vers Settings avec sous-page et synchronisation URL
   const navigateToSettings = useCallback((subpage: SettingsSubpage = 'account') => {
+    setSupervisedContext(null);
     setCurrentTab('settings');
     setSettingsSubpage(subpage);
     const url = subpage && subpage !== 'account'
       ? `/settings?sub=${encodeURIComponent(subpage)}`
       : '/settings';
     window.history.pushState({ tab: 'settings', sub: subpage }, '', url);
+  }, []);
+
+  // Navigation vers Admin avec onglet et synchronisation URL
+  const navigateToAdmin = useCallback((tab: 'users' | 'dashboards' = 'users') => {
+    setSupervisedContext(null);
+    setCurrentTab('admin');
+    setAdminSubtab(tab);
+    const url = tab !== 'users' ? `/admin?tab=${encodeURIComponent(tab)}` : '/admin';
+    window.history.pushState({ tab: 'admin', adminTab: tab }, '', url);
   }, []);
 
   // Changement de page de dashboard
@@ -99,13 +143,106 @@ function DashboardContent() {
     window.history.replaceState({ tab: 'dashboard', page: pageId }, '', url);
   }, []);
 
+  // Ouverture du mode supervision d'un utilisateur par l'admin
+  const handleOpenVisualDashboard = useCallback(async (userId: number, dashboardId: string) => {
+    try {
+      const detail = await fetchAdminDashboardDetail(userId, dashboardId);
+      setSupervisedContext({
+        userId,
+        dashboardId,
+        userUsername: detail.user_username,
+        userEmail: detail.user_email,
+        dashboardName: detail.name,
+        primaryColor: detail.primary_color,
+        secondaryColor: detail.secondary_color,
+        tertiaryColor: detail.tertiary_color,
+        backgroundImage: detail.background_image,
+        widgets: detail.widgets,
+      });
+      setCurrentTab('dashboard');
+      window.history.pushState(
+        { tab: 'dashboard', superviseUser: userId, superviseDash: dashboardId },
+        '',
+        `/dashboard?superviseUser=${userId}&page=${encodeURIComponent(dashboardId)}`
+      );
+    } catch (err) {
+      console.error('Erreur ouverture dashboard supervision:', err);
+    }
+  }, []);
+
+  // Opérations de widgets en mode supervision
+  const handleSupervisedAddWidget = async (data: NewWidgetData) => {
+    if (!supervisedContext) return;
+    try {
+      const payload = mapWidgetToApiPayload({
+        ...data,
+        dashboardId: supervisedContext.dashboardId,
+      });
+      const created = await createAdminWidget(supervisedContext.userId, payload);
+      setSupervisedContext((prev) =>
+        prev ? { ...prev, widgets: [...prev.widgets, created] } : null
+      );
+    } catch (err) {
+      console.error('Erreur création widget supervision:', err);
+    }
+  };
+
+  const handleSupervisedUpdateWidget = async (id: string, updatedFields: Partial<Widget>) => {
+    if (!supervisedContext) return;
+    try {
+      const existing = supervisedContext.widgets.find((w) => String(w.id) === id);
+      if (!existing) return;
+      const mapped = mapApiToWidget(existing);
+      const merged = { ...mapped, ...updatedFields };
+      const payload = mapWidgetToApiPayload(merged);
+      const updated = await updateAdminWidget(supervisedContext.userId, id, payload);
+      setSupervisedContext((prev) =>
+        prev
+          ? {
+              ...prev,
+              widgets: prev.widgets.map((w) => (String(w.id) === id ? updated : w)),
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Erreur modification widget supervision:', err);
+    }
+  };
+
+  const handleSupervisedRemoveWidget = async (id: string) => {
+    if (!supervisedContext) return;
+    try {
+      await deleteAdminWidget(supervisedContext.userId, id);
+      setSupervisedContext((prev) =>
+        prev
+          ? {
+              ...prev,
+              widgets: prev.widgets.filter((w) => String(w.id) !== id),
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Erreur suppression widget supervision:', err);
+    }
+  };
+
   // Synchronisation avec l'historique du navigateur (boutons précédent / suivant)
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
-      if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+      if (path.startsWith('/admin') || params.get('tab') === 'admin') {
+        if (user?.role === 'admin') {
+          setCurrentTab('admin');
+          setSupervisedContext(null);
+          const at = params.get('adminTab') === 'dashboards' ? 'dashboards' : 'users';
+          setAdminSubtab(at);
+        } else {
+          setCurrentTab('dashboard');
+        }
+      } else if (path.startsWith('/settings') || params.get('tab') === 'settings') {
         setCurrentTab('settings');
+        setSupervisedContext(null);
         const sub = params.get('sub');
         if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
           setSettingsSubpage(sub);
@@ -123,7 +260,7 @@ function DashboardContent() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setActiveDashboardId]);
+  }, [setActiveDashboardId, user]);
 
   // Normalisation initiale de l'URL pour l'utilisateur connecté
   useEffect(() => {
@@ -131,7 +268,13 @@ function DashboardContent() {
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
 
-    if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+    if ((path.startsWith('/admin') || params.get('tab') === 'admin') && user.role === 'admin') {
+      setCurrentTab('admin');
+      const at = params.get('adminTab') === 'dashboards' ? 'dashboards' : 'users';
+      setAdminSubtab(at);
+      const url = at !== 'users' ? `/admin?tab=${encodeURIComponent(at)}` : '/admin';
+      window.history.replaceState({ tab: 'admin', adminTab: at }, '', url);
+    } else if (path.startsWith('/settings') || params.get('tab') === 'settings') {
       setCurrentTab('settings');
       const sub = params.get('sub') as SettingsSubpage;
       if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
@@ -145,7 +288,7 @@ function DashboardContent() {
       const url = page && page !== 'default' ? `/dashboard?page=${encodeURIComponent(page)}` : '/dashboard';
       window.history.replaceState({ tab: 'dashboard', page }, '', url);
     }
-  }, [user]); // Ne s'exécute qu'à l'authentification
+  }, [user]);
 
   if (authLoading) {
     return (
@@ -158,7 +301,7 @@ function DashboardContent() {
     );
   }
 
-  // Écran de transition motivante lors de la connexion (sans vidéo de fond)
+  // Écran de transition motivante lors de la connexion
   if (showMotivationalTransition) {
     return (
       <MotivationalLoader
@@ -168,7 +311,7 @@ function DashboardContent() {
     );
   }
 
-  // Écran de méditation immersive (avec vidéo de fond par défaut)
+  // Écran de méditation immersive
   if (isMeditating) {
     return (
       <MotivationalLoader
@@ -178,31 +321,46 @@ function DashboardContent() {
     );
   }
 
-  // Filtrage des widgets par page de tableau de bord active
-  const displayedWidgets = widgets.filter(
-    (w) => (w.dashboardId || 'default') === activeDashboardId
-  );
+  // Widgets affichés : soit ceux du dashboard supervisé, soit ceux de l'utilisateur actif
+  const displayedWidgets = supervisedContext
+    ? supervisedContext.widgets.map(mapApiToWidget)
+    : widgets.filter((w) => (w.dashboardId || 'default') === activeDashboardId);
 
   const isDashboardTab = currentTab === 'dashboard';
-  const hasBgImage = Boolean(customization?.background_image);
+
+  // Dynamic container styling
+  const activePrimaryColor = supervisedContext
+    ? (supervisedContext.primaryColor || '#0b0f19')
+    : (customization?.primary_color || '#0b0f19');
+  const activeSecondaryColor = supervisedContext
+    ? (supervisedContext.secondaryColor || '#131b2e')
+    : (customization?.secondary_color || '#131b2e');
+  const activeTertiaryColor = supervisedContext
+    ? (supervisedContext.tertiaryColor || '#38bdf8')
+    : (customization?.tertiary_color || '#38bdf8');
+  const activeBgImage = supervisedContext
+    ? supervisedContext.backgroundImage
+    : customization?.background_image;
+
+  const hasBgImage = Boolean(activeBgImage);
 
   const containerStyle: React.CSSProperties = user && isDashboardTab ? {
-    backgroundColor: hasBgImage ? undefined : (customization?.primary_color || '#0b0f19'),
+    backgroundColor: hasBgImage ? undefined : activePrimaryColor,
     backgroundImage: hasBgImage
-      ? `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url("${customization?.background_image}")`
+      ? `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url("${activeBgImage}")`
       : undefined,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundAttachment: 'fixed',
-    ['--card' as string]: customization?.secondary_color || '#131b2e',
+    ['--card' as string]: activeSecondaryColor,
     ['--card-foreground' as string]: '#f8fafc',
-    ['--secondary' as string]: customization?.secondary_color || '#131b2e',
-    ['--primary' as string]: customization?.tertiary_color || '#38bdf8',
-    ['--ring' as string]: customization?.tertiary_color || '#38bdf8',
-    ['--border' as string]: `${customization?.tertiary_color || '#38bdf8'}33`,
-    ['--user-primary' as string]: customization?.primary_color || '#0b0f19',
-    ['--user-secondary' as string]: customization?.secondary_color || '#131b2e',
-    ['--user-tertiary' as string]: customization?.tertiary_color || '#38bdf8',
+    ['--secondary' as string]: activeSecondaryColor,
+    ['--primary' as string]: activeTertiaryColor,
+    ['--ring' as string]: activeTertiaryColor,
+    ['--border' as string]: `${activeTertiaryColor}33`,
+    ['--user-primary' as string]: activePrimaryColor,
+    ['--user-secondary' as string]: activeSecondaryColor,
+    ['--user-tertiary' as string]: activeTertiaryColor,
   } : {};
 
   return (
@@ -224,18 +382,34 @@ function DashboardContent() {
             </button>
 
             {user && (
-              <nav className="flex items-center gap-1">
+              <nav className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => navigateToDashboard()}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${currentTab === 'dashboard'
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                    currentTab === 'dashboard'
                       ? 'bg-muted text-foreground font-semibold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                    }`}
+                  }`}
                 >
                   <LayoutDashboard className="size-3.5" />
                   <span>Dashboard</span>
                 </button>
+
+                {user.role === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => navigateToAdmin()}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                      currentTab === 'admin'
+                        ? 'bg-violet-500/20 text-violet-300 font-semibold border border-violet-500/40'
+                        : 'text-violet-400/80 hover:text-violet-300 hover:bg-violet-500/10'
+                    }`}
+                  >
+                    <Shield className="size-3.5 text-violet-400" />
+                    <span>Administration</span>
+                  </button>
+                )}
               </nav>
             )}
           </div>
@@ -293,11 +467,31 @@ function DashboardContent() {
 
                   <DropdownMenuContent align="end" className="w-60 p-1.5 shadow-lg border border-border">
                     <div className="px-2.5 py-2">
-                      <p className="text-xs font-semibold text-foreground truncate">{user.username}</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-xs font-semibold text-foreground truncate">{user.username}</p>
+                        {user.role === 'admin' && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-violet-500/20 text-violet-300 font-semibold border border-violet-500/30">
+                            Admin
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">{user.email}</p>
                     </div>
 
                     <DropdownMenuSeparator />
+
+                    {user.role === 'admin' && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => navigateToAdmin()}
+                          className="cursor-pointer gap-2 text-xs py-2 text-violet-400 focus:text-violet-300 focus:bg-violet-500/10"
+                        >
+                          <Shield className="size-4 text-violet-400" />
+                          <span>Panel d'Administration</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
 
                     <DropdownMenuItem
                       onClick={() => navigateToSettings('account')}
@@ -366,6 +560,34 @@ function DashboardContent() {
         </div>
       </header>
 
+      {/* Admin Supervision Banner (Sticky below header if supervising) */}
+      {user && supervisedContext && (
+        <AdminSupervisionBanner
+          targetUsername={supervisedContext.userUsername}
+          targetEmail={supervisedContext.userEmail}
+          targetDashboardName={supervisedContext.dashboardName}
+          onExitSupervision={() => {
+            setSupervisedContext(null);
+            setCurrentTab('admin');
+          }}
+          onOpenDashboardSettings={() => {
+            setAdminDialogSummary({
+              dashboard_id: supervisedContext.dashboardId,
+              user_id: supervisedContext.userId,
+              user_username: supervisedContext.userUsername,
+              user_email: supervisedContext.userEmail,
+              name: supervisedContext.dashboardName,
+              primary_color: supervisedContext.primaryColor,
+              secondary_color: supervisedContext.secondaryColor,
+              tertiary_color: supervisedContext.tertiaryColor,
+              background_image: supervisedContext.backgroundImage,
+              widgets_count: supervisedContext.widgets.length,
+            });
+            setAdminDialogOpen(true);
+          }}
+        />
+      )}
+
       {/* Main Full-Width Content Container */}
       <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6">
         {!user ? (
@@ -382,6 +604,12 @@ function DashboardContent() {
 
             <AuthCard />
           </div>
+        ) : currentTab === 'admin' && user.role === 'admin' ? (
+          /* Vue Panel d'Administration */
+          <AdminPanel
+            initialTab={adminSubtab}
+            onNavigateToVisualDashboard={handleOpenVisualDashboard}
+          />
         ) : currentTab === 'settings' ? (
           /* Vue Profil & Intégrations / Paramètres avec Sidebar */
           <SettingsView
@@ -394,29 +622,65 @@ function DashboardContent() {
             onLaunchMeditation={() => setIsMeditating(true)}
           />
         ) : (
-          /* Vue Dashboard Utilisateur & Widgets (Header retiré conformément à la demande) */
+          /* Vue Dashboard Utilisateur ou Dashboard Supervisé */
           <div className="space-y-6 w-full">
-            {/* Onglets des pages de tableau de bord */}
-            <DashboardTabs
-              widgets={widgets}
-              isEditing={isEditing}
-              onDashboardChange={handleDashboardPageChange}
-            />
+            {/* Si pas en supervision, afficher les onglets normaux du compte */}
+            {!supervisedContext && (
+              <DashboardTabs
+                widgets={widgets}
+                isEditing={isEditing}
+                onDashboardChange={handleDashboardPageChange}
+              />
+            )}
 
             {/* Widgets Grid Section */}
             <div className="space-y-4 w-full">
               <WidgetGrid
                 widgets={displayedWidgets}
                 isEditing={isEditing}
-                onAddWidget={(data) => addWidget({ ...data, dashboardId: activeDashboardId })}
-                onUpdateWidget={updateWidget}
-                onRemoveWidget={removeWidget}
+                onAddWidget={
+                  supervisedContext
+                    ? handleSupervisedAddWidget
+                    : (data) => addWidget({ ...data, dashboardId: activeDashboardId })
+                }
+                onUpdateWidget={
+                  supervisedContext ? handleSupervisedUpdateWidget : updateWidget
+                }
+                onRemoveWidget={
+                  supervisedContext ? handleSupervisedRemoveWidget : removeWidget
+                }
                 onToggleEdit={() => setIsEditing(true)}
               />
             </div>
           </div>
         )}
       </main>
+
+      {/* Modal d'édition complète depuis la supervision */}
+      {adminDialogSummary && (
+        <DashboardContentDialog
+          open={adminDialogOpen}
+          onOpenChange={setAdminDialogOpen}
+          dashboardSummary={adminDialogSummary}
+          onSuccess={async () => {
+            if (supervisedContext) {
+              const detail = await fetchAdminDashboardDetail(
+                supervisedContext.userId,
+                supervisedContext.dashboardId
+              );
+              setSupervisedContext({
+                ...supervisedContext,
+                dashboardName: detail.name,
+                primaryColor: detail.primary_color,
+                secondaryColor: detail.secondary_color,
+                tertiaryColor: detail.tertiary_color,
+                backgroundImage: detail.background_image,
+                widgets: detail.widgets,
+              });
+            }
+          }}
+        />
+      )}
 
       {/* Footer - Full-Width Edge-to-Edge */}
       <footer className="w-full border-t border-border py-6 text-xs text-muted-foreground mt-auto">
