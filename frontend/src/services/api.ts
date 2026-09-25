@@ -616,5 +616,210 @@ export async function fetchGithubRepoStats(owner: string, repo: string, forceRef
   return apiFetch<GithubRepoDetailedStats>(`/api/v1/auth/github/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stats${query}`);
 }
 
+export interface AdminStats {
+  total_users: number;
+  total_admins: number;
+  total_dashboards: number;
+  total_widgets: number;
+}
+
+export interface AdminUserSummary {
+  id: number;
+  email: string;
+  username: string;
+  role: 'user' | 'admin';
+  created_at: string;
+  dashboards_count: number;
+  widgets_count: number;
+}
+
+export interface AdminUserCreatePayload {
+  email: string;
+  username: string;
+  password: string;
+  role: 'user' | 'admin';
+}
+
+export interface AdminUserUpdatePayload {
+  email?: string;
+  username?: string;
+  role?: 'user' | 'admin';
+  password?: string;
+}
+
+export interface AdminUserDetail {
+  id: number;
+  email: string;
+  username: string;
+  role: 'user' | 'admin';
+  created_at: string;
+  updated_at: string;
+  dashboards: DashboardPageInfo[];
+  widgets: ApiUserWidget[];
+}
+
+export interface AdminDashboardSummary {
+  dashboard_id: string;
+  user_id: number;
+  user_username: string;
+  user_email: string;
+  name: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tertiary_color?: string;
+  background_image?: string | null;
+  widgets_count: number;
+}
+
+export interface AdminDashboardDetail {
+  dashboard_id: string;
+  user_id: number;
+  user_username: string;
+  user_email: string;
+  name: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tertiary_color?: string;
+  background_image?: string | null;
+  widgets: ApiUserWidget[];
+}
+
+export interface AdminDashboardCreatePayload {
+  name: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tertiary_color?: string;
+  background_image?: string | null;
+}
+
+export interface AdminDashboardUpdatePayload {
+  name?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tertiary_color?: string;
+  background_image?: string | null;
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  return apiFetch<AdminStats>('/api/v1/admin/stats');
+}
+
+export async function fetchAdminUsers(q?: string, role?: string): Promise<AdminUserSummary[]> {
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (role) params.set('role', role);
+  const qs = params.toString();
+  return apiFetch<AdminUserSummary[]>(`/api/v1/admin/users${qs ? `?${qs}` : ''}`);
+}
+
+export async function fetchAdminUserDetail(userId: number): Promise<AdminUserDetail> {
+  return apiFetch<AdminUserDetail>(`/api/v1/admin/users/${userId}`);
+}
+
+export async function createAdminUser(payload: AdminUserCreatePayload): Promise<AdminUserDetail> {
+  return apiFetch<AdminUserDetail>('/api/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminUser(userId: number, payload: AdminUserUpdatePayload): Promise<AdminUserDetail> {
+  return apiFetch<AdminUserDetail>(`/api/v1/admin/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminUser(userId: number): Promise<{ message: string; id: number }> {
+  return apiFetch<{ message: string; id: number }>(`/api/v1/admin/users/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function fetchAdminDashboards(userId?: number, q?: string): Promise<AdminDashboardSummary[]> {
+  const params = new URLSearchParams();
+  if (userId) params.set('user_id', String(userId));
+  if (q) params.set('q', q);
+  const qs = params.toString();
+  return apiFetch<AdminDashboardSummary[]>(`/api/v1/admin/dashboards${qs ? `?${qs}` : ''}`);
+}
+
+export async function fetchAdminDashboardDetail(userId: number, dashboardId: string): Promise<AdminDashboardDetail> {
+  return apiFetch<AdminDashboardDetail>(`/api/v1/admin/users/${userId}/dashboards/${encodeURIComponent(dashboardId)}`);
+}
+
+export async function createAdminDashboard(userId: number, payload: AdminDashboardCreatePayload): Promise<AdminDashboardDetail> {
+  return apiFetch<AdminDashboardDetail>(`/api/v1/admin/users/${userId}/dashboards`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminDashboard(
+  userId: number,
+  dashboardId: string,
+  payload: AdminDashboardUpdatePayload
+): Promise<AdminDashboardDetail> {
+  return apiFetch<AdminDashboardDetail>(`/api/v1/admin/users/${userId}/dashboards/${encodeURIComponent(dashboardId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminDashboard(userId: number, dashboardId: string): Promise<{ message: string; dashboard_id: string }> {
+  return apiFetch<{ message: string; dashboard_id: string }>(
+    `/api/v1/admin/users/${userId}/dashboards/${encodeURIComponent(dashboardId)}`,
+    {
+      method: 'DELETE',
+    }
+  );
+}
+
+export async function createAdminWidget(
+  userId: number,
+  payload: {
+    title?: string;
+    type?: string;
+    params_values: Record<string, any>;
+    refresh_rate?: number;
+    width?: number;
+    height?: number;
+  }
+): Promise<ApiUserWidget> {
+  return apiFetch<ApiUserWidget>(`/api/v1/admin/users/${userId}/widgets`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminWidget(
+  userId: number,
+  widgetId: number | string,
+  payload: {
+    title?: string;
+    params_values?: Record<string, any>;
+    refresh_rate?: number;
+    width?: number;
+    height?: number;
+    position_x?: number;
+    position_y?: number;
+  }
+): Promise<ApiUserWidget> {
+  return apiFetch<ApiUserWidget>(`/api/v1/admin/users/${userId}/widgets/${widgetId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminWidget(
+  userId: number,
+  widgetId: number | string
+): Promise<{ message: string; id: number }> {
+  return apiFetch<{ message: string; id: number }>(`/api/v1/admin/users/${userId}/widgets/${widgetId}`, {
+    method: 'DELETE',
+  });
+}
+
+
 
 
