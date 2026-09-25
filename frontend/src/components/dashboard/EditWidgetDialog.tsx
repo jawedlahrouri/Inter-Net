@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import type { Widget } from '@/types/widget'
 import { useSettings } from '@/context/SettingsContext'
+import { WidgetDimensionSelector } from '@/components/dashboard/WidgetDimensionSelector'
 
 export interface EditWidgetDialogProps {
   open: boolean
@@ -39,6 +40,8 @@ export function EditWidgetDialog({
   const [repoFullName, setRepoFullName] = useState('')
   const [orgName, setOrgName] = useState('')
   const [dashboardId, setDashboardId] = useState<string>('default')
+  const [width, setWidth] = useState<number>(1)
+  const [height, setHeight] = useState<number>(1)
 
   useEffect(() => {
     if (widget) {
@@ -53,6 +56,8 @@ export function EditWidgetDialog({
       setRepoFullName(widget.repoFullName || '')
       setOrgName(widget.orgName || '')
       setDashboardId(widget.dashboardId || 'default')
+      setWidth(widget.width || 1)
+      setHeight(widget.height || 1)
     }
   }, [widget])
 
@@ -65,6 +70,8 @@ export function EditWidgetDialog({
       title: title.trim() || widget.title,
       refreshIntervalSeconds: refreshInterval,
       dashboardId: dashboardId || 'default',
+      width,
+      height,
     }
 
     if (widget.type === 'weather') {
@@ -95,7 +102,7 @@ export function EditWidgetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[88vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifier le widget</DialogTitle>
           <DialogDescription>
@@ -226,7 +233,18 @@ export function EditWidgetDialog({
             />
           )}
 
-          <DialogFooter className="pt-2">
+          <div className="pt-3 border-t border-border/60">
+            <WidgetDimensionSelector
+              width={width}
+              height={height}
+              onChange={(w, h) => {
+                setWidth(w)
+                setHeight(h)
+              }}
+            />
+          </div>
+
+          <DialogFooter className="pt-2 border-t border-border/60">
             <Button
               type="button"
               variant="outline"

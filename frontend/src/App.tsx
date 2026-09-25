@@ -7,6 +7,7 @@ import { AuthCard } from '@/components/auth/AuthCard';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
+import { BackgroundMusicPlayer } from '@/components/dashboard/BackgroundMusicPlayer';
 import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
 import { useWidgets } from '@/hooks/useWidgets';
 import { Button } from '@/components/ui/button';
@@ -444,6 +445,9 @@ function DashboardContent() {
           </div>
         </div>
       </footer>
+
+      {/* Lecteur de musique de fond flottant */}
+      {user && isDashboardTab && <BackgroundMusicPlayer />}
     </div>
   );
 }

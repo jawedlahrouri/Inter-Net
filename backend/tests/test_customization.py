@@ -112,3 +112,29 @@ def test_custom_backgrounds_list_and_upload(client):
     bad_upload = client.post("/api/v1/customization/backgrounds/upload", files=invalid_files)
     assert bad_upload.status_code == 400
 
+
+def test_custom_music_list_and_upload(client):
+    # List music
+    get_res = client.get("/api/v1/customization/music")
+    assert get_res.status_code == 200
+    assert isinstance(get_res.json(), list)
+
+    # Upload valid audio file (mp3)
+    fake_mp3 = b"ID3\x03\x00\x00\x00\x00\x00\x00" + b"\x00" * 100
+    files = {"file": ("test_lofi_beat.mp3", io.BytesIO(fake_mp3), "audio/mpeg")}
+    upload_res = client.post("/api/v1/customization/music/upload", files=files)
+    assert upload_res.status_code == 201
+    music_data = upload_res.json()
+    assert "test_lofi_beat.mp3" in music_data["filename"]
+    assert music_data["url"].startswith("/api/v1/storage/custom_music/")
+
+    # Check that it appears in list
+    get_res2 = client.get("/api/v1/customization/music")
+    assert any(m["filename"] == music_data["filename"] for m in get_res2.json())
+
+    # Upload invalid audio extension should return 400
+    invalid_files = {"file": ("bad_script.sh", io.BytesIO(b"echo 'hack'"), "text/plain")}
+    bad_upload = client.post("/api/v1/customization/music/upload", files=invalid_files)
+    assert bad_upload.status_code == 400
+
+

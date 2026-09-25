@@ -72,6 +72,8 @@ export interface Widget {
   repoFullName?: string
   orgName?: string
   dashboardId?: string
+  width?: number
+  height?: number
 }
 
 export interface DashboardPage {

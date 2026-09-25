@@ -51,6 +51,8 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # Mount static files for uploaded and preset storage
 storage_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage")
 os.makedirs(os.path.join(storage_path, "custom_vids"), exist_ok=True)
+os.makedirs(os.path.join(storage_path, "custom_bg"), exist_ok=True)
+os.makedirs(os.path.join(storage_path, "custom_music"), exist_ok=True)
 os.makedirs(os.path.join(storage_path, "widgets"), exist_ok=True)
 
 app.mount(f"{settings.API_V1_STR}/storage", StaticFiles(directory=storage_path), name="api_storage")

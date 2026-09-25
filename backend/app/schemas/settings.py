@@ -24,6 +24,8 @@ class DashboardPage(BaseModel):
     secondary_color: Optional[str] = Field(default="#131b2e", description="Couleur secondaire de cette page")
     tertiary_color: Optional[str] = Field(default="#38bdf8", description="Couleur ternaire de cette page")
     background_image: Optional[str] = Field(default=None, description="Image de fond de cette page")
+    background_music: Optional[str] = Field(default=None, description="URL ou chemin de la musique de fond de cette page")
+    background_music_name: Optional[str] = Field(default=None, description="Titre de la musique de fond")
 
 
 class ThemeCustomizationSettings(BaseModel):
@@ -43,6 +45,14 @@ class ThemeCustomizationSettings(BaseModel):
         default=None,
         description="URL ou chemin de l'image de fond du dashboard",
     )
+    background_music: Optional[str] = Field(
+        default=None,
+        description="URL ou chemin de la musique de fond du dashboard",
+    )
+    background_music_name: Optional[str] = Field(
+        default=None,
+        description="Titre de la musique de fond",
+    )
 
 
 class ThemeCustomizationSettingsUpdate(BaseModel):
@@ -50,6 +60,8 @@ class ThemeCustomizationSettingsUpdate(BaseModel):
     secondary_color: Optional[str] = None
     tertiary_color: Optional[str] = None
     background_image: Optional[str] = None
+    background_music: Optional[str] = None
+    background_music_name: Optional[str] = None
 
 
 class UserSettings(BaseModel):
