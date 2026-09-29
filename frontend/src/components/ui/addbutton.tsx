@@ -7,6 +7,14 @@ export interface AddButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEle
   label?: string
 }
 
+/**
+ * @brief Renders an add button either as a large dashed card or as a compact icon button.
+ * @param className Extra CSS classes merged onto the button.
+ * @param variant Display style: large dashed card or compact icon button; defaults to card.
+ * @param label Text shown in card variant and used as aria-label and title; defaults to Ajouter un widget.
+ * @param props Remaining button attributes forwarded to the underlying button element.
+ * @return A button element with a plus icon, and the label text in card variant.
+ */
 export function AddButton({
   className,
   variant = 'card',
@@ -35,7 +43,6 @@ export function AddButton({
             {label}
           </span>
           <span className="text-xs text-muted-foreground block">
-            {/* Météo, API REST JSON ou raccourci */}
           </span>
         </div>
       </button>

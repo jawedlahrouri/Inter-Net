@@ -3,6 +3,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 import { Tabs as TabsPrimitive } from "radix-ui"
 
+/**
+ * @brief Renders the Radix tabs root with orientation-aware layout styling.
+ * @param className Extra CSS classes merged into the tabs root layout.
+ * @param orientation Layout direction of the tabs, horizontal or vertical; defaults to horizontal.
+ * @param props Remaining props forwarded to the Radix Tabs root element.
+ * @return A styled Radix tabs root element tagged with the tabs data slot and orientation.
+ */
 function Tabs({
   className,
   orientation = "horizontal",
@@ -36,6 +43,13 @@ const tabsListVariants = cva(
   }
 )
 
+/**
+ * @brief Renders the container that holds the tab triggers, in a default or line variant.
+ * @param className Extra CSS classes merged into the tabs list styling.
+ * @param variant Visual style of the list, default or line; defaults to default.
+ * @param props Remaining props forwarded to the Radix Tabs list element.
+ * @return A styled Radix tabs list element tagged with the tabs-list data slot and variant.
+ */
 function TabsList({
   className,
   variant = "default",
@@ -52,6 +66,12 @@ function TabsList({
   )
 }
 
+/**
+ * @brief Renders a styled tab button that activates its associated tab content.
+ * @param className Extra CSS classes merged into the trigger styling.
+ * @param props Remaining props such as value and disabled forwarded to the Radix Tabs trigger.
+ * @return A styled Radix tabs trigger element tagged with the tabs-trigger data slot.
+ */
 function TabsTrigger({
   className,
   ...props
@@ -71,6 +91,12 @@ function TabsTrigger({
   )
 }
 
+/**
+ * @brief Renders the panel shown when its matching tab is active.
+ * @param className Extra CSS classes merged into the content panel styling.
+ * @param props Remaining props such as value and children forwarded to the Radix Tabs content.
+ * @return A styled Radix tabs content element tagged with the tabs-content data slot.
+ */
 function TabsContent({
   className,
   ...props

@@ -31,10 +31,19 @@ INTER-NET/
 │   ├── vite.config.ts        # Configuration Vite + Proxy API
 │   └── package.json
 │
+├── services/                 # Microservices Steam & GitHub (load balancés + cache Redis)
+│   ├── common/               # Cache partagé & base commune des services
+│   ├── steam-service/
+│   ├── github-service/
+│   └── lb/                   # Configs nginx des load balancers
+│
 ├── .gitignore
 ├── .dockerignore
 └── package.json              # Scripts racine pratiques
 ```
+
+Les appels aux API Steam et GitHub passent par des microservices dédiés, répliqués
+derrière un load balancer et partageant un cache Redis. Détails : [services/README.md](services/README.md).
 
 ---
 
@@ -84,6 +93,13 @@ npm run dev
 cd backend
 source .venv/bin/activate
 pytest
+```
+
+### Tests Microservices
+
+```bash
+cd services/steam-service && ../.venv/bin/pytest
+cd services/github-service && ../.venv/bin/pytest
 ```
 
 ### Build Frontend

@@ -16,9 +16,14 @@ interface GithubCommitMetricsProps {
   stats: GithubUserStats
 }
 
+/**
+ * @brief Renders the GitHub widget body for a chosen commit-related metric from the user's stats.
+ * @param metric GitHub metric type selecting which commit-related view is rendered.
+ * @param stats GitHub user statistics object supplying the values displayed.
+ * @return A JSX block for the metric (commits, lines, timeframes, active days, repos or top devs), or null for unknown metrics.
+ */
 export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps) {
   switch (metric) {
-    // 1. Commits (total)
     case 'total_commits':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -39,7 +44,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 2. Lignes ajoutées & supprimées
     case 'lines_stats':
       return (
         <div className="space-y-4 py-1 text-center">
@@ -68,7 +72,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 3. Taille moyenne d'un commit
     case 'avg_commit_size':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -89,7 +92,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 4. Commits par période (7j / 30j / 90j)
     case 'commits_timeframes':
       return (
         <div className="space-y-3 py-1">
@@ -113,7 +115,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 5. Lignes modifiées par période
     case 'lines_timeframes':
       return (
         <div className="space-y-2 text-xs">
@@ -138,7 +139,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 6. Jours actifs (30j / 365j)
     case 'active_days':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -158,7 +158,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 7. Dépôts avec au moins un commit
     case 'active_repos_count':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -175,7 +174,6 @@ export function GithubCommitMetrics({ metric, stats }: GithubCommitMetricsProps)
         </div>
       )
 
-    // 8. Commits cette Semaine — Top Développeurs
     case 'weekly_top_devs': {
       const topDevs = stats.weekly_top_devs || []
       return (

@@ -82,6 +82,11 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+/**
+ * @brief Provides user settings, dashboard pages and customization state (with localStorage and server sync) to its descendants.
+ * @param children React nodes rendered inside the settings context provider.
+ * @return A SettingsContext provider element exposing settings, dashboards, uploads and update actions around the children.
+ */
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [settings, setSettings] = useState<UserSettings>(() => {
@@ -100,7 +105,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         };
       }
     } catch {
-      // ignore json parse error
     }
     return DEFAULT_SETTINGS;
   });
@@ -137,7 +141,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setAvailableVideos(vids);
       }
     } catch {
-      // Fallback stays active
     }
   }, []);
 
@@ -167,10 +170,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     refreshMusic();
   }, [refreshVideos, refreshBackgrounds, refreshMusic]);
 
-  // Synchronise les réglages avec le compte connecté
   useEffect(() => {
     if (!user) return;
     let isMounted = true;
+    /**
+     * @brief Fetches the user's settings from the server and merges them with local settings and defaults, then persists the result.
+     */
     async function syncSettings() {
       try {
         setLoading(true);
@@ -191,7 +196,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
         }
       } catch {
-        // En cas d'échec, les réglages locaux restent prioritaires
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -206,6 +210,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     ? settings.dashboards
     : DEFAULT_SETTINGS.dashboards!;
 
+  /**
+   * @brief Stores the given dashboards list in state and localStorage and pushes it to the server when a user is logged in.
+   * @param newDashboards The complete updated list of dashboard pages to save.
+   */
   const saveDashboards = async (newDashboards: DashboardPageInfo[]) => {
     const newSettings: UserSettings = {
       ...settings,
@@ -223,6 +231,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * @brief Creates a new dashboard page with default colors, saves it and makes it the active dashboard.
+   * @param name The display name for the new dashboard, which is trimmed before use.
+   * @return A promise resolving to the id of the new dashboard, or the current active id when the name is empty.
+   */
   const createDashboard = async (name: string): Promise<string> => {
     const trimmed = name.trim();
     if (!trimmed) return activeDashboardId;
@@ -245,6 +258,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return newId;
   };
 
+  /**
+   * @brief Renames the dashboard with the given id and saves the updated list.
+   * @param id The id of the dashboard to rename.
+   * @param newName The new dashboard name, ignored if empty after trimming.
+   */
   const renameDashboard = async (id: string, newName: string) => {
     const trimmed = newName.trim();
     if (!trimmed) return;
@@ -252,6 +270,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     await saveDashboards(newDashboards);
   };
 
+  /**
+   * @brief Removes a dashboard (never the last one) and switches the active dashboard if the deleted one was active.
+   * @param id The id of the dashboard to delete.
+   */
   const deleteDashboard = async (id: string) => {
     if (dashboards.length <= 1) return;
     const newDashboards = dashboards.filter((d) => d.id !== id);
@@ -261,6 +283,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * @brief Applies the defined theme fields (colors, background image, music) to one dashboard and saves the list.
+   * @param dashboardId The id of the dashboard to update.
+   * @param updates Partial theme customization values; only fields that are not undefined are applied.
+   */
   const updateDashboardCustomization = async (dashboardId: string, updates: Partial<ThemeCustomization>) => {
     const newDashboards = dashboards.map((d) => {
       if (d.id === dashboardId) {
@@ -279,6 +306,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     await saveDashboards(newDashboards);
   };
 
+  /**
+   * @brief Merges meditation setting changes into local settings and localStorage and syncs them to the server when logged in.
+   * @param updates Partial meditation settings such as video and sound options to apply.
+   */
   const updateMeditationSettings = async (updates: Partial<UserSettings['meditation']>) => {
     const newSettings: UserSettings = {
       ...settings,
@@ -299,18 +330,33 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * @brief Applies theme customization updates to the currently active dashboard.
+   * @param updates Partial theme customization values to apply.
+   */
   const updateCustomization = async (updates: Partial<ThemeCustomization>) => {
     await updateDashboardCustomization(activeDashboardId, updates);
   };
 
+  /**
+   * @brief Clears the background image of the currently active dashboard.
+   */
   const removeBackgroundImage = async () => {
     await updateDashboardCustomization(activeDashboardId, { background_image: null });
   };
 
+  /**
+   * @brief Clears the background image of the specified dashboard.
+   * @param dashboardId The id of the dashboard whose background image is removed.
+   */
   const removeDashboardBackgroundImage = async (dashboardId: string) => {
     await updateDashboardCustomization(dashboardId, { background_image: null });
   };
 
+  /**
+   * @brief Clears the background music URL and name of the specified dashboard.
+   * @param dashboardId The id of the dashboard whose background music is removed.
+   */
   const removeDashboardBackgroundMusic = async (dashboardId: string) => {
     await updateDashboardCustomization(dashboardId, {
       background_music: null,
@@ -318,16 +364,32 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  /**
+   * @brief Uploads a custom meditation video to the server and refreshes the available videos list.
+   * @param file The video file to upload.
+   * @return A promise resolving to the uploaded video's info.
+   */
   const uploadVideo = async (file: File): Promise<VideoInfo> => {
     const uploaded = await uploadCustomVideoApi(file);
     await refreshVideos();
     return uploaded;
   };
 
+  /**
+   * @brief Uploads a background image and applies it to the currently active dashboard.
+   * @param file The image file to upload.
+   * @return A promise resolving to the uploaded background's info.
+   */
   const uploadBackground = async (file: File): Promise<BackgroundInfo> => {
     return uploadBackgroundForDashboard(activeDashboardId, file);
   };
 
+  /**
+   * @brief Uploads a background image, refreshes the list and sets it as the background of the given dashboard.
+   * @param dashboardId The id of the dashboard that receives the new background.
+   * @param file The image file to upload.
+   * @return A promise resolving to the uploaded background's info.
+   */
   const uploadBackgroundForDashboard = async (dashboardId: string, file: File): Promise<BackgroundInfo> => {
     const uploaded = await uploadCustomBackgroundApi(file);
     await refreshBackgrounds();
@@ -335,6 +397,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return uploaded;
   };
 
+  /**
+   * @brief Uploads a music file, refreshes the list and sets it as the background music of the given dashboard.
+   * @param dashboardId The id of the dashboard that receives the new music.
+   * @param file The audio file to upload.
+   * @return A promise resolving to the uploaded music's info.
+   */
   const uploadMusicForDashboard = async (dashboardId: string, file: File): Promise<MusicInfo> => {
     const uploaded = await uploadCustomMusicApi(file);
     await refreshMusic();
@@ -345,7 +413,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return uploaded;
   };
 
-  // Tableau de bord actif et ses couleurs / fond / musique personnalisés
   const activeDashboard = dashboards.find((d) => d.id === activeDashboardId) || dashboards[0];
 
   const customization: ThemeCustomization = {
@@ -393,6 +460,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * @brief Returns the settings context value and throws if used outside a SettingsProvider.
+ * @return The settings context object with settings, dashboards, customization and their update and upload actions.
+ */
 export function useSettings(): SettingsContextType {
   const ctx = useContext(SettingsContext);
   if (!ctx) {

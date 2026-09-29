@@ -6,6 +6,16 @@ interface SwitchProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   onCheckedChange?: (checked: boolean) => void
 }
 
+/**
+ * @brief Renders an accessible toggle switch button that reports its new checked state on click.
+ * @param className Extra CSS classes merged into the switch button styling.
+ * @param checked Whether the switch is currently on.
+ * @param onCheckedChange Callback invoked with the new checked state when the switch is clicked.
+ * @param disabled Disables the switch and blocks toggling when true.
+ * @param props Remaining button attributes forwarded to the underlying button element.
+ * @param ref Forwarded ref attached to the underlying button element.
+ * @return A button with role switch containing a sliding thumb that reflects the checked state.
+ */
 export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
   ({ className, checked, onCheckedChange, disabled, ...props }, ref) => {
     return (

@@ -2,6 +2,10 @@ from app.services.widget_storage import JsonWidgetStorage
 
 
 def test_delete_widget_success(client):
+    """
+    @brief Tests that a user can delete their own widget and that it no longer appears in the widget list.
+    @param client The FastAPI test client fixture.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -40,6 +44,10 @@ def test_delete_widget_success(client):
 
 
 def test_delete_widget_not_found(client):
+    """
+    @brief Tests that deleting a nonexistent widget returns a 404 error.
+    @param client The FastAPI test client fixture.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -59,6 +67,10 @@ def test_delete_widget_not_found(client):
 
 
 def test_delete_widget_forbidden_for_other_user(client):
+    """
+    @brief Tests that a user cannot delete a widget owned by another user and receives a 403 error.
+    @param client The FastAPI test client fixture.
+    """
     resp_user1 = client.post(
         "/api/v1/auth/register",
         json={
@@ -100,11 +112,19 @@ def test_delete_widget_forbidden_for_other_user(client):
 
 
 def test_delete_widget_unauthorized(client):
+    """
+    @brief Tests that deleting a widget without authentication returns a 401 error.
+    @param client The FastAPI test client fixture.
+    """
     response = client.delete("/api/v1/widgets/1")
     assert response.status_code == 401
 
 
 def test_create_and_list_widgets(client):
+    """
+    @brief Tests that a created widget is returned with a 201 status and appears in the user's widget list with its fields.
+    @param client The FastAPI test client fixture.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -139,6 +159,10 @@ def test_create_and_list_widgets(client):
 
 
 def test_update_widget_success(client):
+    """
+    @brief Tests that updating a widget's title, refresh rate and parameters is persisted and returned.
+    @param client The FastAPI test client fixture.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -179,6 +203,10 @@ def test_update_widget_success(client):
 
 
 def test_create_widget_by_type(client):
+    """
+    @brief Tests that creating a widget of type weather returns a 201 status and preserves the type.
+    @param client The FastAPI test client fixture.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -205,6 +233,10 @@ def test_create_widget_by_type(client):
 
 
 def test_widget_dimensions_customization(client):
+    """
+    @brief Tests that widget width and height can be set at creation and changed through an update.
+    @param client The FastAPI test client fixture.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={

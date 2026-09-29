@@ -10,17 +10,26 @@ import {
 import { cn } from "@/lib/utils"
 
 export interface SparklineProps extends React.ComponentProps<"div"> {
-  /** Series to plot, oldest first. */
   data: number[]
   variant?: "area" | "line"
-  /** Area fill: a plain gradient, or a dot grid that fades out toward the line. */
   fill?: "gradient" | "dots"
-  /** Any CSS color. Defaults to the theme primary. */
   color?: string
   curve?: "monotone" | "linear" | "step"
   strokeWidth?: number
 }
 
+/**
+ * @brief Renders a small axis-less area or line chart from a series of numbers.
+ * @param data Array of numbers plotted as the sparkline series.
+ * @param variant Chart style, area or line; defaults to area.
+ * @param fill Fill style for the area variant, gradient or dots.
+ * @param color Stroke and gradient color of the series; defaults to the primary color.
+ * @param curve Curve interpolation type: monotone, linear or step.
+ * @param strokeWidth Width of the plotted line in pixels; defaults to 1.5.
+ * @param className Extra CSS classes merged into the wrapper div sizing.
+ * @param props Remaining div props forwarded to the wrapper div.
+ * @return A decorative div containing a responsive Recharts area chart with gradient or a line chart.
+ */
 function Sparkline({
   data,
   variant = "area",

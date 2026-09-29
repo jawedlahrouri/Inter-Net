@@ -1,7 +1,3 @@
-/**
- * JSON Path extraction utilities.
- * Supports dot notation, bracket notation, array indexing, and standard JSONPath root markers ($).
- */
 
 export interface JsonExtractResult {
   value: any
@@ -9,14 +5,9 @@ export interface JsonExtractResult {
 }
 
 /**
- * Parses a path string into a list of accessor keys.
- * Examples:
- * - "bpi.USD.rate_float" -> ["bpi", "USD", "rate_float"]
- * - "data.users[0].name" -> ["data", "users", "0", "name"]
- * - "items[0][1]" -> ["items", "0", "1"]
- * - "[0].id" -> ["0", "id"]
- * - "$.status" -> ["status"]
- * - "data['key with spaces']" -> ["data", "key with spaces"]
+ * @brief Splits a JSON path string such as data.users[0].name into its ordered key segments.
+ * @param path The JSON path string, optionally starting with a dollar sign.
+ * @return An array of path segments, empty if the path is invalid, blank or the root.
  */
 export function parseJsonPath(path: string): string[] {
   if (!path || typeof path !== 'string') {
@@ -28,7 +19,6 @@ export function parseJsonPath(path: string): string[] {
     return []
   }
 
-  // Strip leading root symbols: $, $., $[
   if (cleanPath === '$') {
     return []
   }
@@ -39,11 +29,6 @@ export function parseJsonPath(path: string): string[] {
   }
 
   const segments: string[] = []
-  // Matches:
-  // 1) Quoted bracket keys: ['foo'] or ["foo"]
-  // 2) Numeric bracket indices: [0], [42]
-  // 3) Unquoted bracket keys: [foo]
-  // 4) Dot-separated property identifiers: foo, bar
   const regex = /\[\s*(?:['"]([^'"]+)['"]|([0-9]+)|([^'"][^\]]*))\s*\]|([^.[\]]+)/g
   let match: RegExpExecArray | null
 
@@ -58,8 +43,7 @@ export function parseJsonPath(path: string): string[] {
 }
 
 /**
- * Safely extracts a value from any JSON data structure given a path.
- *
+ * @brief Safely extracts a value from any JSON data structure given a path.
  * @param data The object, array, or primitive to extract from.
  * @param path The path string (e.g. "bpi.USD.rate_float", "data.users[0].name", "status").
  * @returns { value: any; found: boolean }
@@ -78,7 +62,6 @@ export function extractJsonValue(
 
   const trimmed = path.trim()
 
-  // An empty path or '$' queries the root data itself
   if (trimmed === '' || trimmed === '$') {
     return { value: data, found: true }
   }
@@ -97,7 +80,6 @@ export function extractJsonValue(
 
     const key = segments[i]
 
-    // Protect against prototype pollution access
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
       if (!Object.prototype.hasOwnProperty.call(current, key)) {
         return { value: undefined, found: false }
@@ -120,7 +102,6 @@ export function extractJsonValue(
         return { value: undefined, found: false }
       }
     } else {
-      // Cannot traverse into a primitive value
       return { value: undefined, found: false }
     }
   }
@@ -136,7 +117,12 @@ export interface DiscoveredPath {
 }
 
 /**
- * Automatically inspects a JSON response to discover all available leaf paths and array counts.
+ * @brief Recursively explores JSON data to list displayable leaf paths and array lengths with a suggested display mode.
+ * @param data The JSON value to explore.
+ * @param prefix The path accumulated so far for the current node.
+ * @param depth The current recursion depth, exploration stops beyond 5.
+ * @param results The accumulator of discovered paths, capped at 60 entries.
+ * @return The list of discovered paths with their value, type and suggested kpi or gauge mode.
  */
 export function discoverJsonPaths(
   data: any,
@@ -198,6 +184,11 @@ const LOW_PRIORITY_KEYS = [
   'gravatar_id', 'type', 'created_at', 'updated_at'
 ]
 
+/**
+ * @brief Scores a discovered path by type, metric-like keywords, low-priority keys and nesting depth.
+ * @param item The discovered path entry to score.
+ * @return The numeric relevance score, where higher means a better default metric.
+ */
 function calculatePathScore(item: DiscoveredPath): number {
   const lowerPath = item.path.toLowerCase()
   let score = 0
@@ -226,7 +217,9 @@ function calculatePathScore(item: DiscoveredPath): number {
 }
 
 /**
- * Automatically selects the best candidate path for a dashboard metric.
+ * @brief Selects the highest-scoring path from the discovered paths as the default one.
+ * @param paths The list of discovered paths to choose from.
+ * @return The best-scoring path, or undefined if the list is empty.
  */
 export function findBestDefaultPath(paths: DiscoveredPath[]): DiscoveredPath | undefined {
   if (!paths || paths.length === 0) return undefined

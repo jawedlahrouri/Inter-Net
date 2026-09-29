@@ -26,6 +26,16 @@ export interface WidgetCardProps {
   className?: string
 }
 
+/**
+ * @brief Renders a dashboard widget card with its type-specific content and editing controls.
+ * @param widget Widget data that determines which type-specific content is rendered and its size.
+ * @param isEditing Whether edit mode is on, showing the resize, edit and remove actions (defaults to false).
+ * @param onEdit Optional callback receiving the widget when the edit button is clicked.
+ * @param onRemove Optional callback receiving the widget id when the remove button is clicked.
+ * @param onResize Optional callback receiving the new width and height chosen in the size dropdown.
+ * @param className Optional extra CSS classes applied to the card container.
+ * @return A grid-spanning container with the widget content and, in edit mode, the resize, edit and remove actions.
+ */
 export function WidgetCard({
   widget,
   isEditing = false,
@@ -37,11 +47,14 @@ export function WidgetCard({
   const currentWidth = widget.width || 1
   const currentHeight = widget.height || 1
 
+  /**
+   * @brief Renders the edit-mode action bar with a size dropdown and the edit and remove buttons.
+   * @return The action bar JSX, or null when the card is not in editing mode.
+   */
   const renderActions = () => {
     if (!isEditing) return null
     return (
       <div className="mt-2.5 flex items-center justify-between gap-2 px-0.5">
-        {/* Menu de redimensionnement rapide 1-clic */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -64,7 +77,6 @@ export function WidgetCard({
               </Badge>
             </div>
 
-            {/* Largeur rapide */}
             <div className="px-1 py-1 space-y-1">
               <span className="text-[10px] text-muted-foreground font-medium">Largeur :</span>
               <div className="grid grid-cols-5 gap-1">
@@ -85,7 +97,6 @@ export function WidgetCard({
               </div>
             </div>
 
-            {/* Longueur / Hauteur rapide */}
             <div className="px-1 py-1.5 space-y-1">
               <span className="text-[10px] text-muted-foreground font-medium">Longueur (Hauteur) :</span>
               <div className="grid grid-cols-3 gap-1">
@@ -126,6 +137,10 @@ export function WidgetCard({
     )
   }
 
+  /**
+   * @brief Renders the widget body matching its type (Steam, GitHub, weather, custom API) or a placeholder card.
+   * @return The JSX of the type-specific widget, or a generic placeholder card for other widgets.
+   */
   const renderContent = () => {
     if (widget.type === 'steam') {
       return <SteamWidget widget={widget} className="h-full" />
@@ -162,7 +177,6 @@ export function WidgetCard({
       )
     }
 
-    // Default / Shortcut Widget
     return (
       <Card className="min-h-[320px] h-full bg-card border-border flex flex-col justify-between">
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">

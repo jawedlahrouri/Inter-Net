@@ -12,9 +12,14 @@ interface GithubPrMetricsProps {
   stats: GithubUserStats
 }
 
+/**
+ * @brief Renders the GitHub pull request metric card matching the selected metric.
+ * @param metric Selected GitHub PR metric type that decides which card is rendered.
+ * @param stats GitHub user statistics providing the PR counts, merge rate and code review numbers.
+ * @return JSX showing the PR overview, merge rate, total created or code reviews card, or null for an unknown metric.
+ */
 export function GithubPrMetrics({ metric, stats }: GithubPrMetricsProps) {
   switch (metric) {
-    // 9. Pull Requests — Répartition
     case 'pr_overview':
       return (
         <div className="space-y-3 py-1">
@@ -39,7 +44,6 @@ export function GithubPrMetrics({ metric, stats }: GithubPrMetricsProps) {
         </div>
       )
 
-    // 10. Taux de PR mergées
     case 'pr_merge_rate':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -58,7 +62,6 @@ export function GithubPrMetrics({ metric, stats }: GithubPrMetricsProps) {
         </div>
       )
 
-    // 11. PR créées (total)
     case 'pr_created_total':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -75,7 +78,6 @@ export function GithubPrMetrics({ metric, stats }: GithubPrMetricsProps) {
         </div>
       )
 
-    // 12. Reviews de code effectuées
     case 'code_reviews_done':
       return (
         <div className="space-y-3 py-2 text-center">

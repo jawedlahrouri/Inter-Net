@@ -32,6 +32,11 @@ export interface WeatherWidgetProps {
   className?: string
 }
 
+/**
+ * @brief Maps a weather icon name to the corresponding lucide icon component.
+ * @param iconName Icon name provided by the weather service, such as Sun or CloudRain.
+ * @return The matching LucideIcon component, defaulting to Cloud.
+ */
 function getWeatherIconComponent(iconName: string): LucideIcon {
   switch (iconName) {
     case 'Sun':
@@ -51,6 +56,11 @@ function getWeatherIconComponent(iconName: string): LucideIcon {
   }
 }
 
+/**
+ * @brief Maps a weather icon name to Tailwind text color classes for light and dark themes.
+ * @param iconName Icon name provided by the weather service, such as Sun or Snowflake.
+ * @return A string of Tailwind color classes, with a neutral default.
+ */
 function getWeatherIconColor(iconName: string): string {
   switch (iconName) {
     case 'Sun':
@@ -70,6 +80,10 @@ function getWeatherIconColor(iconName: string): string {
   }
 }
 
+/**
+ * @brief Requests the browser's geolocation and resolves with the coordinates or null on failure.
+ * @return A promise resolving to an object with lat and lon, or null if geolocation is unavailable or denied.
+ */
 function getBrowserLocation(): Promise<{ lat: number; lon: number } | null> {
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !('geolocation' in navigator)) {
@@ -90,6 +104,15 @@ function getBrowserLocation(): Promise<{ lat: number; lon: number } | null> {
   })
 }
 
+/**
+ * @brief Renders the card showing current weather, humidity, wind and a 24h temperature trend for a city or coordinates.
+ * @param city Optional city name geocoded to find the location; browser geolocation is used if empty.
+ * @param lat Optional latitude used directly instead of geocoding the city.
+ * @param lon Optional longitude used directly instead of geocoding the city.
+ * @param onLocationDetected Optional callback receiving the resolved location name once weather data loads.
+ * @param className Optional extra CSS classes applied to the card.
+ * @return A loading card, an error card with a retry button, the weather card, or null when there is no data.
+ */
 export function WeatherWidget({
   city,
   lat,
@@ -236,7 +259,6 @@ export function WeatherWidget({
       </CardHeader>
 
       <CardContent className="space-y-4 px-6 pb-6 pt-0 flex-1 flex flex-col justify-between">
-        {/* Main Temperature and Weather Icon */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1">
             <span className="text-4xl sm:text-5xl font-bold tracking-tight text-card-foreground tabular-nums font-mono">
@@ -251,7 +273,6 @@ export function WeatherWidget({
           </div>
         </div>
 
-        {/* Humidity and Wind Metrics (Strict alignment: Label left, Number right) */}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/40">
             <div className="flex items-center gap-2 min-w-0">
@@ -278,7 +299,6 @@ export function WeatherWidget({
           </div>
         </div>
 
-        {/* 24h Temperature Trend Sparkline */}
         {weather.hourlyTemps.length > 1 && (
           <div className="space-y-2 pt-2 border-t border-border/50">
             <div className="flex items-center justify-between text-[11px] text-muted-foreground">

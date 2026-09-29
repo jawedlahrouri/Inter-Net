@@ -26,6 +26,14 @@ const badgeVariants = cva(
   }
 )
 
+/**
+ * @brief Renders a small styled badge as a span, or as a child element when asChild is set.
+ * @param className Extra CSS classes merged onto the badge.
+ * @param variant Visual style variant of the badge; defaults to default.
+ * @param asChild When true, renders the child element instead of a span via Slot.
+ * @param props Remaining span props forwarded to the underlying element.
+ * @return A span (or slotted child) with badge styling and variant data attributes wrapping the children.
+ */
 function Badge({
   className,
   variant = "default",

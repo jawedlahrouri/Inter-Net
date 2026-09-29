@@ -24,6 +24,11 @@ router = APIRouter()
 
 
 def _get_user_dashboards(user: User) -> List[Dict[str, Any]]:
+    """
+    @brief Reads the dashboards list from a user's settings, falling back to a single default dashboard when none is stored.
+    @param user The User model whose settings hold the dashboards.
+    @return A list of dashboard dictionaries, or a one-element list with the default 'Général' dashboard.
+    """
     settings_dict = user.settings or {}
     dashboards = settings_dict.get("dashboards")
     if not dashboards or not isinstance(dashboards, list):
@@ -45,6 +50,12 @@ def get_admin_stats(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Computes global platform statistics (users, admins, dashboards and widgets) for the admin panel.
+    @param db SQLAlchemy session used to query all users.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return An AdminStats object with total_users, total_admins, total_dashboards and total_widgets.
+    """
     users = db.query(User).all()
     total_users = len(users)
     total_admins = sum(1 for u in users if u.role == "admin")
@@ -73,6 +84,14 @@ def list_users(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Lists users ordered by id, optionally filtered by role and by a username or email search term.
+    @param q Optional search text matched case-insensitively against username and email.
+    @param role Optional role filter, applied only when it is 'user' or 'admin'.
+    @param db SQLAlchemy session used to query users.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return A list of AdminUserSummary objects including dashboard and widget counts per user.
+    """
     query = db.query(User)
     if role and role in ["user", "admin"]:
         query = query.filter(User.role == role)
@@ -107,6 +126,13 @@ def get_user_detail(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Fetches a single user together with their dashboards and widgets, raising 404 if the user does not exist.
+    @param user_id Identifier of the user to retrieve.
+    @param db SQLAlchemy session used to query the user.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return An AdminUserDetail object with profile fields, dashboards and widgets.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -135,6 +161,13 @@ def create_user(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Creates a new user account with a hashed password and a default dashboard, rejecting duplicate email or username.
+    @param user_in Payload with the new user's email, username, password and role.
+    @param db SQLAlchemy session used to check uniqueness and persist the user.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return An AdminUserDetail object describing the newly created user with its dashboards and widgets.
+    """
     if db.query(User).filter(User.email == user_in.email).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -191,6 +224,14 @@ def update_user(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Updates a user's email, username, role or password while enforcing uniqueness and protecting the last admin.
+    @param user_id Identifier of the user to update.
+    @param user_in Payload with the optional new email, username, role and password.
+    @param db SQLAlchemy session used to query and commit the changes.
+    @param admin_user The authenticated admin performing the update, used to prevent revoking their own rights as last admin.
+    @return An AdminUserDetail object reflecting the updated user with its dashboards and widgets.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -251,6 +292,13 @@ def delete_user(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Deletes a user and their widget storage file, refusing to let an admin delete their own account.
+    @param user_id Identifier of the user to delete.
+    @param db SQLAlchemy session used to find and delete the user.
+    @param admin_user The authenticated admin performing the deletion, compared against user_id.
+    @return A dictionary with a confirmation message and the deleted user id.
+    """
     if user_id == admin_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -264,7 +312,6 @@ def delete_user(
             detail="Utilisateur introuvable",
         )
 
-    # Suppression du fichier JSON de stockage des widgets
     widget_file = get_user_file_path(user_id)
     if widget_file.exists():
         try:
@@ -285,6 +332,14 @@ def list_all_dashboards(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Lists dashboards of all users, optionally filtered by user id and a name, username or email search term.
+    @param user_id Optional user id restricting the results to one owner.
+    @param q Optional case-insensitive search text matched against dashboard name, owner username and email.
+    @param db SQLAlchemy session used to query users.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return A list of AdminDashboardSummary objects with owner info, colors and widget count per dashboard.
+    """
     query = db.query(User)
     if user_id:
         query = query.filter(User.id == user_id)
@@ -307,7 +362,6 @@ def list_all_dashboards(
                 if not matches_name and not matches_user:
                     continue
 
-            # Comptage des widgets rattachés à ce dashboard
             count = sum(
                 1 for w in widgets
                 if (w.get("params_values") or {}).get("dashboardId", "default") == d_id
@@ -338,6 +392,14 @@ def get_user_dashboard_detail(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Fetches one dashboard of a given user together with its widgets, raising 404 if the user or dashboard is missing.
+    @param user_id Identifier of the dashboard owner.
+    @param dashboard_id Identifier of the dashboard to retrieve.
+    @param db SQLAlchemy session used to query the user.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return An AdminDashboardDetail object with owner info, colors, background image and the dashboard's widgets.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -380,6 +442,14 @@ def create_user_dashboard(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Adds a new dashboard with a timestamp-based id to a user's settings, defaulting missing colors.
+    @param user_id Identifier of the user who will own the new dashboard.
+    @param dash_in Payload with the dashboard name, optional colors and background image.
+    @param db SQLAlchemy session used to query the user and commit the settings.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return An AdminDashboardDetail object for the created dashboard with an empty widgets list.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -438,6 +508,15 @@ def update_user_dashboard(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Applies partial updates (name, colors, background image) to a user's dashboard and persists them.
+    @param user_id Identifier of the dashboard owner.
+    @param dashboard_id Identifier of the dashboard to update.
+    @param dash_in Payload with the optional fields to change.
+    @param db SQLAlchemy session used to query the user and commit the settings.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return An AdminDashboardDetail object with the updated dashboard and its widgets.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -499,6 +578,14 @@ def delete_user_dashboard(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Removes a non-default dashboard from a user's settings and deletes the widgets attached to it.
+    @param user_id Identifier of the dashboard owner.
+    @param dashboard_id Identifier of the dashboard to delete; 'default' is refused.
+    @param db SQLAlchemy session used to query the user and commit the settings.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return A dictionary with a confirmation message and the deleted dashboard id.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -526,7 +613,6 @@ def delete_user_dashboard(
     user.settings = settings_dict
     db.commit()
 
-    # Nettoyage des widgets rattachés à ce dashboard
     widgets = JsonWidgetStorage.load_user_widgets(user.id)
     remaining_widgets = [
         w for w in widgets
@@ -544,6 +630,14 @@ def admin_create_user_widget(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Creates a widget on behalf of a user after checking that the user exists.
+    @param user_id Identifier of the user who will own the widget.
+    @param widget_in Payload describing the widget to create.
+    @param db SQLAlchemy session used to verify the user exists.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return The created widget as returned by JsonWidgetStorage.create_widget.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -561,6 +655,15 @@ def admin_update_user_widget(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Updates a widget belonging to a user after checking that the user exists.
+    @param user_id Identifier of the widget owner.
+    @param widget_id Identifier of the widget to update.
+    @param widget_in Payload with the widget fields to change.
+    @param db SQLAlchemy session used to verify the user exists.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return The updated widget as returned by JsonWidgetStorage.update_widget.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -577,6 +680,14 @@ def admin_delete_user_widget(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_admin),
 ):
+    """
+    @brief Deletes a widget belonging to a user after checking that the user exists.
+    @param user_id Identifier of the widget owner.
+    @param widget_id Identifier of the widget to delete.
+    @param db SQLAlchemy session used to verify the user exists.
+    @param _ The authenticated admin user, injected only to enforce admin access.
+    @return The deletion result returned by JsonWidgetStorage.delete_widget.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(

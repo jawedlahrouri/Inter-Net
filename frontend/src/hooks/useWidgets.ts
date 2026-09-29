@@ -10,6 +10,11 @@ import {
   getStoredToken,
 } from '@/services/api'
 
+/**
+ * @brief Converts a widget returned by the API into the frontend Widget model, normalizing its type and defaults.
+ * @param uw The user widget object as returned by the backend API.
+ * @return A Widget object with mapped type, parameters, refresh interval, dashboard id and dimensions.
+ */
 export function mapApiToWidget(uw: ApiUserWidget): Widget {
   const rawType = uw.type || uw.widget_def?.name || ''
   let type: WidgetType = 'default'
@@ -52,6 +57,11 @@ export function mapApiToWidget(uw: ApiUserWidget): Widget {
   }
 }
 
+/**
+ * @brief Converts a frontend widget into the payload expected by the backend, keeping only the parameters relevant to its type.
+ * @param data Partial widget data to serialize, including its type and type-specific fields.
+ * @return An object with type, title, params_values, refresh_rate, width and height for the API.
+ */
 export function mapWidgetToApiPayload(data: Partial<Widget>) {
   let type = 'default'
   const params: Record<string, any> = {
@@ -94,6 +104,10 @@ export function mapWidgetToApiPayload(data: Partial<Widget>) {
   }
 }
 
+/**
+ * @brief Provides the user's widgets with loading state and functions to add, update, remove and reload them, synced with the API when logged in.
+ * @return An object with widgets, loading, addWidget, updateWidget, removeWidget and reloadWidgets.
+ */
 export function useWidgets() {
   const { user } = useAuth()
   const [widgets, setWidgets] = useState<Widget[]>([])
@@ -121,6 +135,10 @@ export function useWidgets() {
     reloadWidgets()
   }, [reloadWidgets])
 
+  /**
+   * @brief Adds a new widget through the API when authenticated, or locally with a temporary id otherwise.
+   * @param data The data of the new widget to create.
+   */
   const addWidget = async (data: NewWidgetData) => {
     try {
       if (user || getStoredToken()) {
@@ -136,6 +154,11 @@ export function useWidgets() {
     }
   }
 
+  /**
+   * @brief Optimistically updates a widget in local state and persists the change to the API when the user is authenticated.
+   * @param id Identifier of the widget to update.
+   * @param updatedFields Partial widget fields to merge into the existing widget.
+   */
   const updateWidget = async (id: string, updatedFields: Partial<Widget>) => {
     setWidgets((prev) =>
       prev.map((w) => (w.id === id ? { ...w, ...updatedFields } : w))
@@ -153,6 +176,10 @@ export function useWidgets() {
     }
   }
 
+  /**
+   * @brief Removes a widget from local state and deletes it through the API when the user is authenticated.
+   * @param id Identifier of the widget to remove.
+   */
   const removeWidget = async (id: string) => {
     setWidgets((prev) => prev.filter((w) => w.id !== id))
     if ((user || getStoredToken()) && !isNaN(Number(id))) {

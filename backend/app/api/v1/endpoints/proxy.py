@@ -6,7 +6,9 @@ router = APIRouter()
 @router.get("")
 async def proxy_request(url: str = Query(..., description="Target API URL to fetch")):
     """
-    Bypass browser CORS restrictions for external APIs like Steam, GitHub, etc.
+    @brief Fetches a remote JSON URL server-side and returns its body, mapping upstream errors to HTTP errors.
+    @param url Target API URL to fetch, passed as a query parameter.
+    @return The parsed JSON body of the upstream response.
     """
     try:
         async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:

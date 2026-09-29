@@ -9,6 +9,10 @@ from app.schemas.widget import UserWidgetCreate, UserWidgetUpdate
 
 
 def get_storage_dir() -> Path:
+    """
+    @brief Resolves and creates the directory where per-user widget JSON files are stored.
+    @return A Path to the widget storage directory taken from STORAGE_DIR, /app/storage/widgets or a local storage folder.
+    """
     env_path = os.getenv("STORAGE_DIR")
     if env_path:
         storage_dir = Path(env_path)
@@ -21,10 +25,20 @@ def get_storage_dir() -> Path:
 
 
 def get_user_file_path(user_id: int) -> Path:
+    """
+    @brief Builds the path of the JSON file holding a given user's widgets.
+    @param user_id Identifier of the user.
+    @return A Path to user_<id>.json inside the storage directory.
+    """
     return get_storage_dir() / f"user_{user_id}.json"
 
 
 def get_default_widgets_for_user(user_id: int) -> List[Dict[str, Any]]:
+    """
+    @brief Builds the default widget set (weather and custom API status) for a new user.
+    @param user_id Identifier of the user, used to derive widget ids.
+    @return A list of two widget dicts with timestamps and embedded widget definitions.
+    """
     now = datetime.now(timezone.utc).isoformat()
     return [
         {
@@ -86,6 +100,11 @@ def get_default_widgets_for_user(user_id: int) -> List[Dict[str, Any]]:
 class JsonWidgetStorage:
     @staticmethod
     def load_user_widgets(user_id: int) -> List[Dict[str, Any]]:
+        """
+        @brief Loads a user's widgets from their JSON file, creating default widgets if the file does not exist.
+        @param user_id Identifier of the user whose widgets are loaded.
+        @return The list of widget dicts, or an empty list if the file is corrupt or unreadable.
+        """
         file_path = get_user_file_path(user_id)
         if not file_path.exists():
             default_widgets = get_default_widgets_for_user(user_id)
@@ -101,8 +120,12 @@ class JsonWidgetStorage:
 
     @staticmethod
     def save_user_widgets(user_id: int, widgets: List[Dict[str, Any]]) -> None:
+        """
+        @brief Writes a user's widgets to their JSON file atomically via a temporary file.
+        @param user_id Identifier of the user whose widgets are saved.
+        @param widgets List of widget dicts to persist.
+        """
         file_path = get_user_file_path(user_id)
-        # Écriture atomique dans le fichier JSON individuel de l'utilisateur
         temp_path = file_path.with_suffix(".tmp")
         with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(widgets, f, indent=2, ensure_ascii=False)
@@ -110,6 +133,11 @@ class JsonWidgetStorage:
 
     @staticmethod
     def find_widget_globally(widget_id: int) -> Tuple[Optional[int], Optional[Dict[str, Any]]]:
+        """
+        @brief Searches every user's widget file for a widget with the given id.
+        @param widget_id Identifier of the widget to look for.
+        @return A tuple of the owning user id and the widget dict, or (None, None) if not found.
+        """
         storage_dir = get_storage_dir()
         for user_file in storage_dir.glob("user_*.json"):
             try:
@@ -126,9 +154,14 @@ class JsonWidgetStorage:
 
     @staticmethod
     def create_widget(user_id: int, widget_in: UserWidgetCreate) -> Dict[str, Any]:
+        """
+        @brief Creates a new widget for a user with a generated id and a widget definition derived from its type, then saves it.
+        @param user_id Identifier of the user who owns the widget.
+        @param widget_in Creation payload with type, title, parameters, refresh rate, position and size.
+        @return The newly created widget dict.
+        """
         widgets = JsonWidgetStorage.load_user_widgets(user_id)
         
-        # Détermination du nouvel identifiant entier unique
         existing_ids = [w.get("id", 0) for w in widgets if isinstance(w.get("id"), int)]
         next_id = max(existing_ids, default=user_id * 1000) + 1
 
@@ -183,6 +216,13 @@ class JsonWidgetStorage:
 
     @staticmethod
     def update_widget(user_id: int, widget_id: int, widget_in: UserWidgetUpdate) -> Dict[str, Any]:
+        """
+        @brief Applies partial updates to a user's widget and saves it, raising 403 or 404 if it is not accessible.
+        @param user_id Identifier of the user requesting the update.
+        @param widget_id Identifier of the widget to update.
+        @param widget_in Update payload whose non-None fields overwrite the widget.
+        @return The updated widget dict.
+        """
         widgets = JsonWidgetStorage.load_user_widgets(user_id)
         widget_index = next((i for i, w in enumerate(widgets) if w.get("id") == widget_id), None)
 
@@ -223,6 +263,12 @@ class JsonWidgetStorage:
 
     @staticmethod
     def delete_widget(user_id: int, widget_id: int) -> Dict[str, Any]:
+        """
+        @brief Deletes a widget from a user's storage, raising 403 or 404 if it is owned by another user or missing.
+        @param user_id Identifier of the user requesting the deletion.
+        @param widget_id Identifier of the widget to delete.
+        @return A dict with a success message and the deleted widget id.
+        """
         widgets = JsonWidgetStorage.load_user_widgets(user_id)
         filtered = [w for w in widgets if w.get("id") != widget_id]
 

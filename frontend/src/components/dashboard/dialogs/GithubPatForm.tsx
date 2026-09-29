@@ -7,12 +7,21 @@ interface GithubPatFormProps {
   onConnected: () => void
 }
 
+/**
+ * @brief Renders the card prompting the user to connect GitHub via OAuth or a Personal Access Token.
+ * @param onConnected Callback invoked after the Personal Access Token has been accepted by the API.
+ * @return JSX with a GitHub sign-in button, a PAT toggle button and a token input form.
+ */
 export function GithubPatForm({ onConnected }: GithubPatFormProps) {
   const [showPatInput, setShowPatInput] = useState<boolean>(false)
   const [patTokenInput, setPatTokenInput] = useState<string>('')
   const [patSubmitting, setPatSubmitting] = useState<boolean>(false)
   const [patError, setPatError] = useState<string | null>(null)
 
+  /**
+   * @brief Submits the entered Personal Access Token to the API and calls onConnected on success or shows an error.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleConnectPat = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!patTokenInput.trim()) return

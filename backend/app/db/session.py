@@ -15,6 +15,10 @@ Base = declarative_base()
 
 
 def get_db() -> Generator:
+    """
+    @brief Provides a SQLAlchemy database session as a dependency generator and closes it afterwards.
+    @return A generator yielding a SessionLocal database session that is closed when the request finishes.
+    """
     db = SessionLocal()
     try:
         yield db

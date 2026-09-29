@@ -20,26 +20,34 @@ export interface KpiCardProps extends Omit<
   React.ComponentProps<typeof Card>,
   "children"
 > {
-  /** Metric name, e.g. "Revenue". */
   label: string
-  /** Current value. Numbers are formatted with `format`; strings render as-is. */
   value: number | string
-  /** Fractional change vs. the previous period, e.g. 0.124 for +12.4%. */
   delta?: number
-  /** Context for the delta, e.g. "vs. last 30 days". */
   deltaLabel?: string
-  /** Series for the sparkline. Rendered when it has two or more points. */
   trend?: number[]
   format?: NumberFormat
-  /** ISO 4217 code, used when `format` is "currency". */
   currency?: string
-  /** Treat a decrease as good and an increase as bad (churn, latency, errors). */
   invertDelta?: boolean
-  /** Optional icon shown before the label. */
   icon?: React.ReactNode
   children?: React.ReactNode
 }
 
+/**
+ * @brief Renders a KPI card showing a label, a formatted value, an optional delta badge, sparkline trend and footer content.
+ * @param label Title text describing the metric shown on the card.
+ * @param value Metric value to display, either a number (formatted) or a string.
+ * @param delta Optional relative change used for the delta badge and trend color.
+ * @param deltaLabel Optional caption shown in the footer next to the delta.
+ * @param trend Optional series of numbers drawn as a sparkline when it has more than one point.
+ * @param format Number format style for the value (number, compact, currency or percent); defaults to number.
+ * @param currency Currency code used when the value is formatted as currency.
+ * @param invertDelta When true, a negative delta is treated as good and a positive one as bad.
+ * @param icon Optional icon node displayed before the label.
+ * @param className Extra CSS classes merged into the card styling.
+ * @param children Optional extra content rendered in the card footer.
+ * @param props Remaining props forwarded to the underlying Card component.
+ * @return A Card with the metric value, optional delta badge, optional trend sparkline and optional delta label and children.
+ */
 function KpiCard({
   label,
   value,

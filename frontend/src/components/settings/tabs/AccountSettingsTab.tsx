@@ -9,6 +9,12 @@ interface AccountSettingsTabProps {
   onLogout: () => void
 }
 
+/**
+ * @brief Renders the account settings tab showing the user's identity details and a logout button.
+ * @param user Current user whose username, role, email, id and creation date are displayed.
+ * @param onLogout Callback invoked when the user clicks the logout button.
+ * @return A card with initials avatar, username, role badge, email, logout button, user id, registration date and JWT status.
+ */
 export function AccountSettingsTab({ user, onLogout }: AccountSettingsTabProps) {
   const initials = user.username.slice(0, 2).toUpperCase()
   const formattedDate = new Date(user.created_at).toLocaleDateString('fr-FR', {

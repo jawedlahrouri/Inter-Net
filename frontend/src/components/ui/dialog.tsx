@@ -5,30 +5,56 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
+/**
+ * @brief Renders the root of a Radix dialog with a data-slot attribute.
+ * @param props Remaining Radix Dialog root props (open, onOpenChange, children) forwarded to the root.
+ * @return A Radix Dialog.Root element.
+ */
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
+/**
+ * @brief Renders the element that opens the dialog when activated.
+ * @param props Remaining Radix Dialog trigger props forwarded to the trigger element.
+ * @return A Radix Dialog.Trigger element.
+ */
 function DialogTrigger({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
+/**
+ * @brief Renders the dialog content into a portal outside the current DOM hierarchy.
+ * @param props Remaining Radix Dialog portal props forwarded to the portal element.
+ * @return A Radix Dialog.Portal element.
+ */
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
+/**
+ * @brief Renders a control that closes the dialog when activated.
+ * @param props Remaining Radix Dialog.Close props forwarded unchanged to the close element.
+ * @return A Radix Dialog.Close element.
+ */
 function DialogClose({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Close>) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+/**
+ * @brief Renders the semi-transparent blurred backdrop displayed behind the dialog.
+ * @param className Extra CSS classes merged with the default overlay backdrop styles.
+ * @param props Remaining Radix Dialog.Overlay props forwarded to the overlay element.
+ * @return A styled Radix Dialog.Overlay element covering the viewport.
+ */
 function DialogOverlay({
   className,
   ...props
@@ -45,6 +71,14 @@ function DialogOverlay({
   )
 }
 
+/**
+ * @brief Renders the centered dialog panel inside a portal with its overlay and an optional close button.
+ * @param className Extra CSS classes merged with the default dialog panel styles.
+ * @param children Content rendered inside the dialog panel, before the optional close button.
+ * @param showCloseButton Whether to render the top-right X close button; defaults to true.
+ * @param props Remaining Radix Dialog.Content props forwarded to the content element.
+ * @return A portal containing the overlay and a styled Dialog.Content with the children and the optional close button.
+ */
 function DialogContent({
   className,
   children,
@@ -83,6 +117,12 @@ function DialogContent({
   )
 }
 
+/**
+ * @brief Renders the flex column container that holds the dialog title and description.
+ * @param className Extra CSS classes merged with the default flex column header layout.
+ * @param props Remaining div props forwarded to the header element.
+ * @return A styled div element with the dialog-header slot.
+ */
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -93,6 +133,14 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * @brief Renders the dialog footer that holds action buttons and an optional close button.
+ * @param className Extra CSS classes merged with the default footer styles.
+ * @param showCloseButton Whether to append an outline Close button after the children; defaults to false.
+ * @param children Action buttons or content rendered inside the footer.
+ * @param props Remaining div props forwarded to the footer element.
+ * @return A styled div with the children and an optional outline Close button.
+ */
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -120,6 +168,12 @@ function DialogFooter({
   )
 }
 
+/**
+ * @brief Renders the accessible title of the dialog with heading styles.
+ * @param className Extra CSS classes merged with the default title heading styles.
+ * @param props Remaining Radix Dialog.Title props forwarded to the title element.
+ * @return A styled Radix Dialog.Title element.
+ */
 function DialogTitle({
   className,
   ...props
@@ -136,6 +190,12 @@ function DialogTitle({
   )
 }
 
+/**
+ * @brief Renders the muted descriptive text of the dialog.
+ * @param className Extra CSS classes merged with the default muted description styles.
+ * @param props Remaining Radix Dialog.Description props forwarded to the description element.
+ * @return A styled Radix Dialog.Description element.
+ */
 function DialogDescription({
   className,
   ...props

@@ -6,7 +6,11 @@ from fastapi import Request
 class AboutService:
     @staticmethod
     def get_client_host(request: Request) -> str:
-        """Extrait l'adresse IP du client en prenant en compte les proxys inverses."""
+        """
+        @brief Determines the client IP, preferring the first address in the X-Forwarded-For header over the socket address.
+        @param request Incoming FastAPI request providing the client address and headers.
+        @return The client host string, defaulting to 127.0.0.1 when unknown.
+        """
         client_host = request.client.host if request.client else "127.0.0.1"
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
@@ -15,7 +19,10 @@ class AboutService:
 
     @staticmethod
     def get_services_catalog() -> List[Dict[str, Any]]:
-        """Retourne le catalogue complet des services et widgets supportés."""
+        """
+        @brief Builds the static catalog of services and their widgets with parameter schemas exposed by about.json.
+        @return A list of service dicts, each with a name and its list of widgets.
+        """
         return [
             {
                 "name": "weather",
@@ -251,7 +258,11 @@ class AboutService:
 
     @classmethod
     def get_about_payload(cls, request: Request) -> Dict[str, Any]:
-        """Construit la réponse JSON standardisée pour /about.json."""
+        """
+        @brief Assembles the about.json payload with the client host, current server time and services catalog.
+        @param request Incoming FastAPI request used to determine the client host.
+        @return A dict with a client section containing the host and a server section with the current timestamp and services.
+        """
         return {
             "client": {
                 "host": cls.get_client_host(request)

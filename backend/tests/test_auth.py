@@ -1,4 +1,8 @@
 def test_register_success(client):
+    """
+    @brief Tests that registering a new user returns 201 with an access token and the created user data.
+    @param client The test client fixture used to call the API.
+    """
     response = client.post(
         "/api/v1/auth/register",
         json={
@@ -17,6 +21,10 @@ def test_register_success(client):
 
 
 def test_register_duplicate_email(client):
+    """
+    @brief Tests that registering twice with the same email is rejected with a 400 error mentioning the email.
+    @param client The test client fixture used to call the API.
+    """
     client.post(
         "/api/v1/auth/register",
         json={
@@ -38,6 +46,10 @@ def test_register_duplicate_email(client):
 
 
 def test_register_duplicate_username(client):
+    """
+    @brief Tests that registering twice with the same username is rejected with a 400 error mentioning the username.
+    @param client The test client fixture used to call the API.
+    """
     client.post(
         "/api/v1/auth/register",
         json={
@@ -59,6 +71,10 @@ def test_register_duplicate_username(client):
 
 
 def test_login_with_email_and_username(client):
+    """
+    @brief Tests that a registered user can log in with either their email or their username.
+    @param client The test client fixture used to call the API.
+    """
     client.post(
         "/api/v1/auth/register",
         json={
@@ -90,6 +106,10 @@ def test_login_with_email_and_username(client):
 
 
 def test_login_wrong_password(client):
+    """
+    @brief Tests that logging in with a wrong password returns a 401 status.
+    @param client The test client fixture used to call the API.
+    """
     client.post(
         "/api/v1/auth/register",
         json={
@@ -109,6 +129,10 @@ def test_login_wrong_password(client):
 
 
 def test_get_me_authenticated(client):
+    """
+    @brief Tests that the me endpoint returns the profile of the user identified by a valid bearer token.
+    @param client The test client fixture used to call the API.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -130,11 +154,19 @@ def test_get_me_authenticated(client):
 
 
 def test_get_me_unauthorized(client):
+    """
+    @brief Tests that the me endpoint returns 401 when no token is provided.
+    @param client The test client fixture used to call the API.
+    """
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 401
 
 
 def test_user_settings_dashboards(client):
+    """
+    @brief Tests reading the default dashboard settings and updating multiple dashboards through the settings endpoints.
+    @param client The test client fixture used to call the API.
+    """
     reg_resp = client.post(
         "/api/v1/auth/register",
         json={
@@ -146,7 +178,6 @@ def test_user_settings_dashboards(client):
     token = reg_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    # Default settings has General dashboard
     get_resp = client.get("/api/v1/auth/me/settings", headers=headers)
     assert get_resp.status_code == 200
     data = get_resp.json()
@@ -154,7 +185,6 @@ def test_user_settings_dashboards(client):
     assert len(data["dashboards"]) == 1
     assert data["dashboards"][0]["id"] == "default"
 
-    # Update dashboards with per-page customization
     patch_resp = client.patch(
         "/api/v1/auth/me/settings",
         headers=headers,

@@ -15,6 +15,10 @@ reusable_oauth2 = OAuth2PasswordBearer(
 
 
 def get_db() -> Generator:
+    """
+    @brief Provides a database session for a request and closes it when the request ends.
+    @return Yields a SQLAlchemy session that is closed after use.
+    """
     db = SessionLocal()
     try:
         yield db
@@ -26,6 +30,12 @@ def get_current_user(
     db: Session = Depends(get_db),
     token: Optional[str] = Depends(reusable_oauth2),
 ) -> User:
+    """
+    @brief Resolves the authenticated user from the bearer token, raising HTTP errors if the token or user is invalid.
+    @param db The database session dependency.
+    @param token The optional bearer token extracted from the Authorization header.
+    @return The User matching the token subject.
+    """
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -54,6 +64,11 @@ def get_current_user(
 def get_current_active_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
+    """
+    @brief Ensures the current authenticated user has the admin role, otherwise raises a 403 error.
+    @param current_user The authenticated user resolved by the get_current_user dependency.
+    @return The same user when they are an administrator.
+    """
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
