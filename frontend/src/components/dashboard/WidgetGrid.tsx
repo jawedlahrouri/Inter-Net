@@ -17,6 +17,16 @@ export interface WidgetGridProps {
   onToggleEdit?: () => void
 }
 
+/**
+ * @brief Renders the dashboard widget grid with empty states, editing controls and the add and edit widget dialogs.
+ * @param widgets List of widgets to display in the grid.
+ * @param isEditing Whether edit mode is active, showing add, edit and remove controls.
+ * @param onAddWidget Callback receiving the new widget data submitted from the add dialog.
+ * @param onUpdateWidget Optional callback receiving a widget id and partial data for edits and resizes.
+ * @param onRemoveWidget Callback receiving the id of the widget to remove.
+ * @param onToggleEdit Optional callback that toggles edit mode, used by the empty-state button.
+ * @return An empty-state placeholder or a responsive grid of widget cards with an add button, plus the add and edit dialogs.
+ */
 export function WidgetGrid({
   widgets,
   isEditing,
@@ -30,7 +40,6 @@ export function WidgetGrid({
 
   return (
     <>
-      {/* Si aucun widget et PAS en mode édition : état vide discret */}
       {widgets.length === 0 && !isEditing ? (
         <div className="w-full min-h-[260px] rounded-2xl border border-dashed border-border/70 bg-card/30 flex flex-col items-center justify-center p-8 text-center space-y-3">
           <div className="size-10 rounded-xl bg-muted/60 border border-border/80 flex items-center justify-center text-muted-foreground">
@@ -57,7 +66,6 @@ export function WidgetGrid({
           )}
         </div>
       ) : widgets.length === 0 && isEditing ? (
-        /* Si aucun widget et EN mode édition : invitation claire à ajouter un premier widget */
         <div className="w-full min-h-[280px] rounded-2xl border-2 border-dashed border-primary/40 bg-card/40 flex flex-col items-center justify-center p-8 text-center space-y-4">
           <div className="size-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
             <Plus className="size-6" />
@@ -80,7 +88,6 @@ export function WidgetGrid({
           </Button>
         </div>
       ) : (
-        /* Grille des widgets avec le bouton d'ajout visible uniquement en mode édition */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full auto-rows-[minmax(280px,auto)] grid-flow-dense items-stretch">
           {widgets.map((widget) => (
             <WidgetCard

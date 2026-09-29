@@ -27,15 +27,19 @@ export interface SteamWidgetProps {
   className?: string
 }
 
+/**
+ * @brief Renders the dashboard card that shows the selected Steam metric with auto-refresh, loading and error states.
+ * @param widget Widget config providing the Steam metric, title and refresh interval.
+ * @param className Optional extra CSS classes applied to the card (defaults to empty).
+ * @return A Card with a header and refresh button, the metric content, and a footer with last-update time and a Steam badge.
+ */
 export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
   const metric = widget.steamMetric || 'profile_status'
-  // Limite stricte à 5 minutes (300s) minimum pour préserver les quotas Steam
   const refreshInterval = Math.max(300, widget.refreshIntervalSeconds || 300)
   const { stats, loading, error, lastUpdated, refresh } = useSteamStats(refreshInterval)
   const [secondsAgo, setSecondsAgo] = useState<number>(0)
   const [backlogIndex, setBacklogIndex] = useState<number>(0)
 
-  // Carousel automatique pour le backlog (défilement toutes les 3.5 secondes)
   useEffect(() => {
     if (metric !== 'unplayed_games') return
     const unplayed = stats?.unplayed_games_list
@@ -48,6 +52,10 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
     return () => clearInterval(timer)
   }, [metric, stats?.unplayed_games_list])
 
+  /**
+   * @brief Moves the unplayed-games carousel to the previous game, wrapping around at the start.
+   * @param e Click event whose propagation is stopped so the card does not react to it.
+   */
   const handlePrevBacklog = (e: React.MouseEvent) => {
     e.stopPropagation()
     const unplayed = stats?.unplayed_games_list || []
@@ -55,6 +63,10 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
     setBacklogIndex((prev) => (prev - 1 + unplayed.length) % unplayed.length)
   }
 
+  /**
+   * @brief Moves the unplayed-games carousel to the next game, wrapping around at the end.
+   * @param e Click event whose propagation is stopped so the card does not react to it.
+   */
   const handleNextBacklog = (e: React.MouseEvent) => {
     e.stopPropagation()
     const unplayed = stats?.unplayed_games_list || []
@@ -62,8 +74,10 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
     setBacklogIndex((prev) => (prev + 1) % unplayed.length)
   }
 
-  // Timer for relative updated time
   useEffect(() => {
+    /**
+     * @brief Updates the seconds-ago state from the time of the last successful stats refresh.
+     */
     const updateRelativeTime = () => {
       if (!lastUpdated) {
         setSecondsAgo(0)
@@ -79,6 +93,10 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
     return () => clearInterval(timer)
   }, [lastUpdated])
 
+  /**
+   * @brief Builds the card body for the selected Steam metric, or a loading, error or empty state.
+   * @return JSX for the chosen metric view, a loading or error placeholder, or null when there is nothing to show.
+   */
   const renderMetricContent = () => {
     if (loading && !stats) {
       return (
@@ -104,7 +122,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
     if (!stats) return null
 
     switch (metric) {
-      // 1. Dernier jeu joué
       case 'last_played': {
         const game = stats.last_played_game
         if (!game) {
@@ -123,7 +140,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
                   alt={game.name}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
-                    // Fallback on error
                     ;(e.currentTarget as HTMLImageElement).style.display = 'none'
                   }}
                 />
@@ -149,7 +165,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 2. Jeu le plus joué
       case 'most_played': {
         const game = stats.most_played_game
         if (!game) {
@@ -185,7 +200,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 3. Nombre de jeux
       case 'games_count': {
         const playedCount = Math.max(0, stats.games_count - stats.unplayed_games_count)
         return (
@@ -212,7 +226,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 4. Heures cumulées
       case 'total_playtime': {
         const days = Math.round((stats.total_playtime_hours / 24) * 10) / 10
         return (
@@ -235,7 +248,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 5. Activité récente (14 jours)
       case 'recent_playtime': {
         return (
           <div className="space-y-3 py-2 text-center">
@@ -257,7 +269,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 6. Niveau Steam
       case 'steam_level': {
         return (
           <div className="space-y-3 py-2 text-center">
@@ -276,7 +287,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 7. Statut & Profil en direct
       case 'profile_status': {
         const isOnline = stats.profile.personastate !== 0
         const isInGame = stats.profile.is_in_game
@@ -344,7 +354,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 8. Nombre de badges
       case 'badges_count': {
         return (
           <div className="space-y-3 py-2 text-center">
@@ -363,7 +372,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 9. Points d'expérience (XP)
       case 'player_xp': {
         return (
           <div className="space-y-3 py-2 text-center">
@@ -382,7 +390,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 10. Prochain niveau Steam
       case 'next_level_progress': {
         const prog = stats.next_level_progress
         return (
@@ -411,7 +418,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 11. Top 3 des jeux favoris
       case 'top_3_played': {
         return (
           <div className="space-y-2">
@@ -448,7 +454,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 12. Top 3 des jeux récents
       case 'top_3_recent': {
         if (!stats.top_3_recent || stats.top_3_recent.length === 0) {
           return (
@@ -481,7 +486,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 13. Backlog (Jeux jamais lancés avec défilement des jaquettes)
       case 'unplayed_games': {
         const unplayed = stats.unplayed_games_list || []
         const percent =
@@ -492,7 +496,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
 
         return (
           <div className="space-y-2.5">
-            {/* Statistique & Contrôles */}
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-foreground">
@@ -531,7 +534,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
               )}
             </div>
 
-            {/* Image et nom du jeu en défilement */}
             {currentGame ? (
               <div className="relative rounded-lg overflow-hidden border border-border/80 aspect-[460/215] bg-black/40 group">
                 <img
@@ -561,7 +563,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 14. Moyenne d'heures par jeu
       case 'avg_playtime_per_game': {
         return (
           <div className="space-y-3 py-2 text-center">
@@ -580,7 +581,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
         )
       }
 
-      // 15. Nombre de jeux actifs récents avec liste des titres
       case 'recent_games_count': {
         const recentList = stats.recent_games_list || []
         return (
@@ -597,7 +597,6 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
               </Badge>
             </div>
 
-            {/* Liste scrollable des jeux récents avec noms et jaquettes */}
             <div className="space-y-1.5 max-h-[175px] overflow-y-auto pr-1">
               {recentList.length > 0 ? (
                 recentList.map((game) => (

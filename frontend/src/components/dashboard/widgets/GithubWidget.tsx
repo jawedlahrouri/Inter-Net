@@ -49,6 +49,12 @@ const REPO_METRICS = new Set([
   'repo_languages',
 ])
 
+/**
+ * @brief Renders the dashboard card that shows the selected GitHub metric with auto-refresh, loading and error states.
+ * @param widget Widget config providing the GitHub metric, target repo or org, title and refresh interval.
+ * @param className Optional extra CSS classes applied to the card (defaults to empty).
+ * @return A Card with a header and refresh button, the commit, PR, repo or org metric content, and a footer with last-update time and a GitHub badge.
+ */
 export function GithubWidget({ widget, className = '' }: GithubWidgetProps) {
   const metric = widget.githubMetric || 'profile_card'
   const refreshInterval = Math.max(300, widget.refreshIntervalSeconds || 300)
@@ -66,6 +72,9 @@ export function GithubWidget({ widget, className = '' }: GithubWidgetProps) {
   const [secondsAgo, setSecondsAgo] = useState<number>(0)
 
   useEffect(() => {
+    /**
+     * @brief Updates the seconds-ago state from the time of the last successful stats refresh.
+     */
     const updateRelativeTime = () => {
       if (!lastUpdated) {
         setSecondsAgo(0)
@@ -80,6 +89,10 @@ export function GithubWidget({ widget, className = '' }: GithubWidgetProps) {
     return () => clearInterval(timer)
   }, [lastUpdated])
 
+  /**
+   * @brief Builds the card body by choosing the commit, PR, repo or org metrics component, or a loading or error state.
+   * @return JSX for the matching GitHub metrics component, a loading or error placeholder, or null when there are no stats.
+   */
   const renderMetricContent = () => {
     if (loading && !stats) {
       return (

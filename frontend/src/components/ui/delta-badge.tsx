@@ -6,6 +6,11 @@ import { formatDelta } from "@/lib/format"
 
 export type DeltaDirection = "up" | "down" | "flat"
 
+/**
+ * @brief Determines whether a numeric delta is rising, falling or flat.
+ * @param delta Numeric change value, possibly undefined or non-finite.
+ * @return The string up for positive, down for negative, or flat for zero, undefined or non-finite values.
+ */
 export function getDeltaDirection(delta: number | undefined): DeltaDirection {
   if (delta === undefined || delta === 0 || !Number.isFinite(delta)) return "flat"
   return delta > 0 ? "up" : "down"
@@ -18,14 +23,23 @@ const directionIcon: Record<DeltaDirection, React.ElementType> = {
 }
 
 export interface DeltaBadgeProps extends React.ComponentProps<"span"> {
-  /** Fractional change, e.g. 0.124 for +12.4%. */
   delta: number
-  /** Treat a decrease as good and an increase as bad (churn, latency, errors). */
   invert?: boolean
   variant?: "outline" | "soft" | "text"
   showIcon?: boolean
 }
 
+/**
+ * @brief Renders a colored badge showing a delta with a trend icon, where color reflects whether the change is good or bad.
+ * @param delta Numeric change value that determines direction, icon and formatted text.
+ * @param invert When true, treats decreases as good and increases as bad for coloring.
+ * @param variant Badge style: outline, soft or text; defaults to outline.
+ * @param showIcon Whether the trend icon is displayed; defaults to true.
+ * @param className Extra CSS classes merged onto the badge span.
+ * @param children Content overriding the default formatted delta text.
+ * @param props Remaining span props forwarded to the underlying element.
+ * @return A span with a trend icon and formatted delta text, colored green, red or muted according to direction.
+ */
 function DeltaBadge({
   delta,
   invert = false,

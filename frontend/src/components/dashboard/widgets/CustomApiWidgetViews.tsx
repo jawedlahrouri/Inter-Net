@@ -8,6 +8,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RadialGauge } from '@/components/ui/radial-gauge'
 
+/**
+ * @brief Converts an arbitrary JSON value into a display string, formatting numbers with the French locale.
+ * @param value The value to format, which may be null, undefined, boolean, number, object or string.
+ * @return A string such as 'null', 'N/A', 'True', a localized number, JSON text or the stringified value.
+ */
 function formatDisplayValue(value: any): string {
   if (value === null) return 'null'
   if (value === undefined) return 'N/A'
@@ -27,6 +32,10 @@ function formatDisplayValue(value: any): string {
   return String(value)
 }
 
+/**
+ * @brief Renders the loading state of a custom API widget.
+ * @return A centered spinner with the message 'Récupération des données API...'.
+ */
 export function WidgetLoadingView() {
   return (
     <div className="flex flex-col items-center justify-center my-auto py-8 text-center gap-3">
@@ -38,6 +47,12 @@ export function WidgetLoadingView() {
   )
 }
 
+/**
+ * @brief Renders the error state of a custom API widget with a retry button.
+ * @param error Error message text displayed to the user.
+ * @param onRetry Callback fired by the retry button to refetch the data.
+ * @return A centered error icon, title, truncated error message and a 'Réessayer' button.
+ */
 export function WidgetErrorView({
   error,
   onRetry,
@@ -69,6 +84,13 @@ export function WidgetErrorView({
   )
 }
 
+/**
+ * @brief Renders the state shown when the configured JSON path is absent from the API response.
+ * @param jsonPath Configured JSON path that was not found in the API response.
+ * @param availableKeys Keys present in the response, of which up to four are listed as hints.
+ * @param onRetry Callback fired by the refresh button to refetch the data.
+ * @return A warning icon, the missing key name, up to four available keys and an 'Actualiser' button.
+ */
 export function WidgetNotFoundView({
   jsonPath,
   availableKeys,
@@ -107,6 +129,13 @@ export function WidgetNotFoundView({
   )
 }
 
+/**
+ * @brief Renders a custom API value as a large KPI figure with an optional unit badge and the JSON path.
+ * @param value Extracted value to display as a large formatted figure.
+ * @param unit Optional unit shown as a badge next to the value.
+ * @param jsonPath JSON path the value was read from, shown below the figure.
+ * @return A large formatted value, an optional unit badge and a 'path:' line showing the JSON path.
+ */
 export function WidgetKpiView({
   value,
   unit,
@@ -136,6 +165,14 @@ export function WidgetKpiView({
   )
 }
 
+/**
+ * @brief Renders a custom API value as a radial gauge, or a warning if the value is not numeric.
+ * @param value Extracted value to plot on the gauge; a warning shows if it is not numeric.
+ * @param unit Optional unit shown in the gauge center and min/max labels.
+ * @param gaugeMin Minimum bound of the gauge scale (defaults to 0).
+ * @param gaugeMax Maximum bound of the gauge scale (defaults to 100).
+ * @return A RadialGauge with the value and min/max labels, or the raw value with a non-numeric warning.
+ */
 export function WidgetGaugeView({
   value,
   unit,

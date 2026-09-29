@@ -18,6 +18,19 @@ export interface RefreshFieldProps {
 
 const DEFAULT_PRESETS = [10, 30, 60, 300]
 
+/**
+ * @brief Renders a labeled numeric input for a refresh interval with quick preset badges.
+ * @param label Label text for the field; defaults to a French refresh interval label.
+ * @param value Current refresh interval in seconds shown in the input.
+ * @param onChange Callback invoked with the new interval in seconds, clamped to at least 1.
+ * @param min Minimum value allowed on the number input; defaults to 5.
+ * @param max Maximum value allowed on the number input; defaults to 3600.
+ * @param description Optional helper text shown below the input when there is no error.
+ * @param error Error message that marks the input invalid and replaces the description.
+ * @param className Extra CSS classes merged into the field container.
+ * @param presets List of preset intervals in seconds shown as clickable badges; defaults to 10, 30, 60, 300.
+ * @return A field containing the label, preset badges, a number input and an optional description or error.
+ */
 export function RefreshField({
   label = 'Intervalle de rafraîchissement (s)',
   value,
@@ -31,6 +44,10 @@ export function RefreshField({
 }: RefreshFieldProps) {
   const generatedId = React.useId()
 
+  /**
+   * @brief Parses the input value as a number and reports it through onChange, clamped to at least 1.
+   * @param e The change event of the number input.
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = Number(e.target.value)
     if (!Number.isNaN(rawVal)) {

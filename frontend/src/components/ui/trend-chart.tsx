@@ -23,41 +23,37 @@ import {
 } from "@/components/ui/chart"
 
 export interface TrendSeries {
-  /** Key in each data row. */
   key: string
   label: string
-  /** Any CSS color. Defaults to chart-1 through chart-5 in order. */
   color?: string
 }
 
 export interface TrendChartProps
   extends Omit<React.ComponentProps<typeof ChartContainer>, "config" | "children"> {
   data: Record<string, unknown>[]
-  /** Key of the x-axis value in each row. */
   xKey: string
   series: TrendSeries[]
   type?: "area" | "line" | "bar"
-  /** Area fill: a plain gradient, or a dot grid that fades out toward the line. */
   fill?: "gradient" | "dots"
-  /** Bars only: "horizontal" runs bars left to right with categories down the side. */
   layout?: "vertical" | "horizontal"
-  /** Bars only: corner radius in px, or "full" for pill-shaped bars. */
   barRadius?: number | "full"
-  /** Bars only: thickness of each bar in px. Defaults to a share of the category width. */
   barSize?: number
   stacked?: boolean
   showLegend?: boolean
   legendPosition?: "top" | "bottom"
   legendAlign?: "left" | "center" | "right"
   showGrid?: boolean
-  /** Show the value axis. In the horizontal layout this is the axis along the bottom. */
   showYAxis?: boolean
-  /** Recharts domain for the value axis, e.g. ["dataMin", "dataMax"] or ["auto", "auto"]. Defaults to [0, "auto"]. */
   yDomain?: React.ComponentProps<typeof YAxis>["domain"]
   xFormatter?: (value: unknown) => string
   yFormatter?: (value: number) => string
 }
 
+/**
+ * @brief Formats an X axis value, turning ISO date strings into short month and day labels.
+ * @param value The raw X axis value, possibly an ISO date string.
+ * @return A short date label for date strings, otherwise the value converted to a string.
+ */
 function defaultXFormatter(value: unknown) {
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     const [y, m, d] = value.split("-").map(Number)
@@ -71,12 +67,20 @@ function defaultXFormatter(value: unknown) {
 
 
 
-/** Recharts clamps corner radii to half the bar, so an oversized radius draws a pill. */
 const PILL = 9999
 
 type Radius = number | [number, number, number, number]
 
-/** Round only the outer corners of a stack; mixed-sign stacks stay square. */
+/**
+ * @brief Computes the corner radius of a bar, rounding only the outer ends of stacked bars.
+ * @param radius The bar corner radius in pixels, or full for a pill shape.
+ * @param stacked Whether the bars are stacked.
+ * @param hasNegative Whether the data contains negative values.
+ * @param horizontal Whether bars are laid out horizontally.
+ * @param index The position of the series within the stack.
+ * @param count The total number of series in the stack.
+ * @return A single radius number or a four-value corner radius tuple.
+ */
 function barCorners(
   radius: number | "full",
   stacked: boolean,
@@ -88,12 +92,34 @@ function barCorners(
   const r = radius === "full" ? PILL : radius
   if (!stacked || count === 1) return r
   if (hasNegative) return 0
-  // Corners run [top-left, top-right, bottom-right, bottom-left].
   if (index === count - 1) return horizontal ? [0, r, r, 0] : [r, r, 0, 0]
   if (index === 0) return horizontal ? [r, 0, 0, r] : [0, 0, r, r]
   return 0
 }
 
+/**
+ * @brief Renders a configurable area, line or bar chart of one or more data series using recharts.
+ * @param data Array of row objects supplying the chart data points.
+ * @param xKey Key in each data row used for the X axis category.
+ * @param series List of series definitions with key, label and optional color to draw.
+ * @param type Chart kind: area, line or bar; defaults to area.
+ * @param fill Area fill style, gradient or dots; defaults to gradient.
+ * @param layout Bar orientation, vertical or horizontal; defaults to vertical.
+ * @param barRadius Corner radius of bars in pixels, or full for pill shape; defaults to 4.
+ * @param barSize Optional fixed bar thickness in pixels.
+ * @param stacked Whether series are stacked instead of overlaid.
+ * @param showLegend Whether to display the chart legend.
+ * @param legendPosition Vertical legend placement, top or bottom; defaults to bottom.
+ * @param legendAlign Horizontal legend alignment: left, center or right.
+ * @param showGrid Whether to draw the cartesian grid; defaults to true.
+ * @param showYAxis Whether to show the value axis; defaults to false.
+ * @param yDomain Optional domain (min and max) for the value axis.
+ * @param xFormatter Function formatting X axis values and tooltip labels; defaults to a short date formatter.
+ * @param yFormatter Optional function formatting numeric values on the Y axis and in the tooltip.
+ * @param className Extra CSS classes merged into the chart container sizing.
+ * @param props Remaining ChartContainer props forwarded to the underlying container.
+ * @return JSX for a chart container with axes, grid, tooltip, optional legend and the series drawn as area, line or bar.
+ */
 function TrendChart({
   data,
   xKey,

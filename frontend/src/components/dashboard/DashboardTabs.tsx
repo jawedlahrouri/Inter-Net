@@ -28,6 +28,13 @@ interface DashboardTabsProps {
   onDashboardChange?: (dashboardId: string) => void;
 }
 
+/**
+ * @brief Renders the dashboard tab bar with per-tab widget counts and menus, plus dialogs to create, rename, delete and customize dashboards.
+ * @param widgets List of widgets used to compute the widget count shown on each dashboard tab.
+ * @param isEditing Whether edit mode is active, which enables the tab management controls (defaults to false).
+ * @param onDashboardChange Optional callback receiving the dashboard id when the active tab changes or a dashboard is created.
+ * @return A tab bar of dashboards with a create button and the create, rename, delete and customize dialogs.
+ */
 export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }: DashboardTabsProps) {
   const {
     dashboards,
@@ -50,6 +57,10 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
   const [customizeTarget, setCustomizeTarget] = useState<DashboardPageInfo | null>(null);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState<boolean>(false);
 
+  /**
+   * @brief Makes the given dashboard active and notifies the parent through onDashboardChange.
+   * @param id Identifier of the dashboard tab to activate.
+   */
   const handleSelectTab = (id: string) => {
     setActiveDashboardId(id);
     if (onDashboardChange) {
@@ -57,6 +68,10 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
     }
   };
 
+  /**
+   * @brief Creates a new dashboard from the entered name, resets the create dialog and notifies the parent of the new id.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDashboardName.trim()) return;
@@ -68,6 +83,10 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
     }
   };
 
+  /**
+   * @brief Renames the targeted dashboard with the entered value and clears the rename state.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!renameTarget || !renameValue.trim()) return;
@@ -76,12 +95,20 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
     setRenameValue('');
   };
 
+  /**
+   * @brief Deletes the dashboard selected for deletion and clears the delete target.
+   */
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     await deleteDashboard(deleteTarget.id);
     setDeleteTarget(null);
   };
 
+  /**
+   * @brief Counts the widgets that belong to a given dashboard, treating widgets without a dashboard as default.
+   * @param dashboardId Identifier of the dashboard whose widgets are counted.
+   * @return The number of widgets assigned to that dashboard.
+   */
   const getWidgetCountForDashboard = (dashboardId: string) => {
     return widgets.filter((w) => {
       const wDashId = w.dashboardId || 'default';
@@ -91,7 +118,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
 
   return (
     <div className="w-full flex items-center justify-between gap-3 border-b border-border/70 pb-2.5 overflow-x-auto no-scrollbar">
-      {/* Liste des onglets de tableaux de bord */}
       <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
         {dashboards.map((dash) => {
           const isActive = dash.id === activeDashboardId;
@@ -124,7 +150,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
                 </span>
               </button>
 
-              {/* Menu d'options du tableau de bord (renommer / supprimer) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -177,7 +202,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
           );
         })}
 
-        {/* Bouton pour créer une nouvelle page de tableau de bord */}
         <Button
           type="button"
           variant="outline"
@@ -192,7 +216,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
           <span>Nouvelle page</span>
         </Button>
 
-        {/* En mode édition : bouton dédié pour personnaliser la page active */}
         {isEditing && (
           <Button
             type="button"
@@ -210,7 +233,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
         )}
       </div>
 
-      {/* Boîte de dialogue Création d'une page */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
@@ -250,7 +272,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
         </DialogContent>
       </Dialog>
 
-      {/* Boîte de dialogue Renommer une page */}
       <Dialog open={!!renameTarget} onOpenChange={(open) => !open && setRenameTarget(null)}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
@@ -289,7 +310,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
         </DialogContent>
       </Dialog>
 
-      {/* Boîte de dialogue Confirmation de suppression */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
@@ -319,7 +339,6 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
         </DialogContent>
       </Dialog>
 
-      {/* Boîte de dialogue Personnalisation du thème de la page */}
       <CustomizePageDialog
         open={isCustomizeOpen}
         onOpenChange={setIsCustomizeOpen}

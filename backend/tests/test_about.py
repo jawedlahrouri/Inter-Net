@@ -1,4 +1,8 @@
 def test_about_json(client):
+    """
+    @brief Tests that the about.json endpoint returns the expected client, server time and services and widgets structure.
+    @param client The test client fixture used to call the API.
+    """
     response = client.get("/about.json")
     assert response.status_code == 200
     data = response.json()

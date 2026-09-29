@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchGithubUserStats, type GithubUserStats } from '@/services/api'
 
-// Limite stricte de rafraîchissement à 5 minutes (300s) pour préserver les quotas GitHub
-export const MIN_GITHUB_INTERVAL_SECONDS = 300 // 5 minutes
+export const MIN_GITHUB_INTERVAL_SECONDS = 300
 
-// Cache partagé et gestion des abonnés entre tous les widgets GitHub du dashboard
 let cachedStats: GithubUserStats | null = null
 let cachedError: string | null = null
 let isFetching = false
@@ -14,10 +12,19 @@ const subscribers = new Set<(stats: GithubUserStats | null, error: string | null
 let globalIntervalId: ReturnType<typeof setInterval> | null = null
 let activeMinInterval = MIN_GITHUB_INTERVAL_SECONDS
 
+/**
+ * @brief Calls every subscribed listener with the cached stats, cached error and the given loading flag.
+ * @param loading Whether a fetch is currently in progress.
+ */
 function notifySubscribers(loading: boolean) {
   subscribers.forEach((cb) => cb(cachedStats, cachedError, loading))
 }
 
+/**
+ * @brief Fetches GitHub user stats into the shared cache unless a fetch is running, notifying subscribers before and after.
+ * @param forceRefresh Whether to bypass the server-side cache when fetching.
+ * @return A promise resolving to the fetched stats, the cached stats if already fetching, or null on error.
+ */
 export async function refreshGithubStats(forceRefresh: boolean = false): Promise<GithubUserStats | null> {
   if (isFetching) return cachedStats
   isFetching = true
@@ -38,6 +45,9 @@ export async function refreshGithubStats(forceRefresh: boolean = false): Promise
   }
 }
 
+/**
+ * @brief Resets the shared polling interval so it runs only while subscribers exist, using at least the minimum interval.
+ */
 function updateGlobalTimer() {
   if (globalIntervalId) {
     clearInterval(globalIntervalId)
@@ -52,6 +62,11 @@ function updateGlobalTimer() {
   }
 }
 
+/**
+ * @brief Subscribes a component to the shared, periodically refreshed GitHub stats cache.
+ * @param intervalSeconds The desired refresh interval in seconds, raised to the minimum allowed value.
+ * @return An object with stats, loading, error, lastUpdated and a refresh function that forces a reload.
+ */
 export function useGithubStats(intervalSeconds: number = MIN_GITHUB_INTERVAL_SECONDS) {
   const [stats, setStats] = useState<GithubUserStats | null>(cachedStats)
   const [error, setError] = useState<string | null>(cachedError)
@@ -59,6 +74,12 @@ export function useGithubStats(intervalSeconds: number = MIN_GITHUB_INTERVAL_SEC
   const [lastUpdated, setLastUpdated] = useState<Date | null>(lastFetchTime)
 
   useEffect(() => {
+    /**
+     * @brief Subscriber callback that copies the shared stats, error, loading flag and last fetch time into hook state.
+     * @param newStats The latest cached GitHub stats, or null.
+     * @param newError The latest error message, or null.
+     * @param isLoading Whether a fetch is currently in progress.
+     */
     const handleUpdate = (
       newStats: GithubUserStats | null,
       newError: string | null,
@@ -78,7 +99,6 @@ export function useGithubStats(intervalSeconds: number = MIN_GITHUB_INTERVAL_SEC
     }
     updateGlobalTimer()
 
-    // Ne fetch au montage que si pas de données ou si les données ont plus de 5 minutes
     const now = Date.now()
     if (!cachedStats || !lastFetchTime || now - lastFetchTime.getTime() > MIN_GITHUB_INTERVAL_SECONDS * 1000) {
       refreshGithubStats(false)

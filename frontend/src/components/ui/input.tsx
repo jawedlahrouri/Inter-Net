@@ -1,6 +1,13 @@
 import * as React from "react"
 import { cn } from "cn"
 
+/**
+ * @brief Renders a styled text input element that forwards all native input props.
+ * @param className Extra CSS classes merged into the input's default styling.
+ * @param type HTML input type attribute such as text or password.
+ * @param props Remaining native input props forwarded to the input element.
+ * @return An input element with shared styling classes and a data-slot of input.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input

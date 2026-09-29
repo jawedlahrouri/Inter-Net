@@ -17,6 +17,15 @@ export interface WidgetDimensionSelectorProps {
   showPreview?: boolean
 }
 
+/**
+ * @brief Renders the controls used to pick a widget width and height, with presets and a hoverable grid preview.
+ * @param width Current widget width in grid columns.
+ * @param height Current widget height in grid rows.
+ * @param onChange Callback receiving the new width and height when the user picks a size.
+ * @param showPresets Whether to show the recommended size preset buttons (defaults to true).
+ * @param showPreview Whether to show the interactive grid preview (defaults to true).
+ * @return A panel with the size badge, preset buttons, width and height option buttons and an interactive 6x3 grid preview.
+ */
 export function WidgetDimensionSelector({
   width,
   height,
@@ -31,7 +40,6 @@ export function WidgetDimensionSelector({
 
   return (
     <div className="space-y-4">
-      {/* En-tête avec résumé de la taille sélectionnée */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Maximize2 className="size-4 text-primary" />
@@ -42,7 +50,6 @@ export function WidgetDimensionSelector({
         </Badge>
       </div>
 
-      {/* Préréglages rapides 1-clic */}
       {showPresets && (
         <div className="space-y-1.5">
           <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
@@ -74,9 +81,7 @@ export function WidgetDimensionSelector({
         </div>
       )}
 
-      {/* Sélecteurs détaillés Largeur et Longueur (Hauteur) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-        {/* Largeur */}
         <div className="space-y-2 p-3 rounded-xl border border-border/70 bg-card/50">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
@@ -108,7 +113,6 @@ export function WidgetDimensionSelector({
           </p>
         </div>
 
-        {/* Longueur / Hauteur */}
         <div className="space-y-2 p-3 rounded-xl border border-border/70 bg-card/50">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
@@ -141,7 +145,6 @@ export function WidgetDimensionSelector({
         </div>
       </div>
 
-      {/* Mini grille interactive de visualisation (6 cols × 3 rows) */}
       {showPreview && (
         <div className="space-y-1.5 p-3 rounded-xl border border-border/60 bg-muted/20">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">

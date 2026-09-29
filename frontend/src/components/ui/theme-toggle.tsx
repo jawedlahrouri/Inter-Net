@@ -2,6 +2,11 @@ import { Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeContext';
 
+/**
+ * @brief Renders a ghost icon button that toggles between light and dark themes.
+ * @param className Optional extra CSS classes appended to the toggle button.
+ * @return A button showing a Sun icon in dark mode or a Moon icon in light mode, calling toggleTheme on click.
+ */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, toggleTheme } = useTheme();
 

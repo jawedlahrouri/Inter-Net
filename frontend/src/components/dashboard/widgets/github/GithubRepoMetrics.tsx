@@ -22,6 +22,14 @@ interface GithubRepoMetricsProps {
   repoHook: RepoHookReturn
 }
 
+/**
+ * @brief Renders the GitHub metric view that matches the selected repository or user metric type.
+ * @param metric Selected GitHub metric type that decides which repository or user view is rendered.
+ * @param stats GitHub user statistics supplying the top, starred and recent repository lists.
+ * @param targetRepo Full name of the configured repository, empty when none is set.
+ * @param repoHook Result of useGithubRepoStats with repository stats, loading flag, error message and refresh function.
+ * @return JSX with the list, overview, commits, contributors or languages view for the metric, or null for unknown metrics.
+ */
 export function GithubRepoMetrics({
   metric,
   stats,
@@ -29,7 +37,6 @@ export function GithubRepoMetrics({
   repoHook,
 }: GithubRepoMetricsProps) {
   switch (metric) {
-    // 16. Top dépôts par commits
     case 'top_repos_by_commits': {
       const topRepos = stats.top_repos_by_commits || []
       return (
@@ -63,7 +70,6 @@ export function GithubRepoMetrics({
       )
     }
 
-    // 17. Top dépôts par étoiles
     case 'top_starred_repos': {
       const topStars = stats.top_starred_repos || []
       return (
@@ -96,7 +102,6 @@ export function GithubRepoMetrics({
       )
     }
 
-    // 18. Derniers dépôts modifiés
     case 'recent_repos_list': {
       const recents = stats.recent_repos || []
       return (
@@ -126,7 +131,6 @@ export function GithubRepoMetrics({
       )
     }
 
-    // Fiche détaillée d'un dépôt
     case 'repo_overview': {
       if (!targetRepo) {
         return (
@@ -213,7 +217,6 @@ export function GithubRepoMetrics({
       )
     }
 
-    // Derniers commits d'un dépôt
     case 'repo_recent_commits': {
       if (!targetRepo) {
         return (
@@ -262,7 +265,6 @@ export function GithubRepoMetrics({
       )
     }
 
-    // Contributeurs du dépôt
     case 'repo_contributors': {
       if (!targetRepo) {
         return (
@@ -311,7 +313,6 @@ export function GithubRepoMetrics({
       )
     }
 
-    // Langages du dépôt
     case 'repo_languages': {
       if (!targetRepo) {
         return (

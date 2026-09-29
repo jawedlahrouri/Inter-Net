@@ -11,6 +11,13 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/**
+ * @brief Provides the theme state, persists it in localStorage and applies the resolved light or dark class to the document root.
+ * @param children React nodes rendered inside the theme context provider.
+ * @param defaultTheme Initial theme (dark, light or system) used when none is saved; defaults to dark.
+ * @param storageKey localStorage key used to persist the theme; defaults to internet-ui-theme.
+ * @return A ThemeContext.Provider exposing theme, resolvedTheme, setTheme and toggleTheme around the children.
+ */
 export function ThemeProvider({
   children,
   defaultTheme = 'dark',
@@ -49,6 +56,9 @@ export function ThemeProvider({
     localStorage.setItem(storageKey, theme);
   }, [theme, storageKey]);
 
+  /**
+   * @brief Switches the theme between dark and light, resolving the system theme first when needed.
+   */
   const toggleTheme = () => {
     setTheme((prev) => {
       const current = prev === 'system'
@@ -65,6 +75,10 @@ export function ThemeProvider({
   );
 }
 
+/**
+ * @brief Returns the theme context and throws if used outside a ThemeProvider.
+ * @return The ThemeContextType object with theme, resolvedTheme, setTheme and toggleTheme.
+ */
 export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext);
   if (!context) {

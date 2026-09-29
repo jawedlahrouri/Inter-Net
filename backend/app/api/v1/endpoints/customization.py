@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-# Découverte dynamique et robuste du dossier backend/storage
 if Path("/app/storage").is_dir():
     storage_dir = Path("/app/storage")
 else:
@@ -44,6 +43,10 @@ class BackgroundInfo(BaseModel):
 
 @router.get("/videos", response_model=List[VideoInfo])
 def list_custom_videos() -> List[VideoInfo]:
+    """
+    @brief Lists the uploaded custom video files with allowed extensions found in the videos storage directory.
+    @return A list of VideoInfo objects with a prettified name and URL, sorted with la_peace.mp4 first then by name.
+    """
     videos: List[VideoInfo] = []
     allowed_extensions = {".mp4", ".webm", ".ogg"}
 
@@ -67,6 +70,11 @@ def list_custom_videos() -> List[VideoInfo]:
 
 @router.post("/videos/upload", response_model=VideoInfo, status_code=status.HTTP_201_CREATED)
 async def upload_custom_video(file: UploadFile = File(...)) -> VideoInfo:
+    """
+    @brief Validates, sanitizes the name of and saves an uploaded video file, rejecting bad formats and files over 50 MB.
+    @param file The uploaded video file (.mp4, .webm or .ogg).
+    @return A VideoInfo object describing the stored video, including its URL and size.
+    """
     allowed_extensions = {".mp4", ".webm", ".ogg"}
     file_ext = Path(file.filename or "").suffix.lower()
     if file_ext not in allowed_extensions:
@@ -101,6 +109,10 @@ async def upload_custom_video(file: UploadFile = File(...)) -> VideoInfo:
 
 @router.get("/backgrounds", response_model=List[BackgroundInfo])
 def list_custom_backgrounds() -> List[BackgroundInfo]:
+    """
+    @brief Lists the uploaded custom background images with allowed extensions found in the backgrounds storage directory.
+    @return A list of BackgroundInfo objects with a prettified name and URL, sorted by name.
+    """
     backgrounds: List[BackgroundInfo] = []
     allowed_extensions = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg"}
 
@@ -124,6 +136,11 @@ def list_custom_backgrounds() -> List[BackgroundInfo]:
 
 @router.post("/backgrounds/upload", response_model=BackgroundInfo, status_code=status.HTTP_201_CREATED)
 async def upload_custom_background(file: UploadFile = File(...)) -> BackgroundInfo:
+    """
+    @brief Validates, sanitizes the name of and saves an uploaded background image, rejecting bad formats and files over 15 MB.
+    @param file The uploaded image file (.jpg, .jpeg, .png, .webp, .avif or .svg).
+    @return A BackgroundInfo object describing the stored image, including its URL and size.
+    """
     allowed_extensions = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg"}
     file_ext = Path(file.filename or "").suffix.lower()
     if file_ext not in allowed_extensions:
@@ -166,6 +183,10 @@ class MusicInfo(BaseModel):
 
 @router.get("/music", response_model=List[MusicInfo])
 def list_custom_music() -> List[MusicInfo]:
+    """
+    @brief Lists the uploaded custom audio files with allowed extensions found in the music storage directory.
+    @return A list of MusicInfo objects with a prettified name and URL, sorted by name.
+    """
     music: List[MusicInfo] = []
     allowed_extensions = {".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac"}
 
@@ -189,6 +210,11 @@ def list_custom_music() -> List[MusicInfo]:
 
 @router.post("/music/upload", response_model=MusicInfo, status_code=status.HTTP_201_CREATED)
 async def upload_custom_music(file: UploadFile = File(...)) -> MusicInfo:
+    """
+    @brief Validates, sanitizes the name of and saves an uploaded audio file, rejecting bad formats and files over 30 MB.
+    @param file The uploaded audio file (.mp3, .wav, .ogg, .m4a, .aac or .flac).
+    @return A MusicInfo object describing the stored audio file, including its URL and size.
+    """
     allowed_extensions = {".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac"}
     file_ext = Path(file.filename or "").suffix.lower()
     if file_ext not in allowed_extensions:

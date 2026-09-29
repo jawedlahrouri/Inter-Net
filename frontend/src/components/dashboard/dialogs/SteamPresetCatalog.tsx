@@ -13,6 +13,16 @@ interface SteamPresetCatalogProps {
   onSelectPreset: (preset: SteamPreset) => void
 }
 
+/**
+ * @brief Renders a searchable, category-filtered catalog of Steam metric presets for selection.
+ * @param selectedPresetId Id of the currently selected Steam metric preset, highlighted in the list.
+ * @param selectedCategory Currently active category filter, where Tous means all.
+ * @param searchQuery Current search text used to filter presets by title, description or category.
+ * @param onSelectCategory Callback receiving the category label when a category button is clicked.
+ * @param onSearchChange Callback receiving the new search text when the search input changes.
+ * @param onSelectPreset Callback receiving the preset object when a preset card is clicked.
+ * @return A search input, category filter buttons and a scrollable list of preset cards, or an empty message when nothing matches.
+ */
 export function SteamPresetCatalog({
   selectedPresetId,
   selectedCategory,
@@ -35,7 +45,6 @@ export function SteamPresetCatalog({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col space-y-2.5 overflow-hidden">
-      {/* Barre de recherche dans les presets Steam */}
       <div className="relative shrink-0">
         <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -47,7 +56,6 @@ export function SteamPresetCatalog({
         />
       </div>
 
-      {/* Filtres par catégories */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs shrink-0 no-scrollbar">
         {STEAM_CATEGORIES.map((cat) => (
           <button
@@ -66,7 +74,6 @@ export function SteamPresetCatalog({
         ))}
       </div>
 
-      {/* Liste des cartes de visualisations Steam */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
         {filteredPresets.map((preset) => {
           const Icon = preset.icon

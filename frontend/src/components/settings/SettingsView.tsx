@@ -92,6 +92,13 @@ export interface SettingsViewProps {
   onLaunchMeditation?: () => void
 }
 
+/**
+ * @brief Renders the settings page with a collapsible sidebar and the account, integrations, ambiance and appearance tabs.
+ * @param initialSubpage Settings subpage shown first and synced when it changes; defaults to account.
+ * @param onSubpageChange Optional callback notified when the user switches to another settings subpage.
+ * @param onLaunchMeditation Optional callback passed to the ambiance tab to start the meditation session.
+ * @return The settings layout with header, navigation sidebar, active tab content and GitHub connect dialog, or null when logged out.
+ */
 export function SettingsView({
   initialSubpage = 'account',
   onSubpageChange,
@@ -113,6 +120,9 @@ export function SettingsView({
     return localStorage.getItem('settings_sidebar_open') !== 'false'
   })
 
+  /**
+   * @brief Toggles the settings sidebar open or closed and persists the choice in localStorage.
+   */
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => {
       const next = !prev
@@ -131,6 +141,10 @@ export function SettingsView({
     }
   }, [initialSubpage])
 
+  /**
+   * @brief Switches the active settings subpage and notifies the parent through onSubpageChange.
+   * @param subpage Settings subpage to display.
+   */
   const handleSubpageChange = (subpage: SettingsSubpage) => {
     setActiveSubpage(subpage)
     if (onSubpageChange) {
@@ -138,6 +152,9 @@ export function SettingsView({
     }
   }
 
+  /**
+   * @brief Fetches Steam and GitHub connection status and updates the matching integration items.
+   */
   const refreshIntegrations = async () => {
     if (!user && !getStoredToken()) return
 
@@ -155,7 +172,6 @@ export function SettingsView({
         )
       )
     } catch {
-      // ignore
     }
 
     try {
@@ -172,7 +188,6 @@ export function SettingsView({
         )
       )
     } catch {
-      // ignore
     }
   }
 
@@ -180,6 +195,10 @@ export function SettingsView({
     refreshIntegrations()
   }, [user])
 
+  /**
+   * @brief Starts connecting an integration by redirecting to Steam auth or opening the GitHub connect dialog.
+   * @param id Identifier of the integration to connect.
+   */
   const handleConnect = (id: string) => {
     if (id === 'steam') {
       window.location.href = '/api/v1/auth/steam'
@@ -188,6 +207,10 @@ export function SettingsView({
     }
   }
 
+  /**
+   * @brief Disconnects the Steam or GitHub integration and marks it as disconnected in local state.
+   * @param id Identifier of the integration to disconnect.
+   */
   const handleDisconnect = async (id: string) => {
     try {
       if (id === 'steam') {
@@ -211,7 +234,6 @@ export function SettingsView({
 
   return (
     <div className="w-full space-y-6">
-      {/* Header section */}
       <div className="border-b border-border/60 pb-4">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Paramètres
@@ -221,9 +243,7 @@ export function SettingsView({
         </p>
       </div>
 
-      {/* Main Settings Layout with Left Sidebar */}
       <div className="flex flex-col md:flex-row items-start gap-6 w-full">
-        {/* Left Sidebar */}
         {isSidebarOpen ? (
           <aside className="w-full md:w-64 shrink-0 rounded-2xl border border-border/80 bg-card/90 p-3.5 shadow-md backdrop-blur-md space-y-3">
             <div className="flex items-center justify-between px-2 py-1 border-b border-border/50 pb-2">
@@ -332,7 +352,6 @@ export function SettingsView({
           </aside>
         ) : null}
 
-        {/* Right Content Area */}
         <section className="flex-1 min-w-0 w-full space-y-6">
           {!isSidebarOpen && (
             <div className="flex items-center gap-2 pb-1">

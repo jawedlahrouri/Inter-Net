@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchSteamUserStats, type SteamUserStats } from '@/services/api'
 
-// Limite stricte de rafraîchissement à 5 minutes (300s) pour préserver les quotas Steam multi-comptes
-export const MIN_STEAM_INTERVAL_SECONDS = 300 // 5 minutes
+export const MIN_STEAM_INTERVAL_SECONDS = 300
 
-// Cache partagé et gestion des abonnés entre tous les widgets Steam du dashboard
 let cachedStats: SteamUserStats | null = null
 let cachedError: string | null = null
 let isFetching = false
@@ -14,10 +12,19 @@ const subscribers = new Set<(stats: SteamUserStats | null, error: string | null,
 let globalIntervalId: ReturnType<typeof setInterval> | null = null
 let activeMinInterval = MIN_STEAM_INTERVAL_SECONDS
 
+/**
+ * @brief Calls every subscribed callback with the cached Steam stats, cached error and the given loading flag.
+ * @param loading Whether a Steam stats fetch is currently in progress.
+ */
 function notifySubscribers(loading: boolean) {
   subscribers.forEach((cb) => cb(cachedStats, cachedError, loading))
 }
 
+/**
+ * @brief Fetches Steam user stats once at a time, updates the shared cache and notifies subscribers.
+ * @param forceRefresh When true, asks the backend to bypass its cache.
+ * @return A promise resolving to the fetched stats, the cached stats if already fetching, or null on error.
+ */
 export async function refreshSteamStats(forceRefresh: boolean = false): Promise<SteamUserStats | null> {
   if (isFetching) return cachedStats
   isFetching = true
@@ -38,6 +45,9 @@ export async function refreshSteamStats(forceRefresh: boolean = false): Promise<
   }
 }
 
+/**
+ * @brief Resets the shared polling interval and restarts it only if there are subscribers, using the enforced minimum interval.
+ */
 function updateGlobalTimer() {
   if (globalIntervalId) {
     clearInterval(globalIntervalId)
@@ -45,7 +55,6 @@ function updateGlobalTimer() {
   }
 
   if (subscribers.size > 0) {
-    // Toujours au minimum 5 minutes (300 secondes) pour préserver les quotas de l'API Steam
     const effectiveInterval = Math.max(MIN_STEAM_INTERVAL_SECONDS, activeMinInterval)
     globalIntervalId = setInterval(() => {
       refreshSteamStats(false)
@@ -53,6 +62,11 @@ function updateGlobalTimer() {
   }
 }
 
+/**
+ * @brief Provides shared, cached Steam stats with loading and error state and automatic periodic refresh.
+ * @param intervalSeconds Desired refresh interval in seconds, raised to the minimum of 300 seconds if lower.
+ * @return An object with stats, loading, error, lastUpdated and a refresh function forcing a reload.
+ */
 export function useSteamStats(intervalSeconds: number = MIN_STEAM_INTERVAL_SECONDS) {
   const [stats, setStats] = useState<SteamUserStats | null>(cachedStats)
   const [error, setError] = useState<string | null>(cachedError)
@@ -60,6 +74,12 @@ export function useSteamStats(intervalSeconds: number = MIN_STEAM_INTERVAL_SECON
   const [lastUpdated, setLastUpdated] = useState<Date | null>(lastFetchTime)
 
   useEffect(() => {
+    /**
+     * @brief Subscriber callback that copies the shared Steam stats, error, loading state and last fetch time into local state.
+     * @param newStats The latest Steam stats or null.
+     * @param newError The latest error message or null.
+     * @param isLoading Whether a fetch is in progress.
+     */
     const handleUpdate = (
       newStats: SteamUserStats | null,
       newError: string | null,
@@ -73,14 +93,12 @@ export function useSteamStats(intervalSeconds: number = MIN_STEAM_INTERVAL_SECON
 
     subscribers.add(handleUpdate)
 
-    // Toujours au minimum 5 minutes
     const validatedInterval = Math.max(MIN_STEAM_INTERVAL_SECONDS, intervalSeconds)
     if (validatedInterval < activeMinInterval) {
       activeMinInterval = validatedInterval
     }
     updateGlobalTimer()
 
-    // Ne fetch au montage que si pas de données ou si les données ont plus de 5 minutes
     const now = Date.now()
     if (!cachedStats || !lastFetchTime || now - lastFetchTime.getTime() > MIN_STEAM_INTERVAL_SECONDS * 1000) {
       refreshSteamStats(false)

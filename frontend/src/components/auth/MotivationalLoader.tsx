@@ -9,6 +9,12 @@ interface MotivationalLoaderProps {
   mode?: 'login' | 'meditate';
 }
 
+/**
+ * @brief Renders a fullscreen loader that types out a random motivational quote word by word, optionally over a meditation video.
+ * @param onComplete Callback invoked once the loader finishes, via timeout, Escape key or click in meditate mode.
+ * @param mode Loader variant, login or meditate; meditate enables the video and click-to-exit (defaults to login).
+ * @return A fullscreen overlay with header controls, the animated quote and author, and a progress bar or exit hint.
+ */
 export function MotivationalLoader({
   onComplete,
   mode = 'login',
@@ -37,15 +43,21 @@ export function MotivationalLoader({
     }, 350);
   }, [onComplete]);
 
-  // Clic n'importe où sur l'écran pour quitter en mode méditation
+  /**
+   * @brief Finishes the loader when the container is clicked, but only in meditate mode.
+   * @param e The mouse click event on the container.
+   */
   const handleContainerClick = (e: React.MouseEvent) => {
     if (isMeditateMode) {
       handleFinish();
     }
   };
 
-  // Raccourci Échap pour quitter
   useEffect(() => {
+    /**
+     * @brief Finishes the loader when the Escape key is pressed.
+     * @param e The keyboard event received from the window.
+     */
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleFinish();
@@ -55,9 +67,11 @@ export function MotivationalLoader({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleFinish]);
 
-  // Chargement de la citation
   useEffect(() => {
     let isMounted = true;
+    /**
+     * @brief Fetches a random quote and stores it, falling back to a default Churchill quote on failure.
+     */
     async function loadQuote() {
       try {
         const data = await fetchRandomQuote();
@@ -79,7 +93,6 @@ export function MotivationalLoader({
     };
   }, []);
 
-  // Défilement mot par mot de la citation
   useEffect(() => {
     if (!quoteData) return;
 
@@ -100,7 +113,6 @@ export function MotivationalLoader({
     return () => clearInterval(wordInterval);
   }, [quoteData]);
 
-  // Gestion des temporisations et de la fin de session
   useEffect(() => {
     if (!quoteData) return;
     const words = quoteData.quote.trim().split(/\s+/);
@@ -114,7 +126,6 @@ export function MotivationalLoader({
         setShowMediter(true);
       }, 550);
 
-      // En mode connexion classique uniquement, fermeture automatique rapide
       let timerComplete: any = null;
       if (!isMeditateMode) {
         timerComplete = setTimeout(() => {
@@ -144,7 +155,6 @@ export function MotivationalLoader({
         showVideo ? 'bg-black' : 'bg-background/95 backdrop-blur-md'
       }`}
     >
-      {/* Vidéo d'arrière-plan en mode méditation */}
       {showVideo && (
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
           <video
@@ -156,13 +166,11 @@ export function MotivationalLoader({
             onEnded={handleFinish}
             className="w-full h-full object-cover scale-[1.02] transform transition-transform duration-1000"
           />
-          {/* Calque sombre et doux pour détacher nettement la citation */}
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
           <div className="absolute inset-0 bg-radial from-transparent via-black/20 to-black/70" />
         </div>
       )}
 
-      {/* Barre d'action supérieure */}
       <div
         className="w-full max-w-4xl flex items-center justify-between z-20 relative"
         onClick={(e) => e.stopPropagation()}
@@ -220,7 +228,6 @@ export function MotivationalLoader({
         </div>
       </div>
 
-      {/* Conteneur principal de la citation */}
       <div className="max-w-2xl w-full text-center space-y-6 my-auto px-4 z-20 relative">
         <div
           className={`p-6 sm:p-10 rounded-2xl transition-all duration-500 ${
@@ -233,7 +240,6 @@ export function MotivationalLoader({
             <Quote className="size-4" />
           </div>
 
-          {/* Affichage fluide mot par mot */}
           <div className="min-h-[100px] flex items-center justify-center">
             {quoteData ? (
               <h2
@@ -255,7 +261,6 @@ export function MotivationalLoader({
             )}
           </div>
 
-          {/* Auteur */}
           <div
             className={`transition-opacity duration-500 pt-2 ${
               showAuthor ? 'opacity-100' : 'opacity-0'
@@ -272,7 +277,6 @@ export function MotivationalLoader({
             )}
           </div>
 
-          {/* Badge - à méditer */}
           <div
             className={`transition-all duration-500 pt-4 ${
               showMediter ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
@@ -291,7 +295,6 @@ export function MotivationalLoader({
         </div>
       </div>
 
-      {/* Barre de progression ou indication de navigation en bas */}
       <div className="w-full max-w-sm px-4 pb-2 z-20 relative text-center space-y-2">
         {isMeditateMode ? (
           <p

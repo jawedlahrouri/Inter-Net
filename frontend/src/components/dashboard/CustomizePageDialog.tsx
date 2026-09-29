@@ -110,6 +110,13 @@ const PRESET_BACKGROUNDS = [
   },
 ]
 
+/**
+ * @brief Renders the dialog for customizing a dashboard page's colors, background image and background music.
+ * @param open Whether the dialog is currently visible.
+ * @param onOpenChange Callback invoked with the new open state when the dialog is opened or closed.
+ * @param targetDashboard Dashboard page being customized (colors, background, music), or null to render nothing.
+ * @return A dialog with color presets, background and music pickers, upload controls and a save button, or null without a target dashboard.
+ */
 export function CustomizePageDialog({
   open,
   onOpenChange,
@@ -168,12 +175,19 @@ export function CustomizePageDialog({
 
   if (!targetDashboard) return null
 
+  /**
+   * @brief Applies the primary, secondary and tertiary colors of a color preset to the local form state.
+   * @param preset The color preset whose three colors are applied.
+   */
   const handleApplyPreset = (preset: ColorPreset) => {
     setPrimaryColor(preset.primary)
     setSecondaryColor(preset.secondary)
     setTertiaryColor(preset.tertiary)
   }
 
+  /**
+   * @brief Resets colors to the default customization and clears the background image and music in the local form state.
+   */
   const handleReset = () => {
     setPrimaryColor(DEFAULT_CUSTOMIZATION.primary_color)
     setSecondaryColor(DEFAULT_CUSTOMIZATION.secondary_color)
@@ -183,6 +197,10 @@ export function CustomizePageDialog({
     setBackgroundMusicName(null)
   }
 
+  /**
+   * @brief Uploads the chosen image file as the dashboard background and stores its URL, tracking loading and error state.
+   * @param e The change event of the file input holding the selected image.
+   */
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -199,6 +217,10 @@ export function CustomizePageDialog({
     }
   }
 
+  /**
+   * @brief Uploads the chosen audio file as the dashboard background music and stores its URL and name, tracking loading and error state.
+   * @param e The change event of the file input holding the selected audio file.
+   */
   const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -216,6 +238,9 @@ export function CustomizePageDialog({
     }
   }
 
+  /**
+   * @brief Sets the trimmed custom URL input as the background image and clears the input.
+   */
   const handleApplyUrl = () => {
     const trimmed = customUrlInput.trim()
     if (!trimmed) return
@@ -223,6 +248,9 @@ export function CustomizePageDialog({
     setCustomUrlInput('')
   }
 
+  /**
+   * @brief Sets the trimmed custom audio URL input as the background music with a generic name and clears the input.
+   */
   const handleApplyMusicUrl = () => {
     const trimmed = customMusicUrlInput.trim()
     if (!trimmed) return
@@ -231,6 +259,10 @@ export function CustomizePageDialog({
     setCustomMusicUrlInput('')
   }
 
+  /**
+   * @brief Starts or stops a preview playback of a music track using a shared audio element.
+   * @param url The audio URL to preview or stop if it is already playing.
+   */
   const handleTogglePreview = (url: string) => {
     if (previewingTrackUrl === url) {
       previewAudioRef.current?.pause()
@@ -246,6 +278,9 @@ export function CustomizePageDialog({
     }
   }
 
+  /**
+   * @brief Stops any preview audio, saves the chosen colors, background and music to the dashboard, and closes the dialog.
+   */
   const handleSave = async () => {
     if (previewAudioRef.current) {
       previewAudioRef.current.pause()
@@ -286,7 +321,6 @@ export function CustomizePageDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-2">
-          {/* 1. Sélection des 3 couleurs */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -305,7 +339,6 @@ export function CustomizePageDialog({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Couleur primaire */}
               <div className="p-3 rounded-lg border border-border bg-card/60 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-foreground">Primaire</span>
@@ -339,7 +372,6 @@ export function CustomizePageDialog({
                 </div>
               </div>
 
-              {/* Couleur secondaire */}
               <div className="p-3 rounded-lg border border-border bg-card/60 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-foreground">Secondaire</span>
@@ -373,7 +405,6 @@ export function CustomizePageDialog({
                 </div>
               </div>
 
-              {/* Couleur ternaire */}
               <div className="p-3 rounded-lg border border-border bg-card/60 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-foreground">Ternaire</span>
@@ -408,7 +439,6 @@ export function CustomizePageDialog({
               </div>
             </div>
 
-            {/* Palettes thématiques rapides */}
             <div className="space-y-1.5 pt-1">
               <span className="text-[11px] font-medium text-muted-foreground">Palettes prêtes à l'emploi :</span>
               <div className="grid grid-cols-2 sm:grid-cols-6 gap-1.5">
@@ -435,7 +465,6 @@ export function CustomizePageDialog({
 
           <div className="h-px bg-border/60 w-full" />
 
-          {/* 2. Image d'arrière-plan de la page */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -447,7 +476,6 @@ export function CustomizePageDialog({
               </span>
             </div>
 
-            {/* Aperçu état courant du fond de la page */}
             <div className="p-3 rounded-lg border border-border bg-muted/20 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
@@ -487,7 +515,6 @@ export function CustomizePageDialog({
               )}
             </div>
 
-            {/* Options Upload & URL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="space-y-1.5">
                 <input
@@ -539,7 +566,6 @@ export function CustomizePageDialog({
               </div>
             </div>
 
-            {/* Galerie de presets de fond */}
             <div className="space-y-1.5 pt-1">
               <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
                 <Layers className="size-3" />
@@ -580,7 +606,6 @@ export function CustomizePageDialog({
 
           <div className="h-px bg-border/60 w-full" />
 
-          {/* 3. Musique d'ambiance de cette page */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -592,7 +617,6 @@ export function CustomizePageDialog({
               </span>
             </div>
 
-            {/* Statut de la musique pour cette page */}
             <div className="p-3 rounded-lg border border-border bg-muted/20 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="size-10 rounded-md border border-border bg-card flex items-center justify-center shrink-0 text-purple-400">
@@ -624,7 +648,6 @@ export function CustomizePageDialog({
               )}
             </div>
 
-            {/* Options Upload Audio & URL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="space-y-1.5">
                 <input
@@ -676,7 +699,6 @@ export function CustomizePageDialog({
               </div>
             </div>
 
-            {/* Galerie de pistes prédéfinies */}
             <div className="space-y-1.5 pt-1">
               <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
                 <Radio className="size-3" />
@@ -739,7 +761,6 @@ export function CustomizePageDialog({
 
           <div className="h-px bg-border/60 w-full" />
 
-          {/* 4. Live Preview de la page */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">

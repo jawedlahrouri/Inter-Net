@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LogOut, User, Shield, Calendar, Activity } from 'lucide-react';
 
+/**
+ * @brief Renders the card showing the logged-in user's initials, name, role, email, join date and a logout button.
+ * @return A card with the user summary and logout button, or null when nobody is logged in.
+ */
 export function UserDashboardHeader() {
   const { user, logout } = useAuth();
 
@@ -20,7 +24,6 @@ export function UserDashboardHeader() {
     <Card className="w-full border border-border bg-card rounded-lg shadow-xs">
       <CardContent className="p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          {/* User Identity & Avatar */}
           <div className="flex items-center gap-4">
             <div className="size-12 rounded-lg bg-muted/70 border border-border flex items-center justify-center font-mono text-sm font-semibold text-foreground select-none shrink-0">
               {initials}
@@ -55,7 +58,6 @@ export function UserDashboardHeader() {
             </div>
           </div>
 
-          {/* User Metadata & Logout Action */}
           <div className="flex items-center gap-6 justify-between lg:justify-end border-t lg:border-t-0 pt-3 lg:pt-0 border-border/50">
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">

@@ -46,6 +46,12 @@ interface AdminPanelProps {
   onNavigateToVisualDashboard: (userId: number, dashboardId: string) => void;
 }
 
+/**
+ * @brief Renders the administration panel with global stats, and searchable user and dashboard management tables with dialogs.
+ * @param initialTab Tab shown first in the panel, either users or dashboards (defaults to users).
+ * @param onNavigateToVisualDashboard Callback receiving a user id and dashboard id to open that user's dashboard visually.
+ * @return JSX showing the admin header, statistic cards, the users and dashboards tabs, and the related create, edit and delete dialogs.
+ */
 export function AdminPanel({
   initialTab = 'users',
   onNavigateToVisualDashboard,
@@ -56,7 +62,6 @@ export function AdminPanel({
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
-  // Users state
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userSearch, setUserSearch] = useState('');
@@ -64,7 +69,6 @@ export function AdminPanel({
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<AdminUserSummary | null>(null);
 
-  // Dashboards state
   const [dashboards, setDashboards] = useState<AdminDashboardSummary[]>([]);
   const [loadingDashboards, setLoadingDashboards] = useState(false);
   const [dashSearch, setDashSearch] = useState('');
@@ -72,19 +76,19 @@ export function AdminPanel({
   const [selectedDashboard, setSelectedDashboard] = useState<AdminDashboardSummary | null>(null);
   const [dashDialogOpen, setDashDialogOpen] = useState(false);
 
-  // Create dashboard dialog state
   const [isCreateDashOpen, setIsCreateDashOpen] = useState(false);
   const [newDashTargetUser, setNewDashTargetUser] = useState<number | null>(null);
   const [newDashName, setNewDashName] = useState('');
   const [creatingDash, setCreatingDash] = useState(false);
 
-  // Delete confirmations
   const [userToDelete, setUserToDelete] = useState<AdminUserSummary | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [dashToDelete, setDashToDelete] = useState<AdminDashboardSummary | null>(null);
   const [deletingDash, setDeletingDash] = useState(false);
 
-  // Load stats
+  /**
+   * @brief Fetches the global admin statistics and stores them in state, tracking the loading flag.
+   */
   const loadStats = async () => {
     try {
       setLoadingStats(true);
@@ -97,7 +101,9 @@ export function AdminPanel({
     }
   };
 
-  // Load users
+  /**
+   * @brief Fetches the admin user list filtered by the current search text and role filter.
+   */
   const loadUsers = async () => {
     try {
       setLoadingUsers(true);
@@ -113,7 +119,9 @@ export function AdminPanel({
     }
   };
 
-  // Load dashboards
+  /**
+   * @brief Fetches the admin dashboard list filtered by the selected user and search text.
+   */
   const loadDashboards = async () => {
     try {
       setLoadingDashboards(true);
@@ -139,13 +147,18 @@ export function AdminPanel({
     loadDashboards();
   }, [dashSearch, dashUserFilter]);
 
+  /**
+   * @brief Reloads the admin stats, users and dashboards lists.
+   */
   const refreshAll = () => {
     loadStats();
     loadUsers();
     loadDashboards();
   };
 
-  // Handle user delete
+  /**
+   * @brief Deletes the user selected for deletion through the admin API, then refreshes the data.
+   */
   const handleConfirmDeleteUser = async () => {
     if (!userToDelete) return;
     try {
@@ -160,7 +173,9 @@ export function AdminPanel({
     }
   };
 
-  // Handle dashboard delete
+  /**
+   * @brief Deletes the dashboard selected for deletion through the admin API, then refreshes the data.
+   */
   const handleConfirmDeleteDash = async () => {
     if (!dashToDelete) return;
     try {
@@ -175,7 +190,10 @@ export function AdminPanel({
     }
   };
 
-  // Handle create dashboard submit
+  /**
+   * @brief Handles the create-dashboard form submission by creating a dashboard for the target user and refreshing the data.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleCreateDashboardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDashTargetUser || !newDashName.trim()) return;
@@ -196,7 +214,6 @@ export function AdminPanel({
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-300">
-      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/70">
         <div>
           <div className="flex items-center gap-2">
@@ -228,9 +245,7 @@ export function AdminPanel({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Utilisateurs Totaux */}
         <div className="p-4 rounded-xl border border-border/80 bg-card/50 backdrop-blur-sm relative overflow-hidden group hover:border-primary/40 transition-all">
           <div className="flex items-center justify-between text-muted-foreground mb-2">
             <span className="text-xs font-medium">Utilisateurs inscrits</span>
@@ -242,7 +257,6 @@ export function AdminPanel({
           <p className="text-[11px] text-muted-foreground mt-1">Comptes enregistrés en base</p>
         </div>
 
-        {/* Administrateurs */}
         <div className="p-4 rounded-xl border border-border/80 bg-card/50 backdrop-blur-sm relative overflow-hidden group hover:border-violet-500/40 transition-all">
           <div className="flex items-center justify-between text-muted-foreground mb-2">
             <span className="text-xs font-medium">Administrateurs</span>
@@ -254,7 +268,6 @@ export function AdminPanel({
           <p className="text-[11px] text-muted-foreground mt-1">Droits d'administration actifs</p>
         </div>
 
-        {/* Tableaux de bord */}
         <div className="p-4 rounded-xl border border-border/80 bg-card/50 backdrop-blur-sm relative overflow-hidden group hover:border-emerald-500/40 transition-all">
           <div className="flex items-center justify-between text-muted-foreground mb-2">
             <span className="text-xs font-medium">Pages de Dashboards</span>
@@ -266,7 +279,6 @@ export function AdminPanel({
           <p className="text-[11px] text-muted-foreground mt-1">Pages personnalisées déployées</p>
         </div>
 
-        {/* Widgets Actifs */}
         <div className="p-4 rounded-xl border border-border/80 bg-card/50 backdrop-blur-sm relative overflow-hidden group hover:border-amber-500/40 transition-all">
           <div className="flex items-center justify-between text-muted-foreground mb-2">
             <span className="text-xs font-medium">Widgets configurés</span>
@@ -279,7 +291,6 @@ export function AdminPanel({
         </div>
       </div>
 
-      {/* Main Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-border/70 pb-3">
         <button
           type="button"
@@ -314,10 +325,8 @@ export function AdminPanel({
         </button>
       </div>
 
-      {/* TAB 1: GESTION DES UTILISATEURS */}
       {activeTab === 'users' && (
         <div className="space-y-4">
-          {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative w-full sm:w-72">
@@ -354,7 +363,6 @@ export function AdminPanel({
             </Button>
           </div>
 
-          {/* Users Table */}
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -495,10 +503,8 @@ export function AdminPanel({
         </div>
       )}
 
-      {/* TAB 2: SUPERVISION DES TABLEAUX DE BORD */}
       {activeTab === 'dashboards' && (
         <div className="space-y-4">
-          {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative w-full sm:w-72">
@@ -541,7 +547,6 @@ export function AdminPanel({
             </Button>
           </div>
 
-          {/* Dashboards Cards Grid */}
           {loadingDashboards ? (
             <div className="py-12 text-center text-muted-foreground text-xs">
               Chargement des tableaux de bord...
@@ -563,7 +568,6 @@ export function AdminPanel({
                     key={`${dash.user_id}-${dash.dashboard_id}`}
                     className="p-5 rounded-xl border border-border/80 bg-card hover:border-primary/40 transition-all flex flex-col justify-between gap-4 shadow-sm"
                   >
-                    {/* Top Row: Title & Owner */}
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -588,7 +592,6 @@ export function AdminPanel({
                         </span>
                       </div>
 
-                      {/* Colors preview */}
                       <div className="flex items-center gap-2 pt-1">
                         <span className="text-[10px] uppercase font-mono text-muted-foreground">
                           Palette :
@@ -618,7 +621,6 @@ export function AdminPanel({
                       </div>
                     </div>
 
-                    {/* Actions Row */}
                     <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
                       <Button
                         size="sm"
@@ -674,7 +676,6 @@ export function AdminPanel({
         </div>
       )}
 
-      {/* User Create/Edit Dialog */}
       <UserDialog
         open={userDialogOpen}
         onOpenChange={setUserDialogOpen}
@@ -682,7 +683,6 @@ export function AdminPanel({
         onSuccess={refreshAll}
       />
 
-      {/* Dashboard Full Content & Widget Management Dialog */}
       <DashboardContentDialog
         open={dashDialogOpen}
         onOpenChange={setDashDialogOpen}
@@ -691,7 +691,6 @@ export function AdminPanel({
         onOpenVisualDashboard={onNavigateToVisualDashboard}
       />
 
-      {/* Create Dashboard Dialog */}
       <Dialog open={isCreateDashOpen} onOpenChange={setIsCreateDashOpen}>
         <DialogContent className="sm:max-w-md border-border bg-background shadow-2xl">
           <DialogHeader>
@@ -750,7 +749,6 @@ export function AdminPanel({
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Delete User Dialog */}
       <Dialog open={Boolean(userToDelete)} onOpenChange={(o) => !o && setUserToDelete(null)}>
         <DialogContent className="sm:max-w-md border-border bg-background shadow-2xl">
           <DialogHeader>
@@ -789,7 +787,6 @@ export function AdminPanel({
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Delete Dashboard Dialog */}
       <Dialog open={Boolean(dashToDelete)} onOpenChange={(o) => !o && setDashToDelete(null)}>
         <DialogContent className="sm:max-w-md border-border bg-background shadow-2xl">
           <DialogHeader>

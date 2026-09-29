@@ -8,6 +8,16 @@ export interface RemoveButtonProps extends React.ComponentProps<typeof Button> {
   showLabel?: boolean
 }
 
+/**
+ * @brief Renders a trash-icon delete button with an optional text label.
+ * @param className Extra CSS classes merged into the button styling.
+ * @param variant Button visual variant; defaults to outline.
+ * @param size Button size; defaults to sm.
+ * @param label Text used as visible label, aria-label and title; defaults to Supprimer.
+ * @param showLabel Whether the text label is shown next to the trash icon; defaults to true.
+ * @param props Remaining Button props forwarded to the underlying Button component.
+ * @return A button with a trash icon and, when showLabel is true, a label span.
+ */
 export function RemoveButton({
   className,
   variant = 'outline',

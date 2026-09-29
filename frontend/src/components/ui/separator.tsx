@@ -4,6 +4,14 @@ import * as React from "react"
 import { cn } from "cn"
 import { Separator as SeparatorPrimitive } from "radix-ui"
 
+/**
+ * @brief Renders a thin horizontal or vertical divider line.
+ * @param className Extra CSS classes merged into the separator styling.
+ * @param orientation Direction of the divider, horizontal or vertical; defaults to horizontal.
+ * @param decorative Whether the separator is purely visual and hidden from assistive tech; defaults to true.
+ * @param props Remaining props forwarded to the Radix Separator root element.
+ * @return A Radix Separator root element styled as a divider.
+ */
 function Separator({
   className,
   orientation = "horizontal",

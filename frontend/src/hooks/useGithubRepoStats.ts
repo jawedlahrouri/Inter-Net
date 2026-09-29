@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchGithubRepoStats, type GithubRepoDetailedStats } from '@/services/api'
 
 const repoCache = new Map<string, { data: GithubRepoDetailedStats; timestamp: number }>()
-const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000
 
+/**
+ * @brief Loads detailed statistics for a GitHub repository with an in-memory cache, periodic refresh and manual refresh.
+ * @param repoFullName Repository name in owner/repo format, or undefined to skip loading with an error.
+ * @param refreshIntervalSeconds Auto-refresh period in seconds, with a minimum of 300 (default 300).
+ * @return An object with the stats, loading flag, error message, last update date and a refresh function that forces a reload.
+ */
 export function useGithubRepoStats(repoFullName?: string, refreshIntervalSeconds: number = 300) {
   const [stats, setStats] = useState<GithubRepoDetailedStats | null>(null)
   const [loading, setLoading] = useState<boolean>(true)

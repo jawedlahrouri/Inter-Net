@@ -143,7 +143,6 @@ body {
     @apply font-sans;
   }
 
-  /* Custom scrollbar styling */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

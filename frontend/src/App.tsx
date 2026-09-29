@@ -61,6 +61,10 @@ interface SupervisedContext {
   widgets: ApiUserWidget[];
 }
 
+/**
+ * @brief Renders the main application shell handling navigation between dashboard, settings and admin views plus supervised dashboards.
+ * @return JSX with the header, the active tab content (dashboard, settings or admin), footer and background music player.
+ */
 function DashboardContent() {
   const {
     user,
@@ -100,12 +104,14 @@ function DashboardContent() {
   const [adminDialogOpen, setAdminDialogOpen] = useState<boolean>(false);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  /**
+   * @brief Toggles the dashboard edit mode on or off.
+   */
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
   };
   const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
 
-  // Navigation vers Dashboard avec synchronisation URL
   const navigateToDashboard = useCallback((pageId?: string) => {
     setSupervisedContext(null);
     setCurrentTab('dashboard');
@@ -116,7 +122,6 @@ function DashboardContent() {
     window.history.pushState({ tab: 'dashboard', page: targetPage }, '', url);
   }, [activeDashboardId]);
 
-  // Navigation vers Settings avec sous-page et synchronisation URL
   const navigateToSettings = useCallback((subpage: SettingsSubpage = 'account') => {
     setSupervisedContext(null);
     setCurrentTab('settings');
@@ -127,7 +132,6 @@ function DashboardContent() {
     window.history.pushState({ tab: 'settings', sub: subpage }, '', url);
   }, []);
 
-  // Navigation vers Admin avec onglet et synchronisation URL
   const navigateToAdmin = useCallback((tab: 'users' | 'dashboards' = 'users') => {
     setSupervisedContext(null);
     setCurrentTab('admin');
@@ -136,7 +140,6 @@ function DashboardContent() {
     window.history.pushState({ tab: 'admin', adminTab: tab }, '', url);
   }, []);
 
-  // Changement de page de dashboard
   const handleDashboardPageChange = useCallback((pageId: string) => {
     const url = pageId && pageId !== 'default'
       ? `/dashboard?page=${encodeURIComponent(pageId)}`
@@ -144,7 +147,6 @@ function DashboardContent() {
     window.history.replaceState({ tab: 'dashboard', page: pageId }, '', url);
   }, []);
 
-  // Ouverture du mode supervision d'un utilisateur par l'admin
   const handleOpenVisualDashboard = useCallback(async (userId: number, dashboardId: string) => {
     try {
       const detail = await fetchAdminDashboardDetail(userId, dashboardId);
@@ -171,7 +173,10 @@ function DashboardContent() {
     }
   }, []);
 
-  // Opérations de widgets en mode supervision
+  /**
+   * @brief Creates a widget on the supervised user's dashboard through the admin API and adds it to the local supervised state.
+   * @param data The new widget data, to which the supervised dashboard id is added.
+   */
   const handleSupervisedAddWidget = async (data: NewWidgetData) => {
     if (!supervisedContext) return;
     try {
@@ -188,6 +193,11 @@ function DashboardContent() {
     }
   };
 
+  /**
+   * @brief Updates a widget on the supervised user's dashboard through the admin API and replaces it in local state.
+   * @param id The id of the widget to update, as a string.
+   * @param updatedFields The partial widget fields to merge into the existing widget.
+   */
   const handleSupervisedUpdateWidget = async (id: string, updatedFields: Partial<Widget>) => {
     if (!supervisedContext) return;
     try {
@@ -210,6 +220,10 @@ function DashboardContent() {
     }
   };
 
+  /**
+   * @brief Deletes a widget from the supervised user's dashboard through the admin API and removes it from local state.
+   * @param id The id of the widget to delete, as a string.
+   */
   const handleSupervisedRemoveWidget = async (id: string) => {
     if (!supervisedContext) return;
     try {
@@ -227,8 +241,10 @@ function DashboardContent() {
     }
   };
 
-  // Synchronisation avec l'historique du navigateur (boutons précédent / suivant)
   useEffect(() => {
+    /**
+     * @brief Synchronizes the current tab and sub-pages with the browser URL when the user navigates back or forward.
+     */
     const handlePopState = () => {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
@@ -263,7 +279,6 @@ function DashboardContent() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setActiveDashboardId, user]);
 
-  // Normalisation initiale de l'URL pour l'utilisateur connecté
   useEffect(() => {
     if (!user) return;
     const path = window.location.pathname;
@@ -302,7 +317,6 @@ function DashboardContent() {
     );
   }
 
-  // Écran de transition motivante lors de la connexion
   if (showMotivationalTransition) {
     return (
       <MotivationalLoader
@@ -312,7 +326,6 @@ function DashboardContent() {
     );
   }
 
-  // Écran de méditation immersive
   if (isMeditating) {
     return (
       <MotivationalLoader
@@ -322,14 +335,12 @@ function DashboardContent() {
     );
   }
 
-  // Widgets affichés : soit ceux du dashboard supervisé, soit ceux de l'utilisateur actif
   const displayedWidgets = supervisedContext
     ? supervisedContext.widgets.map(mapApiToWidget)
     : widgets.filter((w) => (w.dashboardId || 'default') === activeDashboardId);
 
   const isDashboardTab = currentTab === 'dashboard';
 
-  // Dynamic container styling
   const activePrimaryColor = supervisedContext
     ? (supervisedContext.primaryColor || '#0b0f19')
     : (customization?.primary_color || '#0b0f19');
@@ -369,10 +380,8 @@ function DashboardContent() {
       className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full transition-colors duration-200"
       style={containerStyle}
     >
-      {/* Top Navbar Header - Full-Width Edge-to-Edge */}
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
         <div className="w-full px-6 sm:px-8 lg:px-12 h-14 flex items-center justify-between gap-4">
-          {/* Brand & Main Nav Links (Far Left) */}
           <div className="flex items-center gap-6">
             <button
               type="button"
@@ -415,7 +424,6 @@ function DashboardContent() {
             )}
           </div>
 
-          {/* Right Action Bar */}
           <div className="flex items-center gap-3">
             {user ? (
               <>
@@ -448,7 +456,6 @@ function DashboardContent() {
                   </Button>
                 )}
 
-                {/* Profile & Settings Dropdown Menu (Far Right) */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -561,7 +568,6 @@ function DashboardContent() {
         </div>
       </header>
 
-      {/* Admin Supervision Banner (Sticky below header if supervising) */}
       {user && supervisedContext && (
         <AdminSupervisionBanner
           targetUsername={supervisedContext.userUsername}
@@ -589,10 +595,8 @@ function DashboardContent() {
         />
       )}
 
-      {/* Main Full-Width Content Container */}
       <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6">
         {!user ? (
-          /* Non-authentifié : Formulaire Login/Register épuré */
           <div className="space-y-8 max-w-md mx-auto py-12">
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -606,13 +610,11 @@ function DashboardContent() {
             <AuthCard />
           </div>
         ) : currentTab === 'admin' && user.role === 'admin' ? (
-          /* Vue Panel d'Administration */
           <AdminPanel
             initialTab={adminSubtab}
             onNavigateToVisualDashboard={handleOpenVisualDashboard}
           />
         ) : currentTab === 'settings' ? (
-          /* Vue Profil & Intégrations / Paramètres avec Sidebar */
           <SettingsView
             initialSubpage={settingsSubpage}
             onSubpageChange={(sub) => {
@@ -623,9 +625,7 @@ function DashboardContent() {
             onLaunchMeditation={() => setIsMeditating(true)}
           />
         ) : (
-          /* Vue Dashboard Utilisateur ou Dashboard Supervisé */
           <div className="space-y-6 w-full">
-            {/* Si pas en supervision, afficher les onglets normaux du compte */}
             {!supervisedContext && (
               <DashboardTabs
                 widgets={widgets}
@@ -634,7 +634,6 @@ function DashboardContent() {
               />
             )}
 
-            {/* Widgets Grid Section */}
             <div className="space-y-4 w-full">
               <WidgetGrid
                 widgets={displayedWidgets}
@@ -657,7 +656,6 @@ function DashboardContent() {
         )}
       </main>
 
-      {/* Modal d'édition complète depuis la supervision */}
       {adminDialogSummary && (
         <DashboardContentDialog
           open={adminDialogOpen}
@@ -683,7 +681,6 @@ function DashboardContent() {
         />
       )}
 
-      {/* Footer - Full-Width Edge-to-Edge */}
       <footer className="w-full border-t border-border py-6 text-xs text-muted-foreground mt-auto">
         <div className="w-full px-6 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-medium text-foreground/80">CrabeCorp • INTER-NET</p>
@@ -710,12 +707,15 @@ function DashboardContent() {
         </div>
       </footer>
 
-      {/* Lecteur de musique de fond flottant */}
       {user && isDashboardTab && <BackgroundMusicPlayer />}
     </div>
   );
 }
 
+/**
+ * @brief Renders the root component wrapping the application in theme, authentication and settings providers.
+ * @return JSX with ThemeProvider, AuthProvider and SettingsProvider nesting the DashboardContent component.
+ */
 export function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="internet-theme">

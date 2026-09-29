@@ -8,6 +8,16 @@ export interface EditButtonProps extends React.ComponentProps<typeof Button> {
   showLabel?: boolean
 }
 
+/**
+ * @brief Renders a button with a pencil icon and optional label used to trigger editing.
+ * @param className Extra CSS classes merged with the default styles for the labelled or icon-only layout.
+ * @param variant Button visual variant; defaults to outline.
+ * @param size Button size; defaults to sm.
+ * @param label Text used for the visible label, aria-label and tooltip; defaults to Modifier.
+ * @param showLabel Whether to display the label next to the pencil icon; false gives an icon-only button.
+ * @param props Remaining Button props forwarded to the underlying Button component.
+ * @return A styled button with a pencil icon and, when showLabel is true, the label text.
+ */
 export function EditButton({
   className,
   variant = 'outline',

@@ -2,16 +2,20 @@ export type NumberFormat = "number" | "compact" | "currency" | "percent"
 
 export interface FormatNumberOptions {
   format?: NumberFormat
-  /** ISO 4217 code, used when format is "currency". Defaults to USD. */
   currency?: string
   locale?: string
   maximumFractionDigits?: number
-  /** Abbreviate large values, e.g. "$158K" instead of "$158,143". */
   compact?: boolean
 }
 
 const formatterCache = new Map<string, Intl.NumberFormat>()
 
+/**
+ * @brief Returns a cached Intl.NumberFormat for the given locale and options, creating it on first use.
+ * @param locale BCP 47 locale tag used to format numbers.
+ * @param options Intl.NumberFormat options that define the formatting style.
+ * @return The cached or newly created Intl.NumberFormat instance.
+ */
 function getFormatter(locale: string, options: Intl.NumberFormatOptions) {
   const key = locale + JSON.stringify(options)
   let formatter = formatterCache.get(key)
@@ -23,13 +27,14 @@ function getFormatter(locale: string, options: Intl.NumberFormatOptions) {
 }
 
 /**
- * Format a metric value for display.
- *
- * formatNumber(1234567)                          -> "1,234,567"
- * formatNumber(1234567, { format: "compact" })   -> "1.2M"
- * formatNumber(48.2, { format: "currency" })     -> "$48.20"
- * formatNumber(158143, { format: "currency", compact: true }) -> "$158K"
- * formatNumber(0.124, { format: "percent" })     -> "12.4%"
+ * @brief Formats a number as plain, compact, currency or percent text using Intl.NumberFormat.
+ * @param value Number to format.
+ * @param format Formatting style: number, compact, currency or percent; defaults to number.
+ * @param currency ISO currency code used for currency formatting; defaults to USD.
+ * @param locale BCP 47 locale tag used by Intl.NumberFormat; defaults to en-US.
+ * @param maximumFractionDigits Maximum fraction digits; when omitted, a default depends on the format.
+ * @param compact Whether to use compact notation such as 1.2K for number and currency formats.
+ * @return The formatted string, or an em dash when the value is not finite.
  */
 export function formatNumber(
   value: number,
@@ -43,7 +48,6 @@ export function formatNumber(
 ): string {
   if (!Number.isFinite(value)) return "—"
 
-  // Compact values keep three significant digits: $158K, $1.23M, 41.2K.
   const compactOptions: Intl.NumberFormatOptions = compact
     ? maximumFractionDigits === undefined
       ? { notation: "compact", maximumSignificantDigits: 3 }
@@ -76,11 +80,10 @@ export function formatNumber(
 }
 
 /**
- * Format a fractional change as a signed percentage.
- *
- * formatDelta(0.124)  -> "+12.4%"
- * formatDelta(-0.03)  -> "-3.0%"
- * formatDelta(0)      -> "0.0%"
+ * @brief Formats a ratio as a signed percentage with one decimal.
+ * @param delta Relative change expressed as a ratio, for example 0.05 for 5%.
+ * @param locale BCP 47 locale tag used for formatting.
+ * @return The signed percent string, or an em dash when the delta is not finite.
  */
 export function formatDelta(delta: number, locale = "en-US"): string {
   if (!Number.isFinite(delta)) return "—"
@@ -93,7 +96,10 @@ export function formatDelta(delta: number, locale = "en-US"): string {
 }
 
 /**
- * Fractional change between two values. Returns 0 when there is no baseline.
+ * @brief Computes the relative change between a current and a previous value.
+ * @param current Current value.
+ * @param previous Previous value used as the baseline.
+ * @return The change divided by the absolute previous value, or 0 when the previous value is falsy.
  */
 export function computeDelta(current: number, previous: number): number {
   if (!previous) return 0

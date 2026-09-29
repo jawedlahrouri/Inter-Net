@@ -55,6 +55,13 @@ export interface AddWidgetDialogProps {
   onAddWidget: (data: NewWidgetData) => void
 }
 
+/**
+ * @brief Renders the full-screen dialog used to configure, preview and add a new dashboard widget.
+ * @param open Whether the dialog is currently visible.
+ * @param onOpenChange Callback invoked with the new open state when the dialog is opened or closed.
+ * @param onAddWidget Callback receiving the configured new widget data when the user confirms the addition.
+ * @return A Dialog element with the widget type selector, preset catalogs, parameter forms and a live preview.
+ */
 export function AddWidgetDialog({
   open,
   onOpenChange,
@@ -72,7 +79,6 @@ export function AddWidgetDialog({
   const [width, setWidth] = useState<number>(1)
   const [height, setHeight] = useState<number>(1)
 
-  // Steam State
   const [steamConnected, setSteamConnected] = useState<boolean>(false)
   const [steamLoading, setSteamLoading] = useState<boolean>(true)
   const [steamProfile, setSteamProfile] = useState<{
@@ -85,7 +91,6 @@ export function AddWidgetDialog({
   const [selectedCategory, setSelectedCategory] = useState<string>('Tous')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
-  // GitHub State
   const [githubConnected, setGithubConnected] = useState<boolean>(false)
   const [githubLoading, setGithubLoading] = useState<boolean>(true)
   const [githubProfile, setGithubProfile] = useState<{
@@ -113,6 +118,9 @@ export function AddWidgetDialog({
     }
   }, [githubStats, selectedRepoFullName, selectedOrgName])
 
+  /**
+   * @brief Reloads the Steam and GitHub connection statuses and profiles into local state.
+   */
   const refreshStatuses = () => {
     setSteamLoading(true)
     fetchSteamStatus()
@@ -159,6 +167,10 @@ export function AddWidgetDialog({
     )
   }, [selectedSteamPreset])
 
+  /**
+   * @brief Selects a GitHub preset and applies its title and default refresh interval to the form.
+   * @param preset GitHub preset chosen in the catalog.
+   */
   const handleSelectGithubPreset = (preset: GithubPreset) => {
     setSelectedGithubPreset(preset.id)
     setTitle(preset.title)
@@ -167,6 +179,10 @@ export function AddWidgetDialog({
     }
   }
 
+  /**
+   * @brief Selects a Steam preset and applies its title and default refresh interval to the form.
+   * @param preset Steam preset chosen in the catalog.
+   */
   const handleSelectSteamPreset = (preset: SteamPreset) => {
     setSelectedSteamPreset(preset.id)
     setTitle(preset.title)
@@ -175,6 +191,10 @@ export function AddWidgetDialog({
     }
   }
 
+  /**
+   * @brief Switches the selected widget type and resets the title and refresh interval to that type's defaults.
+   * @param type Widget type to select (github, steam, weather or custom_api).
+   */
   const handleSelectType = (type: WidgetType) => {
     setSelectedType(type)
     if (type === 'github') {
@@ -192,6 +212,10 @@ export function AddWidgetDialog({
     }
   }
 
+  /**
+   * @brief Fills the custom API form fields with the values of the chosen API preset.
+   * @param preset Custom API preset providing title, URL, JSON path, display mode, unit and refresh rate.
+   */
   const handleApplyApiPreset = (preset: ApiPreset) => {
     setTitle(preset.title)
     setApiUrl(preset.apiUrl)
@@ -201,6 +225,11 @@ export function AddWidgetDialog({
     setRefreshInterval(preset.refresh || 30)
   }
 
+  /**
+   * @brief Stores the JSON path picked by the user and switches to KPI display when the sample value is numeric.
+   * @param path JSON path selected in the API response explorer.
+   * @param sampleValue Optional sample value found at that path.
+   */
   const handleSelectPath = (path: string, sampleValue?: any) => {
     setJsonPath(path)
     if (typeof sampleValue === 'number') {
@@ -208,6 +237,9 @@ export function AddWidgetDialog({
     }
   }
 
+  /**
+   * @brief Resets every widget form field and selection to its initial default value.
+   */
   const resetForm = () => {
     setTitle('Commits (total)')
     setCity('')
@@ -229,11 +261,18 @@ export function AddWidgetDialog({
     setHeight(1)
   }
 
+  /**
+   * @brief Resets the form and closes the dialog without adding a widget.
+   */
   const handleCancel = () => {
     resetForm()
     onOpenChange(false)
   }
 
+  /**
+   * @brief Validates the form for the selected widget type, calls onAddWidget with the new widget data, then resets and closes the dialog.
+   * @param e Optional form event whose default submission is prevented.
+   */
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
@@ -303,7 +342,6 @@ export function AddWidgetDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* TOP BAR STYLE GRAFANA */}
         <header className="h-14 px-5 border-b border-border/70 flex items-center justify-between bg-card/80 shrink-0 select-none">
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
             <span className="font-semibold text-foreground/80 hover:text-foreground transition-colors cursor-pointer">
@@ -366,11 +404,8 @@ export function AddWidgetDialog({
           </div>
         </header>
 
-        {/* CORPS PRINCIPAL : SPLIT VIEW 2 COLONNES GRAFANA */}
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-          {/* COLONNE GAUCHE (8 COLS) : APERÇU (HAUT) + PARAMÈTRES (BAS) */}
           <div className="lg:col-span-8 flex flex-col min-h-0 border-r border-border/70 bg-muted/5">
-            {/* SCÈNE DE PRÉVISUALISATION (CANVAS HAUT) */}
             <div className="flex-1 min-h-[340px] flex flex-col overflow-hidden bg-background/40 relative">
               <div className="h-10 px-4 border-b border-border/50 flex items-center justify-between bg-muted/20 text-xs shrink-0 select-none">
                 <div className="flex items-center gap-2">
@@ -397,7 +432,6 @@ export function AddWidgetDialog({
                 </div>
               </div>
 
-              {/* Scène de rendu du widget */}
               <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto bg-[radial-gradient(#80808018_1px,transparent_1px)] [background-size:16px_16px]">
                 <div className="w-full max-w-[420px] shadow-2xl transition-all duration-300">
                   {selectedType === 'github' ? (
@@ -474,7 +508,6 @@ export function AddWidgetDialog({
               </div>
             </div>
 
-            {/* PARAMÈTRES / QUERY EDITOR (BAS) */}
             <div className="h-[280px] border-t border-border/70 bg-card/50 p-4 overflow-y-auto shrink-0 flex flex-col gap-3">
               <div className="flex items-center justify-between pb-2 border-b border-border/40">
                 <div className="flex items-center gap-2">
@@ -523,7 +556,6 @@ export function AddWidgetDialog({
                 )}
               </div>
 
-              {/* LIGNE COMMUNE : TITRE & CYCLE */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
                   <InputField
@@ -549,7 +581,6 @@ export function AddWidgetDialog({
                 </div>
               </div>
 
-              {/* CHAMPS SPÉCIFIQUES SELON SERVICE */}
               {selectedType === 'github' && (
                 <GithubParamsForm
                   selectedPreset={selectedGithubPreset}
@@ -590,7 +621,6 @@ export function AddWidgetDialog({
                 />
               )}
 
-              {/* Dimensions de départ du widget (Largeur & Longueur) */}
               <div className="pt-3 border-t border-border/60">
                 <WidgetDimensionSelector
                   width={width}
@@ -605,7 +635,6 @@ export function AddWidgetDialog({
             </div>
           </div>
 
-          {/* COLONNE DROITE (4 COLS) : CATALOGUE DE VISUALISATIONS */}
           <div className="lg:col-span-4 flex flex-col min-h-0 bg-card/60 p-4 space-y-3 overflow-hidden">
             <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
@@ -621,7 +650,6 @@ export function AddWidgetDialog({
               </span>
             </div>
 
-            {/* SÉLECTEUR DE SERVICES (4 TABS) */}
             <div className="grid grid-cols-4 p-1 bg-muted/70 rounded-xl border border-border/70 shrink-0 gap-1">
               <button
                 type="button"
@@ -682,7 +710,6 @@ export function AddWidgetDialog({
               </button>
             </div>
 
-            {/* CATALOGUES SELON SERVICE */}
             {selectedType === 'github' && (
               <GithubPresetCatalog
                 selectedPresetId={selectedGithubPreset}

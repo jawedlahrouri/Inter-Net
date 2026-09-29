@@ -51,13 +51,10 @@ export interface Widget {
   id: string
   title: string
   type?: WidgetType
-  // For default / link
   url?: string
-  // For weather
   city?: string
   lat?: number
   lon?: number
-  // For custom_api
   apiUrl?: string
   jsonPath?: string
   displayMode?: 'kpi' | 'gauge'
@@ -65,9 +62,7 @@ export interface Widget {
   refreshIntervalSeconds?: number
   gaugeMin?: number
   gaugeMax?: number
-  // For Steam
   steamMetric?: SteamMetricType
-  // For GitHub
   githubMetric?: GithubMetricType
   repoFullName?: string
   orgName?: string
