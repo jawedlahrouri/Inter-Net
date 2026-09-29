@@ -6,7 +6,10 @@ from fastapi.testclient import TestClient
 
 from app.db.session import Base
 from app.api.deps import get_db
+from app.core.config import settings
 from app.main import app
+
+settings.MAIL_SUPPRESS_SEND = True
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -50,3 +53,17 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+def create_user_token(client, db_session, email: str, username: str, password: str = "password123") -> str:
+    from app.models.user import User
+    from app.core.security import create_access_token
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "username": username, "password": password},
+    )
+    user = db_session.query(User).filter(User.email == email).first()
+    if user:
+        user.is_verified = True
+        db_session.commit()
+        return create_access_token(subject=user.id)
+    return ""

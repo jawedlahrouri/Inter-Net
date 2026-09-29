@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Enum, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Boolean, Enum, DateTime, JSON
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
@@ -12,6 +12,8 @@ class User(Base):
     username = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum("user", "admin", name="user_roles"), default="user", nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String(255), nullable=True, index=True)
     settings = Column(JSON, nullable=True, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

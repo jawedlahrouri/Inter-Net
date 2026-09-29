@@ -17,6 +17,7 @@ def auth_header(db_session):
         username="githubdev",
         password_hash="fakehash",
         role="user",
+        is_verified=True,
     )
     db_session.add(user)
     db_session.commit()

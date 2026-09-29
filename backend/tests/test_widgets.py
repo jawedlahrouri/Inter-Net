@@ -1,16 +1,8 @@
-from app.services.widget_storage import JsonWidgetStorage
+from tests.conftest import create_user_token
 
 
-def test_delete_widget_success(client):
-    reg_resp = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "widget_owner@example.com",
-            "username": "widget_owner",
-            "password": "password123",
-        },
-    )
-    token = reg_resp.json()["access_token"]
+def test_delete_widget_success(client, db_session):
+    token = create_user_token(client, db_session, "widget_owner@example.com", "widget_owner", "password123")
     headers = {"Authorization": f"Bearer {token}"}
 
     create_resp = client.post(
@@ -39,16 +31,8 @@ def test_delete_widget_success(client):
     assert not any(w["id"] == widget_id for w in list_resp.json())
 
 
-def test_delete_widget_not_found(client):
-    reg_resp = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "notfound_tester@example.com",
-            "username": "notfound_tester",
-            "password": "password123",
-        },
-    )
-    token = reg_resp.json()["access_token"]
+def test_delete_widget_not_found(client, db_session):
+    token = create_user_token(client, db_session, "notfound_tester@example.com", "notfound_tester", "password123")
 
     response = client.delete(
         "/api/v1/widgets/999999",
@@ -58,26 +42,9 @@ def test_delete_widget_not_found(client):
     assert "introuvable" in response.json()["detail"].lower()
 
 
-def test_delete_widget_forbidden_for_other_user(client):
-    resp_user1 = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "user1_widget@example.com",
-            "username": "user1_widget",
-            "password": "password123",
-        },
-    )
-    token1 = resp_user1.json()["access_token"]
-
-    resp_user2 = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "user2_widget@example.com",
-            "username": "user2_widget",
-            "password": "password123",
-        },
-    )
-    token2 = resp_user2.json()["access_token"]
+def test_delete_widget_forbidden_for_other_user(client, db_session):
+    token1 = create_user_token(client, db_session, "user1_widget@example.com", "user1_widget", "password123")
+    token2 = create_user_token(client, db_session, "user2_widget@example.com", "user2_widget", "password123")
 
     create_resp = client.post(
         "/api/v1/widgets",
@@ -104,16 +71,8 @@ def test_delete_widget_unauthorized(client):
     assert response.status_code == 401
 
 
-def test_create_and_list_widgets(client):
-    reg_resp = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "crud_user@example.com",
-            "username": "crud_user",
-            "password": "password123",
-        },
-    )
-    token = reg_resp.json()["access_token"]
+def test_create_and_list_widgets(client, db_session):
+    token = create_user_token(client, db_session, "crud_user@example.com", "crud_user", "password123")
     headers = {"Authorization": f"Bearer {token}"}
 
     create_resp = client.post(
@@ -138,16 +97,8 @@ def test_create_and_list_widgets(client):
     assert created_widget["refresh_rate"] == 15
 
 
-def test_update_widget_success(client):
-    reg_resp = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "update_user@example.com",
-            "username": "update_user",
-            "password": "password123",
-        },
-    )
-    token = reg_resp.json()["access_token"]
+def test_update_widget_success(client, db_session):
+    token = create_user_token(client, db_session, "update_user@example.com", "update_user", "password123")
     headers = {"Authorization": f"Bearer {token}"}
 
     create_resp = client.post(
@@ -178,16 +129,8 @@ def test_update_widget_success(client):
     assert data["params_values"]["city"] == "Toulouse"
 
 
-def test_create_widget_by_type(client):
-    reg_resp = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "type_user@example.com",
-            "username": "type_user",
-            "password": "password123",
-        },
-    )
-    token = reg_resp.json()["access_token"]
+def test_create_widget_by_type(client, db_session):
+    token = create_user_token(client, db_session, "type_user@example.com", "type_user", "password123")
     headers = {"Authorization": f"Bearer {token}"}
 
     create_resp = client.post(
@@ -204,16 +147,8 @@ def test_create_widget_by_type(client):
     assert create_resp.json()["type"] == "weather"
 
 
-def test_widget_dimensions_customization(client):
-    reg_resp = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "dimensions_user@example.com",
-            "username": "dimensions_user",
-            "password": "password123",
-        },
-    )
-    token = reg_resp.json()["access_token"]
+def test_widget_dimensions_customization(client, db_session):
+    token = create_user_token(client, db_session, "dimensions_user@example.com", "dimensions_user", "password123")
     headers = {"Authorization": f"Bearer {token}"}
 
     create_resp = client.post(
@@ -246,4 +181,3 @@ def test_widget_dimensions_customization(client):
     updated = update_resp.json()
     assert updated["width"] == 3
     assert updated["height"] == 1
-

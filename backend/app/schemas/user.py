@@ -22,6 +22,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     role: str
+    is_verified: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -35,3 +36,24 @@ class Token(BaseModel):
 
 class TokenPayload(BaseModel):
     sub: Optional[str] = None
+
+
+class RegisterResponse(BaseModel):
+    message: str
+    email: EmailStr
+    username: str
+    is_verified: bool = False
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(..., min_length=1, description="Jeton de vérification d'email")
+
+
+class VerifyEmailResponse(BaseModel):
+    message: str
+    is_verified: bool
+    email: Optional[EmailStr] = None
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr

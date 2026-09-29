@@ -16,6 +16,7 @@ export interface User {
   email: string;
   username: string;
   role: 'user' | 'admin';
+  is_verified?: boolean;
   created_at: string;
 }
 
@@ -29,6 +30,13 @@ export interface RegisterPayload {
   email: string;
   username: string;
   password: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  email: string;
+  username: string;
+  is_verified: boolean;
 }
 
 export interface LoginPayload {
@@ -102,13 +110,25 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
   return response.json();
 }
 
-export async function registerUser(payload: RegisterPayload): Promise<TokenResponse> {
-  const data = await apiFetch<TokenResponse>('/api/v1/auth/register', {
+export async function registerUser(payload: RegisterPayload): Promise<RegisterResponse> {
+  return apiFetch<RegisterResponse>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
-  setStoredToken(data.access_token);
-  return data;
+}
+
+export async function verifyEmailApi(token: string): Promise<{ message: string; is_verified: boolean; email?: string }> {
+  return apiFetch<{ message: string; is_verified: boolean; email?: string }>('/api/v1/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendVerificationApi(email: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 }
 
 export async function loginUser(payload: LoginPayload): Promise<TokenResponse> {

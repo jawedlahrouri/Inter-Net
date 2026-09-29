@@ -36,9 +36,19 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - MAIL_SERVER=${MAIL_SERVER:-mailpit}
+      - MAIL_PORT=${MAIL_PORT:-1025}
+      - MAIL_USERNAME=${MAIL_USERNAME:-noreply@inter-net.com}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_FROM=${MAIL_FROM:-noreply@inter-net.com}
+      - MAIL_STARTTLS=${MAIL_STARTTLS:-false}
+      - MAIL_SSL_TLS=${MAIL_SSL_TLS:-false}
+      - MAIL_USE_CREDENTIALS=${MAIL_USE_CREDENTIALS:-false}
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     volumes:
       - ./backend:/app
       - ./backend/storage:/app/storage
@@ -47,6 +57,14 @@ services:
         aliases:
           - server
           - backend
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
   frontend:
     build:

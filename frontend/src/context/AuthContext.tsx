@@ -3,6 +3,7 @@ import {
   type User,
   type LoginPayload,
   type RegisterPayload,
+  type RegisterResponse,
   loginUser,
   registerUser,
   fetchCurrentUser,
@@ -16,7 +17,7 @@ interface AuthContextType {
   showMotivationalTransition: boolean;
   setShowMotivationalTransition: (show: boolean) => void;
   login: (payload: LoginPayload) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<RegisterResponse>;
   logout: () => void;
 }
 
@@ -55,10 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setShowMotivationalTransition(true);
   };
 
-  const handleRegister = async (payload: RegisterPayload) => {
-    const data = await registerUser(payload);
-    setUser(data.user);
-    setShowMotivationalTransition(true);
+  const handleRegister = async (payload: RegisterPayload): Promise<RegisterResponse> => {
+    return await registerUser(payload);
   };
 
   const handleLogout = () => {

@@ -31,6 +31,17 @@ class Settings(BaseSettings):
     GITHUB_API_KEY: Optional[str] = None
     BASE_URL: str = "http://localhost:8080"
     FRONTEND_URL: str = "http://localhost:3000"
+    MAIL_USERNAME: str = "noreply@inter-net.com"
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = "noreply@inter-net.com"
+    MAIL_FROM_NAME: str = "INTER-NET"
+    MAIL_PORT: int = 1025
+    MAIL_SERVER: str = "localhost"
+    MAIL_STARTTLS: bool = False
+    MAIL_SSL_TLS: bool = False
+    MAIL_USE_CREDENTIALS: bool = False
+    MAIL_VALIDATE_CERTS: bool = False
+    MAIL_SUPPRESS_SEND: bool = False
 
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

@@ -152,6 +152,7 @@ def create_user(
         username=user_in.username,
         password_hash=hashed_pw,
         role=user_in.role,
+        is_verified=True,
         settings={
             "dashboards": [
                 {

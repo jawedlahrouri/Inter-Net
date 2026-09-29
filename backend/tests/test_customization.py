@@ -16,18 +16,11 @@ def test_storage_static_file_serving(client):
     assert len(response.content) > 0
 
 
-def test_user_settings_lifecycle(client):
-    # Register a user to test settings
-    reg_res = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "settings_tester@example.com",
-            "username": "settings_tester",
-            "password": "Password123!",
-        },
-    )
-    assert reg_res.status_code == 201
-    token = reg_res.json()["access_token"]
+from tests.conftest import create_user_token
+
+
+def test_user_settings_lifecycle(client, db_session):
+    token = create_user_token(client, db_session, "settings_tester@example.com", "settings_tester", "Password123!")
     headers = {"Authorization": f"Bearer {token}"}
 
     # Get default settings
