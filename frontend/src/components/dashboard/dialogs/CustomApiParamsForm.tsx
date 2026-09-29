@@ -17,6 +17,20 @@ interface CustomApiParamsFormProps {
   onSelectPath: (path: string, previewValue: any, suggestedMode?: 'kpi' | 'gauge') => void
 }
 
+/**
+ * @brief Renders the form to configure a custom API widget: URL, JSON path, unit, display mode and quick presets.
+ * @param apiUrl Current API URL value in the form.
+ * @param jsonPath Current JSON path value in the form.
+ * @param displayMode Current display mode, either kpi or gauge.
+ * @param unit Current unit label value.
+ * @param onApiUrlChange Callback receiving the new API URL when the input changes.
+ * @param onJsonPathChange Callback receiving the new JSON path when the input changes.
+ * @param onDisplayModeChange Callback receiving the chosen display mode, kpi or gauge.
+ * @param onUnitChange Callback receiving the new unit text when the input changes.
+ * @param onApplyPreset Callback receiving an API preset when a quick-template badge is clicked.
+ * @param onSelectPath Callback receiving a path, preview value and suggested mode chosen in the JSON path picker.
+ * @return A form with preset badges, URL and JSON path fields, a JsonPathPicker, a unit field and KPI/gauge mode buttons.
+ */
 export function CustomApiParamsForm({
   apiUrl,
   jsonPath,

@@ -19,6 +19,13 @@ interface IntegrationsSettingsTabProps {
   onDisconnect: (id: string) => void
 }
 
+/**
+ * @brief Renders the settings tab listing external service integrations with their connection status and actions.
+ * @param integrations List of integration items to display with their status and account.
+ * @param onConnect Callback invoked with an integration id when its connect button is clicked.
+ * @param onDisconnect Callback invoked with an integration id when its disconnect button is clicked.
+ * @return A heading and a grid of integration cards with status badges and connect, disconnect or coming-soon buttons.
+ */
 export function IntegrationsSettingsTab({
   integrations,
   onConnect,

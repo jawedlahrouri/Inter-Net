@@ -16,7 +16,16 @@ def get_or_create_service(
     auth_type: str = "oauth2",
     icon: str = "",
 ) -> Service:
-    """Récupère un service par son nom (ex: 'steam', 'github') ou le crée s'il n'existe pas encore."""
+    """
+    @brief Looks up a service by name and creates and persists it as active if it does not exist.
+    @param db SQLAlchemy database session.
+    @param name Unique internal name of the service.
+    @param display_name Display name used when creating the service.
+    @param description Description used when creating the service.
+    @param auth_type Authentication type used when creating the service.
+    @param icon Icon identifier used when creating the service.
+    @return The existing or newly created Service record.
+    """
     service = db.query(Service).filter(Service.name == name).first()
     if not service:
         service = Service(
@@ -39,8 +48,11 @@ def resolve_user_from_request(
     token: Optional[str] = None,
 ) -> Optional[User]:
     """
-    Extrait et valide l'utilisateur à partir d'un paramètre ?token=...,
-    d'un header Authorization Bearer, ou fallback en développement.
+    @brief Resolves the current user from a JWT found in the argument, query string or Bearer header, falling back to the first user.
+    @param db SQLAlchemy database session.
+    @param request Incoming FastAPI request carrying the token in its query or headers.
+    @param token Optional explicit JWT that takes precedence over the request.
+    @return The matching User, otherwise the first user in the database, or None if there are no users.
     """
     jwt_token = token or request.query_params.get("token")
     auth_header = request.headers.get("Authorization")
@@ -54,7 +66,6 @@ def resolve_user_from_request(
             if user:
                 return user
 
-    # Fallback pour faciliter les tests et le dev local
     return db.query(User).first()
 
 
@@ -71,8 +82,18 @@ def link_user_service(
     service_auth_type: str = "oauth2",
 ) -> UserService:
     """
-    Associe ou met à jour les identifiants d'un service externe (Steam, GitHub, Spotify, etc.)
-    dans la table user_services pour l'utilisateur spécifié.
+    @brief Creates or updates the link between a user and a service with its tokens and credentials, marking it connected.
+    @param db SQLAlchemy database session.
+    @param user_id Identifier of the user linking the service.
+    @param service_name Internal name of the service.
+    @param access_token Access token to store for the link.
+    @param credentials Optional credentials or profile data to store.
+    @param refresh_token Optional refresh token to store.
+    @param token_expires_at Optional expiry datetime of the access token.
+    @param service_display_name Optional display name used if the service must be created.
+    @param service_description Description used if the service must be created.
+    @param service_auth_type Authentication type used if the service must be created.
+    @return The saved UserService record.
     """
     try:
         service = get_or_create_service(
@@ -124,7 +145,13 @@ def get_user_service_status(
     user_id: int,
     service_name: str,
 ) -> Dict[str, Any]:
-    """Vérifie si un service donné est actuellement connecté pour cet utilisateur."""
+    """
+    @brief Returns whether a user is connected to a service and, if so, the stored token and profile data.
+    @param db SQLAlchemy database session.
+    @param user_id Identifier of the user.
+    @param service_name Internal name of the service.
+    @return A dictionary with connected false, or connected true plus access_token, credentials, profile and connected_at.
+    """
     service = db.query(Service).filter(Service.name == service_name).first()
     if not service:
         return {"connected": False}
@@ -152,7 +179,13 @@ def unlink_user_service(
     user_id: int,
     service_name: str,
 ) -> bool:
-    """Déconnecte un service pour un utilisateur."""
+    """
+    @brief Marks a user's link to a service as disconnected.
+    @param db SQLAlchemy database session.
+    @param user_id Identifier of the user.
+    @param service_name Internal name of the service.
+    @return True if a link was found and disconnected, otherwise False.
+    """
     try:
         service = db.query(Service).filter(Service.name == service_name).first()
         if not service:

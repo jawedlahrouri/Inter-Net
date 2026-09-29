@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from app.services.steam_service import (
+from app.steam import (
     get_game_icon_url,
     get_game_header_url,
     get_persona_state_label,
@@ -9,6 +9,9 @@ from app.services.steam_service import (
 
 
 def test_get_game_icon_url():
+    """
+    @brief Tests that get_game_icon_url builds the expected URL and returns None for a missing or empty hash.
+    """
     url = get_game_icon_url(730, "abcdef123456")
     assert url == "https://media.steampowered.com/steamcommunity/public/images/apps/730/abcdef123456.jpg"
     assert get_game_icon_url(730, None) is None
@@ -16,12 +19,17 @@ def test_get_game_icon_url():
 
 
 def test_get_game_header_url():
+    """
+    @brief Tests that get_game_header_url returns the expected Steam CDN header URL.
+    """
     url = get_game_header_url(1172470)
     assert url == "https://cdn.akamai.steamstatic.com/steam/apps/1172470/header.jpg"
 
 
 def test_get_persona_state_label():
-    # In game overrides personastate
+    """
+    @brief Tests the French persona state labels, the in-game label and the fallback for unknown states.
+    """
     assert get_persona_state_label(1, "Apex Legends") == "En jeu : Apex Legends"
     assert get_persona_state_label(0, None) == "Hors ligne"
     assert get_persona_state_label(1, None) == "En ligne"
@@ -34,7 +42,9 @@ def test_get_persona_state_label():
 
 @pytest.mark.anyio
 async def test_fetch_steam_user_stats_mocked():
-    # Mocking httpx.AsyncClient responses
+    """
+    @brief Tests fetch_steam_user_stats against a mocked HTTP client and checks the aggregated statistics.
+    """
     player_summary_response = {
         "response": {
             "players": [
@@ -96,6 +106,12 @@ async def test_fetch_steam_user_stats_mocked():
     mock_client = AsyncMock()
 
     async def mock_get(url, params=None):
+        """
+        @brief Fakes the async HTTP client GET by returning a canned Steam API response chosen from the requested URL.
+        @param url Requested Steam API URL used to pick the canned response.
+        @param params Query parameters of the request, ignored by the mock.
+        @return A mock response with status 200 and the JSON payload matching the endpoint.
+        """
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         if "GetPlayerSummaries" in url:
@@ -126,14 +142,17 @@ async def test_fetch_steam_user_stats_mocked():
         assert stats["steam_level"] == 42
         assert stats["badges_count"] == 1
         assert stats["games_count"] == 2
-        assert stats["total_playtime_hours"] == 10.0  # 600 min / 60
-        assert stats["recent_playtime_hours"] == 2.0  # 120 min / 60
+        assert stats["total_playtime_hours"] == 10.0
+        assert stats["recent_playtime_hours"] == 2.0
         assert stats["unplayed_games_count"] == 1
         assert stats["next_level_progress"]["percent"] == 50
 
 
 def test_compute_profile_summary():
-    from app.services.steam_service import compute_profile_summary
+    """
+    @brief Tests that compute_profile_summary maps a player dict to the expected name, in-game flag and status label.
+    """
+    from app.steam import compute_profile_summary
     profile = compute_profile_summary({
         "personaname": "Alice",
         "avatar": "http://a.jpg",
@@ -148,7 +167,10 @@ def test_compute_profile_summary():
 
 
 def test_compute_level_progress():
-    from app.services.steam_service import compute_level_progress
+    """
+    @brief Tests that compute_level_progress returns the right badge count, XP needed and percent progress.
+    """
+    from app.steam import compute_level_progress
     badges_count, xp_needed, progress = compute_level_progress(
         player_xp=550,
         badges_data={
@@ -164,7 +186,10 @@ def test_compute_level_progress():
 
 
 def test_compute_library_statistics():
-    from app.services.steam_service import compute_library_statistics
+    """
+    @brief Tests that compute_library_statistics returns the right total hours, unplayed count and average hours.
+    """
+    from app.steam import compute_library_statistics
     stats = compute_library_statistics(
         owned_games=[
             {"appid": 1, "playtime_forever": 120},

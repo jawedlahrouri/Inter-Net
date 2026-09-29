@@ -46,20 +46,35 @@ export interface LoginPayload {
 
 const TOKEN_KEY = 'dashboard_access_token';
 
+/**
+ * @brief Reads the stored authentication token from the browser localStorage.
+ * @return The stored access token string, or null when none is saved.
+ */
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+/**
+ * @brief Saves the authentication token in the browser localStorage.
+ * @param token The JWT access token to persist.
+ */
 export function setStoredToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
 }
 
+/**
+ * @brief Removes the authentication token from the browser localStorage.
+ */
 export function clearStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
+/**
+ * @brief Builds the backend URL that starts the Steam authentication flow, attaching the stored token when available.
+ * @return The Steam auth URL string, with an encoded token query parameter if the user is logged in.
+ */
 export function getSteamAuthRedirectUrl(): string {
   const token = getStoredToken();
   return token
@@ -67,6 +82,10 @@ export function getSteamAuthRedirectUrl(): string {
     : `${API_BASE_URL}/api/v1/auth/steam`;
 }
 
+/**
+ * @brief Builds the backend URL that starts the GitHub authentication flow, attaching the stored token when available.
+ * @return The GitHub auth URL string, with an encoded token query parameter if the user is logged in.
+ */
 export function getGithubAuthRedirectUrl(): string {
   const token = getStoredToken();
   return token
@@ -76,6 +95,12 @@ export function getGithubAuthRedirectUrl(): string {
 
 
 
+/**
+ * @brief Performs a fetch call to the backend API with JSON and bearer-token headers and throws an Error on non-OK responses.
+ * @param endpoint The API path (prefixed with the base URL) or a full http URL to call.
+ * @param options Optional fetch RequestInit settings such as method, headers and body.
+ * @return A promise resolving to the parsed JSON response body typed as T.
+ */
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
   const headers = new Headers(options.headers || {});
@@ -102,7 +127,6 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
         errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
       }
     } catch {
-      // ignore json parse error
     }
     throw new Error(errorMessage);
   }
@@ -110,6 +134,11 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
   return response.json();
 }
 
+/**
+ * @brief Registers a new user through the API and sends an activation email.
+ * @param payload The registration data containing email, username and password.
+ * @return A promise resolving to the register response.
+ */
 export async function registerUser(payload: RegisterPayload): Promise<RegisterResponse> {
   return apiFetch<RegisterResponse>('/api/v1/auth/register', {
     method: 'POST',
@@ -131,6 +160,11 @@ export async function resendVerificationApi(email: string): Promise<{ message: s
   });
 }
 
+/**
+ * @brief Logs a user in through the API and stores the returned access token.
+ * @param payload The login data containing the identifier (email or username) and password.
+ * @return A promise resolving to the token response with the access token and user.
+ */
 export async function loginUser(payload: LoginPayload): Promise<TokenResponse> {
   const data = await apiFetch<TokenResponse>('/api/v1/auth/login', {
     method: 'POST',
@@ -140,10 +174,18 @@ export async function loginUser(payload: LoginPayload): Promise<TokenResponse> {
   return data;
 }
 
+/**
+ * @brief Fetches the profile of the currently authenticated user.
+ * @return A promise resolving to the current User object.
+ */
 export async function fetchCurrentUser(): Promise<User> {
   return apiFetch<User>('/api/v1/auth/me');
 }
 
+/**
+ * @brief Fetches the backend health status.
+ * @return A promise resolving to the health response with status, version, timestamp and service name.
+ */
 export async function fetchHealth(): Promise<HealthResponse> {
   return apiFetch<HealthResponse>('/api/v1/health');
 }
@@ -153,10 +195,18 @@ export interface QuoteResponse {
   author: string;
 }
 
+/**
+ * @brief Fetches a random motivational quote from the backend.
+ * @return A promise resolving to an object with the quote text and its author.
+ */
 export async function fetchRandomQuote(): Promise<QuoteResponse> {
   return apiFetch<QuoteResponse>('/api/v1/quotes/random');
 }
 
+/**
+ * @brief Fetches the backend root endpoint containing the welcome message and documentation links.
+ * @return A promise resolving to the root response with message, docs and health paths.
+ */
 export async function fetchRoot(): Promise<RootResponse> {
   return apiFetch<RootResponse>('/');
 }
@@ -193,10 +243,19 @@ export interface ApiUserWidget {
   widget_def?: ApiWidgetDefinition;
 }
 
+/**
+ * @brief Fetches all widgets belonging to the authenticated user.
+ * @return A promise resolving to the array of user widgets.
+ */
 export async function fetchUserWidgets(): Promise<ApiUserWidget[]> {
   return apiFetch<ApiUserWidget[]>('/api/v1/widgets');
 }
 
+/**
+ * @brief Creates a new widget for the authenticated user.
+ * @param payload The widget data such as type, title, parameter values, refresh rate, position and size.
+ * @return A promise resolving to the newly created user widget.
+ */
 export async function createUserWidget(payload: {
   widget_id?: number;
   type?: string;
@@ -214,6 +273,12 @@ export async function createUserWidget(payload: {
   });
 }
 
+/**
+ * @brief Updates an existing widget of the authenticated user.
+ * @param widgetId The identifier of the widget to update.
+ * @param payload The fields to change such as title, parameter values, refresh rate, position and size.
+ * @return A promise resolving to the updated user widget.
+ */
 export async function updateUserWidget(
   widgetId: string | number,
   payload: {
@@ -232,6 +297,11 @@ export async function updateUserWidget(
   });
 }
 
+/**
+ * @brief Deletes a widget of the authenticated user.
+ * @param widgetId The identifier of the widget to delete.
+ * @return A promise resolving to a confirmation message with the deleted widget id.
+ */
 export async function deleteWidgetApi(widgetId: string | number): Promise<DeleteWidgetResponse> {
   return apiFetch<DeleteWidgetResponse>(`/api/v1/widgets/${widgetId}`, {
     method: 'DELETE',
@@ -294,10 +364,19 @@ export interface MusicInfo {
   size: number;
 }
 
+/**
+ * @brief Fetches the settings of the authenticated user.
+ * @return A promise resolving to the user settings with meditation, dashboards and customization.
+ */
 export async function fetchUserSettings(): Promise<UserSettings> {
   return apiFetch<UserSettings>('/api/v1/auth/me/settings');
 }
 
+/**
+ * @brief Partially updates the settings of the authenticated user via a PATCH request.
+ * @param payload The partial meditation, dashboards and customization settings to apply.
+ * @return A promise resolving to the updated user settings.
+ */
 export async function updateUserSettingsApi(payload: {
   meditation?: Partial<MeditationSettings>;
   dashboards?: DashboardPageInfo[];
@@ -309,10 +388,19 @@ export async function updateUserSettingsApi(payload: {
   });
 }
 
+/**
+ * @brief Fetches the list of custom videos available to the user.
+ * @return A promise resolving to an array of video information objects.
+ */
 export async function fetchCustomVideos(): Promise<VideoInfo[]> {
   return apiFetch<VideoInfo[]>('/api/v1/customization/videos');
 }
 
+/**
+ * @brief Uploads a custom video file to the backend as multipart form data.
+ * @param file The video file to upload.
+ * @return A promise resolving to the information of the uploaded video.
+ */
 export async function uploadCustomVideoApi(file: File): Promise<VideoInfo> {
   const formData = new FormData();
   formData.append('file', file);
@@ -322,10 +410,19 @@ export async function uploadCustomVideoApi(file: File): Promise<VideoInfo> {
   });
 }
 
+/**
+ * @brief Fetches the list of custom background images available to the user.
+ * @return A promise resolving to an array of background information objects.
+ */
 export async function fetchCustomBackgrounds(): Promise<BackgroundInfo[]> {
   return apiFetch<BackgroundInfo[]>('/api/v1/customization/backgrounds');
 }
 
+/**
+ * @brief Uploads a custom background image to the backend as multipart form data.
+ * @param file The background image file to upload.
+ * @return A promise resolving to the information of the uploaded background.
+ */
 export async function uploadCustomBackgroundApi(file: File): Promise<BackgroundInfo> {
   const formData = new FormData();
   formData.append('file', file);
@@ -335,10 +432,19 @@ export async function uploadCustomBackgroundApi(file: File): Promise<BackgroundI
   });
 }
 
+/**
+ * @brief Fetches the list of custom music tracks available to the user.
+ * @return A promise resolving to an array of music information objects.
+ */
 export async function fetchCustomMusic(): Promise<MusicInfo[]> {
   return apiFetch<MusicInfo[]>('/api/v1/customization/music');
 }
 
+/**
+ * @brief Uploads a custom music file to the backend as multipart form data.
+ * @param file The audio file to upload.
+ * @return A promise resolving to the information of the uploaded music track.
+ */
 export async function uploadCustomMusicApi(file: File): Promise<MusicInfo> {
   const formData = new FormData();
   formData.append('file', file);
@@ -359,10 +465,18 @@ export interface SteamStatusResponse {
   };
 }
 
+/**
+ * @brief Fetches whether the user has a linked Steam account and its profile.
+ * @return A promise resolving to the Steam status with the connected flag, steam id and profile.
+ */
 export async function fetchSteamStatus(): Promise<SteamStatusResponse> {
   return apiFetch<SteamStatusResponse>('/api/v1/auth/steam/status');
 }
 
+/**
+ * @brief Unlinks the Steam account from the authenticated user.
+ * @return A promise resolving to an object containing a confirmation message.
+ */
 export async function disconnectSteam(): Promise<{ message: string }> {
   return apiFetch<{ message: string }>('/api/v1/auth/steam/disconnect', {
     method: 'POST',
@@ -419,6 +533,11 @@ export interface SteamUserStats {
   recent_games_list?: SteamGameInfo[];
 }
 
+/**
+ * @brief Fetches the Steam statistics of the linked account, optionally bypassing the backend cache.
+ * @param forceRefresh When true, asks the backend to refresh the data instead of using cached values.
+ * @return A promise resolving to the Steam user statistics.
+ */
 export async function fetchSteamUserStats(forceRefresh: boolean = false): Promise<SteamUserStats> {
   const query = forceRefresh ? '?force_refresh=true' : '';
   return apiFetch<SteamUserStats>(`/api/v1/auth/steam/user/stats${query}`);
@@ -449,16 +568,29 @@ export interface GithubStatusResponse {
   connected_at?: string;
 }
 
+/**
+ * @brief Fetches whether the user has a linked GitHub account and its profile.
+ * @return A promise resolving to the GitHub status with the connected flag and profile.
+ */
 export async function fetchGithubStatus(): Promise<GithubStatusResponse> {
   return apiFetch<GithubStatusResponse>('/api/v1/auth/github/status');
 }
 
+/**
+ * @brief Unlinks the GitHub account from the authenticated user.
+ * @return A promise resolving to an object containing a confirmation message.
+ */
 export async function disconnectGithub(): Promise<{ message: string }> {
   return apiFetch<{ message: string }>('/api/v1/auth/github/disconnect', {
     method: 'POST',
   });
 }
 
+/**
+ * @brief Links a GitHub account by sending a personal access token to the backend.
+ * @param token The GitHub personal access token to register.
+ * @return A promise resolving to a message and the linked GitHub profile.
+ */
 export async function connectGithubToken(token: string): Promise<{ message: string; profile: GithubProfileInfo }> {
   return apiFetch<{ message: string; profile: GithubProfileInfo }>('/api/v1/auth/github/token', {
     method: 'POST',
@@ -491,13 +623,11 @@ export interface WeeklyTopDev {
 
 export interface GithubUserStats {
   profile: GithubProfileInfo;
-  // Volume & Lignes
   total_commits: number;
   lines_added: number;
   lines_deleted: number;
   lines_ratio: number;
   avg_commit_size: number;
-  // Fenêtres temporelles & Jours actifs
   commits_7d: number;
   commits_30d: number;
   commits_90d: number;
@@ -510,27 +640,22 @@ export interface GithubUserStats {
   active_days_30d: number;
   active_days_365d: number;
   active_repos_count: number;
-  // Semaine
   weekly_top_devs: WeeklyTopDev[];
-  // Pull Requests & Reviews
   pr_open_count: number;
   pr_merged_count: number;
   pr_closed_unmerged: number;
   pr_merge_rate: number;
   pr_created_total: number;
   code_reviews_done: number;
-  // Projets & Collaboration
   joined_projects_count: number;
   owned_projects_count: number;
   collab_projects_count: number;
   avg_team_size: number;
   avg_seniority_days: number;
   oldest_project_age_days: number;
-  // Organisations & Ventilation
   organisations?: GithubOrgInfo[];
   org_count?: number;
   repos_by_owner?: GithubRepoByOwner[];
-  // Repos & Notoriété
   total_stars: number;
   total_forks: number;
   total_open_issues: number;
@@ -547,6 +672,11 @@ export interface GithubUserStats {
   last_updated: number;
 }
 
+/**
+ * @brief Fetches the aggregated GitHub statistics of the linked user, optionally bypassing the backend cache.
+ * @param forceRefresh When true, asks the backend to refresh the data instead of using cached values.
+ * @return A promise resolving to the GitHub user statistics.
+ */
 export async function fetchGithubUserStats(forceRefresh: boolean = false): Promise<GithubUserStats> {
   const query = forceRefresh ? '?force_refresh=true' : '';
   return apiFetch<GithubUserStats>(`/api/v1/auth/github/user/stats${query}`);
@@ -622,15 +752,32 @@ export interface GithubOrgDetailedStats {
   last_updated: number;
 }
 
+/**
+ * @brief Fetches the GitHub organisations the linked user belongs to.
+ * @return A promise resolving to an array of GitHub organisation summaries.
+ */
 export async function fetchGithubUserOrgs(): Promise<GithubOrgInfo[]> {
   return apiFetch<GithubOrgInfo[]>('/api/v1/auth/github/user/orgs');
 }
 
+/**
+ * @brief Fetches detailed statistics of a GitHub organisation, optionally bypassing the backend cache.
+ * @param org The login of the GitHub organisation.
+ * @param forceRefresh When true, asks the backend to refresh the data instead of using cached values.
+ * @return A promise resolving to the detailed organisation statistics.
+ */
 export async function fetchGithubOrgStats(org: string, forceRefresh: boolean = false): Promise<GithubOrgDetailedStats> {
   const query = forceRefresh ? '?force_refresh=true' : '';
   return apiFetch<GithubOrgDetailedStats>(`/api/v1/auth/github/orgs/${encodeURIComponent(org)}/stats${query}`);
 }
 
+/**
+ * @brief Fetches detailed statistics of a GitHub repository, optionally bypassing the backend cache.
+ * @param owner The login of the repository owner.
+ * @param repo The name of the repository.
+ * @param forceRefresh When true, asks the backend to refresh the data instead of using cached values.
+ * @return A promise resolving to the detailed repository statistics.
+ */
 export async function fetchGithubRepoStats(owner: string, repo: string, forceRefresh: boolean = false): Promise<GithubRepoDetailedStats> {
   const query = forceRefresh ? '?force_refresh=true' : '';
   return apiFetch<GithubRepoDetailedStats>(`/api/v1/auth/github/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stats${query}`);
@@ -720,10 +867,20 @@ export interface AdminDashboardUpdatePayload {
   background_image?: string | null;
 }
 
+/**
+ * @brief Fetches global platform counters for the admin panel.
+ * @return A promise resolving to the totals of users, admins, dashboards and widgets.
+ */
 export async function fetchAdminStats(): Promise<AdminStats> {
   return apiFetch<AdminStats>('/api/v1/admin/stats');
 }
 
+/**
+ * @brief Fetches the list of users for the admin panel with optional search and role filters.
+ * @param q Optional search text matched against users.
+ * @param role Optional role to filter users by.
+ * @return A promise resolving to an array of admin user summaries.
+ */
 export async function fetchAdminUsers(q?: string, role?: string): Promise<AdminUserSummary[]> {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
@@ -732,10 +889,20 @@ export async function fetchAdminUsers(q?: string, role?: string): Promise<AdminU
   return apiFetch<AdminUserSummary[]>(`/api/v1/admin/users${qs ? `?${qs}` : ''}`);
 }
 
+/**
+ * @brief Fetches the full details of a user, including dashboards and widgets, as an admin.
+ * @param userId The identifier of the user to inspect.
+ * @return A promise resolving to the admin user detail.
+ */
 export async function fetchAdminUserDetail(userId: number): Promise<AdminUserDetail> {
   return apiFetch<AdminUserDetail>(`/api/v1/admin/users/${userId}`);
 }
 
+/**
+ * @brief Creates a new user account as an admin.
+ * @param payload The new user's email, username, password and role.
+ * @return A promise resolving to the created user's detail.
+ */
 export async function createAdminUser(payload: AdminUserCreatePayload): Promise<AdminUserDetail> {
   return apiFetch<AdminUserDetail>('/api/v1/admin/users', {
     method: 'POST',
@@ -743,6 +910,12 @@ export async function createAdminUser(payload: AdminUserCreatePayload): Promise<
   });
 }
 
+/**
+ * @brief Updates an existing user account as an admin.
+ * @param userId The identifier of the user to update.
+ * @param payload The fields to change such as email, username, role or password.
+ * @return A promise resolving to the updated user's detail.
+ */
 export async function updateAdminUser(userId: number, payload: AdminUserUpdatePayload): Promise<AdminUserDetail> {
   return apiFetch<AdminUserDetail>(`/api/v1/admin/users/${userId}`, {
     method: 'PUT',
@@ -750,12 +923,23 @@ export async function updateAdminUser(userId: number, payload: AdminUserUpdatePa
   });
 }
 
+/**
+ * @brief Deletes a user account as an admin.
+ * @param userId The identifier of the user to delete.
+ * @return A promise resolving to a confirmation message and the deleted user id.
+ */
 export async function deleteAdminUser(userId: number): Promise<{ message: string; id: number }> {
   return apiFetch<{ message: string; id: number }>(`/api/v1/admin/users/${userId}`, {
     method: 'DELETE',
   });
 }
 
+/**
+ * @brief Fetches dashboards across users for the admin panel with optional user and search filters.
+ * @param userId Optional user identifier to restrict dashboards to.
+ * @param q Optional search text matched against dashboards.
+ * @return A promise resolving to an array of admin dashboard summaries.
+ */
 export async function fetchAdminDashboards(userId?: number, q?: string): Promise<AdminDashboardSummary[]> {
   const params = new URLSearchParams();
   if (userId) params.set('user_id', String(userId));
@@ -764,10 +948,22 @@ export async function fetchAdminDashboards(userId?: number, q?: string): Promise
   return apiFetch<AdminDashboardSummary[]>(`/api/v1/admin/dashboards${qs ? `?${qs}` : ''}`);
 }
 
+/**
+ * @brief Fetches the details and widgets of a specific user dashboard as an admin.
+ * @param userId The identifier of the dashboard owner.
+ * @param dashboardId The identifier of the dashboard to fetch.
+ * @return A promise resolving to the admin dashboard detail.
+ */
 export async function fetchAdminDashboardDetail(userId: number, dashboardId: string): Promise<AdminDashboardDetail> {
   return apiFetch<AdminDashboardDetail>(`/api/v1/admin/users/${userId}/dashboards/${encodeURIComponent(dashboardId)}`);
 }
 
+/**
+ * @brief Creates a dashboard for a given user as an admin.
+ * @param userId The identifier of the user who will own the dashboard.
+ * @param payload The dashboard name, colors and background image.
+ * @return A promise resolving to the created dashboard detail.
+ */
 export async function createAdminDashboard(userId: number, payload: AdminDashboardCreatePayload): Promise<AdminDashboardDetail> {
   return apiFetch<AdminDashboardDetail>(`/api/v1/admin/users/${userId}/dashboards`, {
     method: 'POST',
@@ -775,6 +971,13 @@ export async function createAdminDashboard(userId: number, payload: AdminDashboa
   });
 }
 
+/**
+ * @brief Updates a user's dashboard as an admin.
+ * @param userId The identifier of the dashboard owner.
+ * @param dashboardId The identifier of the dashboard to update.
+ * @param payload The dashboard fields to change such as name, colors or background image.
+ * @return A promise resolving to the updated dashboard detail.
+ */
 export async function updateAdminDashboard(
   userId: number,
   dashboardId: string,
@@ -786,6 +989,12 @@ export async function updateAdminDashboard(
   });
 }
 
+/**
+ * @brief Deletes a user's dashboard as an admin.
+ * @param userId The identifier of the dashboard owner.
+ * @param dashboardId The identifier of the dashboard to delete.
+ * @return A promise resolving to a confirmation message and the deleted dashboard id.
+ */
 export async function deleteAdminDashboard(userId: number, dashboardId: string): Promise<{ message: string; dashboard_id: string }> {
   return apiFetch<{ message: string; dashboard_id: string }>(
     `/api/v1/admin/users/${userId}/dashboards/${encodeURIComponent(dashboardId)}`,
@@ -795,6 +1004,12 @@ export async function deleteAdminDashboard(userId: number, dashboardId: string):
   );
 }
 
+/**
+ * @brief Creates a widget for a given user as an admin.
+ * @param userId The identifier of the user who will own the widget.
+ * @param payload The widget title, type, parameter values, refresh rate and size.
+ * @return A promise resolving to the created user widget.
+ */
 export async function createAdminWidget(
   userId: number,
   payload: {
@@ -812,6 +1027,13 @@ export async function createAdminWidget(
   });
 }
 
+/**
+ * @brief Updates a user's widget as an admin.
+ * @param userId The identifier of the widget owner.
+ * @param widgetId The identifier of the widget to update.
+ * @param payload The widget fields to change such as title, parameters, refresh rate, size and position.
+ * @return A promise resolving to the updated user widget.
+ */
 export async function updateAdminWidget(
   userId: number,
   widgetId: number | string,
@@ -831,6 +1053,12 @@ export async function updateAdminWidget(
   });
 }
 
+/**
+ * @brief Deletes a user's widget as an admin.
+ * @param userId The identifier of the widget owner.
+ * @param widgetId The identifier of the widget to delete.
+ * @return A promise resolving to a confirmation message and the deleted widget id.
+ */
 export async function deleteAdminWidget(
   userId: number,
   widgetId: number | string

@@ -22,6 +22,14 @@ export interface EditWidgetDialogProps {
   onUpdateWidget: (id: string, data: Partial<Widget>) => void
 }
 
+/**
+ * @brief Renders the dialog that lets the user edit a widget's title, refresh interval, dashboard page, size and type-specific settings.
+ * @param open Whether the dialog is currently visible.
+ * @param onOpenChange Callback invoked with the new open state, e.g. false after saving.
+ * @param widget Widget being edited, or null to render nothing.
+ * @param onUpdateWidget Callback receiving the widget id and the partial updated data when the form is submitted.
+ * @return A dialog with a form of widget fields and save/cancel buttons, or null when no widget is selected.
+ */
 export function EditWidgetDialog({
   open,
   onOpenChange,
@@ -63,6 +71,10 @@ export function EditWidgetDialog({
 
   if (!widget) return null
 
+  /**
+   * @brief Builds the updated widget data from the form state, sends it to onUpdateWidget and closes the dialog.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 

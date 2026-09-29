@@ -18,6 +18,11 @@ export interface JsonPathPickerProps {
   className?: string
 }
 
+/**
+ * @brief Fetches JSON from an API URL, retrying through the backend proxy when the direct request fails.
+ * @param apiUrl The URL of the API to call with a GET request.
+ * @return A promise resolving to the parsed JSON response, rejecting with an error on a non-OK status.
+ */
 async function fetchApiResponse(apiUrl: string): Promise<any> {
   let response: Response
   try {
@@ -34,6 +39,14 @@ async function fetchApiResponse(apiUrl: string): Promise<any> {
   return response.json()
 }
 
+/**
+ * @brief Renders a tool that analyzes an API response and lets the user pick a JSON path to display.
+ * @param apiUrl URL of the API to fetch and analyze for selectable JSON paths.
+ * @param selectedPath Currently selected JSON path, highlighted in the list and used to skip auto-selection.
+ * @param onSelectPath Callback receiving the chosen path, its preview value and an optional suggested display mode.
+ * @param className Optional extra CSS classes merged into the root container.
+ * @return A panel with analyze and auto-select buttons, an error message, a search box and the list of discovered JSON paths.
+ */
 export function JsonPathPicker({
   apiUrl,
   selectedPath,
@@ -45,6 +58,9 @@ export function JsonPathPicker({
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
+  /**
+   * @brief Fetches the API response, discovers its JSON paths and auto-selects the best one if none is selected yet.
+   */
   const handleInspect = async () => {
     if (!apiUrl.trim()) return
     setLoading(true)
@@ -73,6 +89,9 @@ export function JsonPathPicker({
     }
   }
 
+  /**
+   * @brief Selects the best default path among the discovered ones and reports it through onSelectPath.
+   */
   const handleAutoSelect = () => {
     const best = findBestDefaultPath(paths)
     if (best) {

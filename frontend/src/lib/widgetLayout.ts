@@ -75,6 +75,12 @@ export const WIDGET_SIZE_PRESETS: SizePreset[] = [
   { name: 'Plein écran (Full×1)', width: 6, height: 1, iconDesc: 'Barre Full' },
 ]
 
+/**
+ * @brief Builds the responsive grid column and row span CSS classes for a widget of a given size.
+ * @param width Widget width in grid columns, clamped between 1 and 6.
+ * @param height Widget height in grid rows, clamped between 1 and 3.
+ * @return A string of Tailwind classes for column span, row span and minimum height.
+ */
 export function getWidgetSpanClasses(width: number = 1, height: number = 1): string {
   const w = Math.min(Math.max(width || 1, 1), 6)
   const h = Math.min(Math.max(height || 1, 1), 3)

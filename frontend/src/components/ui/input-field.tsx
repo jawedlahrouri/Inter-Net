@@ -9,6 +9,16 @@ export interface InputFieldProps extends React.ComponentProps<typeof Input> {
   error?: string
 }
 
+/**
+ * @brief Renders a labeled text input with an optional description or error message.
+ * @param id Input element id; a generated unique id is used when omitted.
+ * @param label Optional label text displayed above the input.
+ * @param description Optional helper text shown below the input when there is no error.
+ * @param error Error message that marks the input invalid and replaces the description.
+ * @param className CSS classes applied to the wrapping Field container.
+ * @param props Remaining input props forwarded to the underlying Input component.
+ * @return A Field containing the label, an Input with a generated id when none is given, and the description or error text.
+ */
 export function InputField({
   id,
   label,

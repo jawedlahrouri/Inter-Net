@@ -1,9 +1,3 @@
-/**
- * Weather Service
- *
- * Fetches meteorological forecasts from the Open-Meteo API
- * and converts WMO weather interpretation codes into user-friendly labels and icons.
- */
 
 export interface WeatherConditionInfo {
   condition: string
@@ -30,15 +24,9 @@ const OPEN_METEO_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search
 const REVERSE_GEOCODE_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client'
 
 /**
- * Converts a WMO weather code into a friendly condition label and Lucide icon name.
- *
- * Mapping rules:
- * - 0: Sunny ('Sun')
- * - 1-3: Partly Cloudy ('CloudSun')
- * - 45, 48: Fog ('CloudFog')
- * - 51-67, 80-82: Rain ('CloudRain')
- * - 71-77, 85-86: Snow ('Snowflake')
- * - 95+: Thunderstorm ('CloudLightning')
+ * @brief Maps an Open-Meteo weather code to a readable condition label and an icon name.
+ * @param weatherCode Numeric WMO weather code returned by Open-Meteo.
+ * @return An object with the condition text and the iconName, defaulting to Cloudy for unmapped codes.
  */
 export function getWeatherCondition(weatherCode: number): WeatherConditionInfo {
   if (weatherCode === 0) {
@@ -65,7 +53,10 @@ export function getWeatherCondition(weatherCode: number): WeatherConditionInfo {
 export const getWeatherInfo = getWeatherCondition
 
 /**
- * Reverse geocodes latitude and longitude coordinates into a human-readable city name.
+ * @brief Resolves coordinates to a place name through a reverse geocoding API with a 3.5 second timeout.
+ * @param lat Latitude in decimal degrees.
+ * @param lon Longitude in decimal degrees.
+ * @return A promise of the city or locality name, or the formatted coordinates when lookup fails.
  */
 export async function reverseGeocode(lat: number, lon: number): Promise<string> {
   try {
@@ -85,13 +76,14 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string> 
       }
     }
   } catch {
-    // Gracefully handle network errors or timeout aborts
   }
   return `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`
 }
 
 /**
- * Searches coordinates for a given city name via Open-Meteo Geocoding API.
+ * @brief Looks up the coordinates of a city by name using the Open-Meteo geocoding API.
+ * @param cityName Name of the city to search for.
+ * @return A promise of an object with lat, lon and name for the first match, or null when nothing is found or the request fails.
  */
 export async function fetchCoordinatesForCity(
   cityName: string
@@ -111,14 +103,16 @@ export async function fetchCoordinatesForCity(
       }
     }
   } catch {
-    // Return null if geocoding fails
   }
   return null
 }
 
 /**
- * Fetches current weather and 24h hourly forecast from the Open-Meteo API.
- * Defaults to Paris (lat: 48.8566, lon: 2.3522) if coordinates are not provided.
+ * @brief Fetches current conditions and 24 hourly temperatures from Open-Meteo, falling back to Paris coordinates by default.
+ * @param lat Optional latitude, defaulting to Paris when both coordinates are omitted.
+ * @param lon Optional longitude, defaulting to Paris when both coordinates are omitted.
+ * @param locationName Optional display name for the location, resolved automatically when omitted.
+ * @return A promise of a WeatherData object with temperature, humidity, wind, condition, icon, hourly temperatures and location name.
  */
 export async function fetchWeather(
   lat?: number,

@@ -3,11 +3,15 @@ import { Volume2, VolumeX, Square, Play } from 'lucide-react'
 import { useSettings } from '@/context/SettingsContext'
 import { MUSIC_PRESETS } from '@/config/musicPresets'
 
+/**
+ * @brief Renders the floating background music player that loops the customized track and lets the user stop or restart it.
+ * @return A fixed bottom-right control showing the track name with a stop button while playing, or a play button when stopped.
+ */
 export function BackgroundMusicPlayer() {
   const { customization } = useSettings()
 
-  const currentTrackUrl = customization.background_music
-  const currentTrackName = customization.background_music_name || 'Musique de fond'
+  const currentTrackUrl = customization.background_music || MUSIC_PRESETS[0].url
+  const currentTrackName = customization.background_music_name || MUSIC_PRESETS[0].title
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
@@ -28,7 +32,7 @@ export function BackgroundMusicPlayer() {
 
     const audio = audioRef.current
     audio.loop = true
-    audio.volume = 0.35 // Volume d'ambiance doux
+    audio.volume = 0.35
 
     if (audio.src !== currentTrackUrl) {
       audio.src = currentTrackUrl
@@ -43,9 +47,11 @@ export function BackgroundMusicPlayer() {
             setIsPlaying(true)
           })
           .catch(() => {
-            // Contournement des restrictions d'autoplay du navigateur dès la première interaction
             setIsPlaying(false)
 
+            /**
+             * @brief Retries starting audio playback after the first pointer or keyboard interaction when autoplay was blocked.
+             */
             const startOnInteraction = () => {
               if (audioRef.current && !isStoppedByUser) {
                 audioRef.current
@@ -64,6 +70,9 @@ export function BackgroundMusicPlayer() {
       setIsPlaying(false)
     }
 
+    /**
+     * @brief Restarts the audio when the track ends unless the user has stopped the music.
+     */
     const handleEnded = () => {
       if (!isStoppedByUser) {
         audio.play().catch(() => { })
@@ -77,7 +86,6 @@ export function BackgroundMusicPlayer() {
     }
   }, [currentTrackUrl, isStoppedByUser])
 
-  // Arrêt propre lors du démontage du composant
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -86,6 +94,9 @@ export function BackgroundMusicPlayer() {
     }
   }, [])
 
+  /**
+   * @brief Pauses the audio and records that the user stopped the music.
+   */
   const handleStop = () => {
     if (audioRef.current) {
       audioRef.current.pause()
@@ -94,6 +105,9 @@ export function BackgroundMusicPlayer() {
     setIsStoppedByUser(true)
   }
 
+  /**
+   * @brief Clears the stopped flag and resumes audio playback, marking the player as playing on success.
+   */
   const handlePlay = () => {
     setIsStoppedByUser(false)
     if (audioRef.current) {
@@ -111,7 +125,6 @@ export function BackgroundMusicPlayer() {
     <div className="fixed bottom-4 right-4 z-40 select-none">
       {isPlaying ? (
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-full border border-primary/40 bg-card/95 backdrop-blur-md shadow-lg shadow-black/30 transition-all text-xs">
-          {/* Égaliseur animé discret */}
           <div className="flex items-end gap-0.5 h-3.5 text-primary shrink-0" aria-hidden="true">
             <span className="w-0.5 bg-current rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-2.5" />
             <span className="w-0.5 bg-current rounded-full animate-[pulse_0.8s_ease-in-out_infinite_0.2s] h-3.5" />
@@ -123,7 +136,6 @@ export function BackgroundMusicPlayer() {
             <span className="font-medium text-foreground truncate">{currentTrackName}</span>
           </div>
 
-          {/* Bouton unique pour arrêter la musique */}
           <button
             type="button"
             onClick={handleStop}

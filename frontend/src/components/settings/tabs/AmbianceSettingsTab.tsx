@@ -28,6 +28,17 @@ interface AmbianceSettingsTabProps {
   onLaunchMeditation?: () => void
 }
 
+/**
+ * @brief Renders the settings tab for meditation ambiance, letting users toggle video and sound and choose or upload a background video.
+ * @param isVideoEnabled Whether the meditation background video is turned on.
+ * @param isSoundEnabled Whether the meditation video sound is turned on.
+ * @param currentVideoUrl URL of the video currently selected as meditation background.
+ * @param availableVideos Catalog of videos the user can pick as background.
+ * @param onUpdateMeditationSettings Async callback that saves partial meditation settings changes.
+ * @param onUploadVideo Async callback that uploads a video file and returns its video info.
+ * @param onLaunchMeditation Optional callback that starts the meditation session.
+ * @return A settings panel with toggles, a video catalog, custom URL and file upload inputs, and reset and launch buttons.
+ */
 export function AmbianceSettingsTab({
   isVideoEnabled,
   isSoundEnabled,
@@ -42,10 +53,18 @@ export function AmbianceSettingsTab({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  /**
+   * @brief Saves the chosen video URL as the meditation background video.
+   * @param videoUrl URL of the video the user selected.
+   */
   const handleSelectVideo = async (videoUrl: string) => {
     await onUpdateMeditationSettings({ video_url: videoUrl })
   }
 
+  /**
+   * @brief Saves the trimmed custom video URL as the meditation background video and clears the input.
+   * @param e Form submit event whose default browser submission is prevented.
+   */
   const handleCustomUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!customUrl.trim()) return
@@ -53,6 +72,10 @@ export function AmbianceSettingsTab({
     setCustomUrl('')
   }
 
+  /**
+   * @brief Uploads the selected video file, applies it as the meditation video, and tracks upload and error state.
+   * @param e File input change event carrying the file chosen by the user.
+   */
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -70,6 +93,9 @@ export function AmbianceSettingsTab({
     }
   }
 
+  /**
+   * @brief Resets the meditation settings to the default video with video enabled and sound disabled.
+   */
   const handleResetToDefault = async () => {
     await onUpdateMeditationSettings({
       video_enabled: true,
@@ -90,7 +116,6 @@ export function AmbianceSettingsTab({
         </p>
       </div>
 
-      {/* Interrupteur vidéo de fond */}
       <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
         <div className="space-y-0.5 pr-4">
           <div className="flex items-center gap-2">
@@ -111,7 +136,6 @@ export function AmbianceSettingsTab({
         />
       </div>
 
-      {/* Panneau de configuration si la vidéo est activée */}
       {isVideoEnabled && (
         <Card className="border border-border bg-card rounded-xl">
           <CardHeader className="p-5 pb-3">
@@ -137,7 +161,6 @@ export function AmbianceSettingsTab({
           </CardHeader>
 
           <CardContent className="p-5 pt-2 space-y-4">
-            {/* Grille des vidéos disponibles */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {availableVideos.map((vid) => {
                 const isSelected =
@@ -177,7 +200,6 @@ export function AmbianceSettingsTab({
               })}
             </div>
 
-            {/* Uploader une vidéo ou saisir une URL */}
             <div className="space-y-3 pt-2 border-t border-border/50">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
@@ -228,7 +250,6 @@ export function AmbianceSettingsTab({
               )}
             </div>
 
-            {/* Contrôle audio */}
             <div className="flex items-center justify-between pt-3 border-t border-border/50">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
@@ -253,7 +274,6 @@ export function AmbianceSettingsTab({
               />
             </div>
 
-            {/* Lecteur d'aperçu */}
             <div className="space-y-1.5 pt-3 border-t border-border/50">
               <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                 <span>Aperçu de la vidéo active</span>

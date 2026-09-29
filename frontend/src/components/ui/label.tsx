@@ -2,6 +2,12 @@ import * as React from "react"
 import { cn } from "cn"
 import { Label as LabelPrimitive } from "radix-ui"
 
+/**
+ * @brief Renders a styled form label built on the Radix label primitive.
+ * @param className Extra CSS classes merged into the label's default styling.
+ * @param props Remaining props forwarded to the Radix Label root element.
+ * @return A Radix Label root element with the label data slot and default label styling.
+ */
 function Label({
   className,
   ...props

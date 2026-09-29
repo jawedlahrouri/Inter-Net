@@ -18,7 +18,7 @@ from app.services.integration_service import (
     get_user_service_status,
     unlink_user_service,
 )
-from app.services.github_service import (
+from app.services.integration_clients import (
     fetch_github_user_profile,
     fetch_github_user_stats,
     fetch_github_user_orgs,
@@ -49,7 +49,9 @@ class GithubProfileResponse(BaseModel):
 @router.get("/auth/github")
 def github_auth(token: Optional[str] = None):
     """
-    Redirige l'utilisateur vers la mire d'autorisation GitHub OAuth2.
+    @brief Starts the GitHub OAuth flow by redirecting the browser to GitHub's authorization page.
+    @param token Optional app JWT passed through the OAuth state parameter to identify the user on callback.
+    @return A RedirectResponse to the GitHub authorize URL, or a 400 HTTPException if the client ID is not configured.
     """
     client_id = settings.GITHUB_CLIENT_ID or os.getenv("GITHUB_CLIENT_ID")
     if not client_id:
@@ -80,8 +82,13 @@ async def github_callback(
     db: Session = Depends(get_db),
 ):
     """
-    Reçoit le code d'autorisation retourné par GitHub, l'échange contre un jeton
-    d'accès, récupère les données de profil et lie le service au compte utilisateur.
+    @brief Handles the GitHub OAuth callback by exchanging the code for a token, fetching the profile and linking it to the user.
+    @param request The incoming FastAPI request used to resolve the user and read the Accept header.
+    @param code Optional authorization code returned by GitHub.
+    @param state Optional state value carrying the app token of the user who started the flow.
+    @param error Optional error string returned by GitHub if the user denied or the flow failed.
+    @param db SQLAlchemy database session injected via dependency.
+    @return The GitHub profile as JSON when the client accepts JSON, otherwise a redirect to the frontend settings tab.
     """
     frontend_url = settings.FRONTEND_URL or os.getenv("FRONTEND_URL", "http://localhost:3000")
 
@@ -131,7 +138,6 @@ async def github_callback(
                 detail=error_desc,
             )
 
-        # Récupération des informations de profil
         try:
             profile_data = await fetch_github_user_profile(access_token)
         except Exception as e:
@@ -140,7 +146,6 @@ async def github_callback(
                 detail=f"Impossible de charger le profil GitHub : {e}",
             )
 
-        # Association à l'utilisateur connecté
         user = resolve_user_from_request(db, request, token=state)
         if user:
             try:
@@ -180,8 +185,11 @@ async def github_connect_token(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Connecte et lie le compte GitHub de l'utilisateur directement via un
-    Personal Access Token (PAT) ou une clé API GitHub.
+    @brief Connects a GitHub account for the current user using a personal access token.
+    @param payload Request body containing the GitHub personal access token.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user who links the GitHub account.
+    @return A dict with a success message and the fetched GitHub profile data.
     """
     token_str = payload.token.strip()
     if not token_str:
@@ -190,18 +198,7 @@ async def github_connect_token(
             detail="Le jeton GitHub ne peut pas être vide.",
         )
 
-    try:
-        profile_data = await fetch_github_user_profile(token_str)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Erreur lors de la vérification du token GitHub : {e}",
-        )
+    profile_data = await fetch_github_user_profile(token_str)
 
     try:
         link_user_service(
@@ -232,7 +229,10 @@ def github_status(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retourne le statut actuel de l'intégration GitHub pour l'utilisateur connecté.
+    @brief Returns the GitHub connection status of the current user.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user whose GitHub link status is checked.
+    @return The service status data for the GitHub integration of the current user.
     """
     return get_user_service_status(db=db, user_id=current_user.id, service_name="github")
 
@@ -243,7 +243,10 @@ def github_disconnect(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Déconnecte le compte GitHub de l'utilisateur.
+    @brief Unlinks the GitHub integration from the current user.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user whose GitHub account is disconnected.
+    @return A dict with a message saying whether the account was disconnected or none was linked.
     """
     unlinked = unlink_user_service(db=db, user_id=current_user.id, service_name="github")
     if unlinked:
@@ -252,6 +255,12 @@ def github_disconnect(
 
 
 def _get_github_access_token(db: Session, user_id: int) -> str:
+    """
+    @brief Looks up the stored GitHub access token of a user and raises an HTTP 400 if the service or connection is missing.
+    @param db SQLAlchemy database session used to query services and user links.
+    @param user_id Identifier of the user whose GitHub token is retrieved.
+    @return The GitHub access token string stored for the connected user service.
+    """
     service = db.query(Service).filter(Service.name == "github").first()
     if not service:
         raise HTTPException(
@@ -281,17 +290,14 @@ async def github_user_stats(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retourne les statistiques GitHub (profil, dépôts récents, étoiles totales, orgs)
-    pour l'utilisateur connecté.
+    @brief Fetches GitHub statistics for the current user's connected account.
+    @param force_refresh When true, bypasses the cache and reloads the stats from GitHub.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user whose GitHub stats are requested.
+    @return The user's GitHub stats as returned by the integration client.
     """
     token = _get_github_access_token(db, current_user.id)
-    try:
-        stats = await fetch_github_user_stats(token=token, force_refresh=force_refresh)
-        return stats
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Erreur données GitHub : {e}")
+    return await fetch_github_user_stats(token=token, force_refresh=force_refresh)
 
 
 @router.get("/auth/github/user/orgs")
@@ -300,14 +306,13 @@ async def github_user_orgs(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retourne la liste des organisations dont l'utilisateur est membre.
+    @brief Fetches the GitHub organizations of the current user's connected account.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user whose organizations are listed.
+    @return The list of GitHub organizations returned by the integration client.
     """
     token = _get_github_access_token(db, current_user.id)
-    try:
-        orgs = await fetch_github_user_orgs(token)
-        return orgs
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Erreur API GitHub : {e}")
+    return await fetch_github_user_orgs(token)
 
 
 @router.get("/auth/github/orgs/{org}/stats")
@@ -318,16 +323,15 @@ async def github_org_stats(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retourne les statistiques détaillées d'une organisation ciblée.
+    @brief Fetches statistics for a GitHub organization using the current user's token.
+    @param org Login name of the GitHub organization.
+    @param force_refresh When true, bypasses the cache and reloads the stats from GitHub.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user whose GitHub token is used.
+    @return The organization stats as returned by the integration client.
     """
     token = _get_github_access_token(db, current_user.id)
-    try:
-        stats = await fetch_github_org_stats(token=token, org=org, force_refresh=force_refresh)
-        return stats
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Erreur organisation GitHub : {e}")
+    return await fetch_github_org_stats(token=token, org=org, force_refresh=force_refresh)
 
 
 @router.get("/auth/github/repos/{owner}/{repo}/stats")
@@ -339,15 +343,15 @@ async def github_repo_stats(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retourne les statistiques détaillées d'un dépôt ciblé.
+    @brief Fetches statistics for a GitHub repository using the current user's token.
+    @param owner Login of the user or organization that owns the repository.
+    @param repo Name of the GitHub repository.
+    @param force_refresh When true, bypasses the cache and reloads the stats from GitHub.
+    @param db SQLAlchemy database session injected via dependency.
+    @param current_user The authenticated user whose GitHub token is used.
+    @return The repository stats as returned by the integration client.
     """
     token = _get_github_access_token(db, current_user.id)
-    try:
-        stats = await fetch_github_repo_stats(token=token, owner=owner, repo=repo, force_refresh=force_refresh)
-        return stats
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Erreur dépôt GitHub : {e}")
+    return await fetch_github_repo_stats(token=token, owner=owner, repo=repo, force_refresh=force_refresh)
 
 

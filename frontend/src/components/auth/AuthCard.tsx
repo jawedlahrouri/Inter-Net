@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, MailCheck, CheckCircle2, RefreshCw, ArrowLeft } from 'lucide-react';
 import { verifyEmailApi, resendVerificationApi } from '@/services/api';
 
+/**
+ * @brief Renders the authentication card with login and registration tabs and their validation state.
+ * @return A card with a tabbed login form and registration form, including error messages and loading states.
+ */
 export function AuthCard() {
   const { login, register } = useAuth();
 
@@ -69,6 +73,10 @@ export function AuthCard() {
     }
   }, []);
 
+  /**
+   * @brief Validates the login form and calls the auth context login, storing any error message.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoginError(null);
@@ -96,6 +104,10 @@ export function AuthCard() {
     }
   };
 
+  /**
+   * @brief Validates the registration form (required fields, password length and confirmation) and calls the auth context register.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setRegError(null);
@@ -273,7 +285,6 @@ export function AuthCard() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Onglet Connexion */}
           <TabsContent value="login" className="space-y-4 focus-visible:outline-none">
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               {loginError && (
@@ -351,7 +362,6 @@ export function AuthCard() {
             </form>
           </TabsContent>
 
-          {/* Onglet Inscription */}
           <TabsContent value="register" className="space-y-4 focus-visible:outline-none">
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               {regError && (

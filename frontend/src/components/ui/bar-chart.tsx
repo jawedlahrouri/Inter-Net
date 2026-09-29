@@ -18,50 +18,39 @@ import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 export type BarRow = Record<string, unknown>
 
 export interface BarReferenceLine {
-  /** Horizontal line at this y value. */
   y: number
   label?: string
-  /** Any CSS color. Defaults to the muted foreground. */
   color?: string
-  /** Defaults to dashed. */
   dashed?: boolean
 }
 
 export interface BarChartProps
   extends Omit<React.ComponentProps<typeof ChartContainer>, "config" | "children"> {
   data: BarRow[]
-  /** Key of the x-axis value in each row. */
   xKey: string
-  /** Key of the bar value in each row. */
   yKey: string
-  /**
-   * Key of a coarser label, e.g. "month" for weekly rows. When set, the x-axis
-   * shows one tick per group centered under its bars instead of a tick per bar.
-   */
   groupKey?: string
-  /** "gradient" fades each bar toward the bottom; "striped" fills it with diagonal bands. */
   variant?: "gradient" | "striped" | "solid"
-  /** Any CSS color for highlighted bars. Defaults to chart-1. */
   color?: string
-  /** Any CSS color for bars that are not highlighted. Defaults to the muted foreground. */
   mutedColor?: string
-  /** Return true for bars drawn in color. Every bar is highlighted when omitted. */
   highlight?: (row: BarRow, index: number) => boolean
   grid?: "dashed" | "solid" | "none"
   showYAxis?: boolean
   showTooltip?: boolean
-  /** Draw a hollow ring on top of the hovered bar. */
   showActiveMarker?: boolean
   barRadius?: number
-  /** Horizontal lines, e.g. a goal or an average. The y-axis extends to fit them. */
   referenceLines?: BarReferenceLine[]
   xFormatter?: (value: unknown) => string
   yFormatter?: (value: number) => string
-  /** Secondary line of the tooltip. Defaults to the formatted x value. */
   tooltipLabel?: (row: BarRow, index: number) => React.ReactNode
   onBarClick?: (row: BarRow, index: number) => void
 }
 
+/**
+ * @brief Formats an X axis value, turning ISO date strings into short month and day labels.
+ * @param value Raw X axis value, often a date string starting with YYYY-MM-DD.
+ * @return A short English date label for ISO dates, otherwise the value converted to a string.
+ */
 function defaultXFormatter(value: unknown) {
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     const [y, m, d] = value.split("-").map(Number)
@@ -73,7 +62,12 @@ function defaultXFormatter(value: unknown) {
   return String(value)
 }
 
-/** One tick per group, placed under the middle bar of the group. */
+/**
+ * @brief Computes X axis tick labels that show each group's value once, centered under its run of consecutive bars.
+ * @param data Chart rows in display order.
+ * @param groupKey Row key whose consecutive equal values form a group.
+ * @return An array of labels, one per row, that is empty except at each group's middle position.
+ */
 function groupTicks(data: BarRow[], groupKey: string) {
   const labels: string[] = Array.from({ length: data.length }, () => "")
   let start = 0
@@ -94,7 +88,30 @@ interface ShapeProps {
   index?: number
 }
 
-/** A single-series bar chart with gradient or striped fills, highlighted bars, and a hover marker. */
+/**
+ * @brief Renders a configurable bar chart with gradient, striped or solid fills, highlighting, reference lines and a custom tooltip.
+ * @param data Array of row objects plotted as bars.
+ * @param xKey Row key used for the X axis values.
+ * @param yKey Row key holding the numeric bar values.
+ * @param groupKey Optional row key whose consecutive equal values are labeled once on the X axis.
+ * @param variant Bar fill style: gradient, striped or solid; defaults to gradient.
+ * @param color Fill color for highlighted bars; defaults to the chart-1 CSS variable.
+ * @param mutedColor Fill color for non-highlighted bars; defaults to muted-foreground.
+ * @param highlight Predicate deciding whether a row is highlighted; all rows are by default.
+ * @param grid Grid style: dashed, solid or none; defaults to dashed.
+ * @param showYAxis Whether the Y axis is displayed; defaults to false.
+ * @param showTooltip Whether the hover tooltip is displayed; defaults to true.
+ * @param showActiveMarker Whether a circle marker appears on top of the hovered bar; defaults to true.
+ * @param barRadius Corner radius of the bars; defaults to 6.
+ * @param referenceLines Horizontal reference lines with y value, optional label, color and dashed flag.
+ * @param xFormatter Formats X axis values and tooltip labels; defaults to a short date formatter.
+ * @param yFormatter Formats Y axis ticks and the tooltip value.
+ * @param tooltipLabel Custom function returning the tooltip label node for a row.
+ * @param onBarClick Callback invoked with the row and index when a bar is clicked.
+ * @param className Extra CSS classes merged onto the chart container.
+ * @param props Remaining ChartContainer props forwarded to the underlying container element.
+ * @return A ChartContainer wrapping a Recharts bar chart with axes, grid, tooltip, bars and reference lines.
+ */
 function BarChart({
   data,
   xKey,
@@ -126,9 +143,19 @@ function BarChart({
     () => (groupKey ? groupTicks(data, groupKey) : null),
     [data, groupKey]
   )
+  /**
+   * @brief Builds the SVG paint reference used to fill a bar, depending on whether it is highlighted.
+   * @param index Index of the bar in the data array.
+   * @return A url(#...) string pointing to the on or off fill definition.
+   */
   const fillFor = (index: number) =>
     `url(#${id}-${isHighlighted(index) ? "on" : "off"})`
 
+  /**
+   * @brief Renders the hovered bar with its fill and an optional circular marker on top.
+   * @param shape Recharts bar shape props including position, size and index.
+   * @return An SVG group with the bar rectangle and, when enabled and non-empty, a marker circle.
+   */
   const activeBar = (shape: ShapeProps) => {
     const { x = 0, y = 0, width = 0, height = 0, index = 0 } = shape
     const on = isHighlighted(index)

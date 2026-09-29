@@ -24,6 +24,14 @@ interface UserDialogProps {
   onSuccess: () => void;
 }
 
+/**
+ * @brief Renders the admin dialog for creating a new user or editing an existing one.
+ * @param open Whether the dialog is currently visible.
+ * @param onOpenChange Callback invoked with the new open state, e.g. false after a successful save.
+ * @param userToEdit Existing user to edit; when absent or null the dialog creates a new user.
+ * @param onSuccess Callback invoked after the user has been created or updated successfully.
+ * @return A Dialog containing a form with username, email, role and password fields plus error display and action buttons.
+ */
 export function UserDialog({
   open,
   onOpenChange,
@@ -54,6 +62,10 @@ export function UserDialog({
     setError(null);
   }, [userToEdit, open]);
 
+  /**
+   * @brief Validates the user form, then creates or updates the user through the admin API and closes the dialog on success.
+   * @param e Form submit event whose default behavior is prevented.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

@@ -26,6 +26,12 @@ router = APIRouter()
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_in: UserCreate, db: Session = Depends(get_db)):
+    """
+    @brief Registers a new user after checking email and username uniqueness, creates default widgets and sends an activation email.
+    @param user_in The registration payload with email, username and password.
+    @param db The SQLAlchemy database session.
+    @return RegisterResponse containing registration status message and user info.
+    """
     existing_email = db.query(User).filter(User.email == user_in.email).first()
     if existing_email:
         raise HTTPException(
@@ -136,6 +142,12 @@ async def resend_verification(data: ResendVerificationRequest, db: Session = Dep
 
 @router.post("/login", response_model=Token)
 def login(login_in: UserLogin, db: Session = Depends(get_db)):
+    """
+    @brief Authenticates a user by email or username and password and issues an access token.
+    @param login_in The login payload with the identifier and password.
+    @param db The SQLAlchemy database session.
+    @return A Token containing the bearer access token and the authenticated user.
+    """
     user = db.query(User).filter(
         (User.email == login_in.identifier) | (User.username == login_in.identifier)
     ).first()
@@ -163,11 +175,21 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
+    """
+    @brief Returns the profile of the currently authenticated user.
+    @param current_user The authenticated user resolved from the bearer token.
+    @return The current user serialized as a UserResponse.
+    """
     return UserResponse.model_validate(current_user)
 
 
 @router.get("/me/settings", response_model=UserSettings)
 def get_user_settings(current_user: User = Depends(get_current_user)):
+    """
+    @brief Returns the stored settings of the currently authenticated user.
+    @param current_user The authenticated user resolved from the bearer token.
+    @return The user's settings validated as a UserSettings object, empty defaults if none are stored.
+    """
     user_settings = current_user.settings or {}
     return UserSettings.model_validate(user_settings)
 
@@ -178,6 +200,13 @@ def update_user_settings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    @brief Merges partial meditation, dashboards and customization updates into the user's stored settings and saves them.
+    @param settings_in The partial settings update sent by the client.
+    @param current_user The authenticated user resolved from the bearer token.
+    @param db The SQLAlchemy database session.
+    @return The updated settings validated as a UserSettings object.
+    """
     current = current_user.settings or {}
     updated_dict = dict(current)
 

@@ -30,6 +30,13 @@ interface SettingsDialogProps {
   onLaunchMeditation?: () => void;
 }
 
+/**
+ * @brief Renders the settings dialog used to configure the meditation background video, its sound and its source.
+ * @param open Whether the settings dialog is currently visible.
+ * @param onOpenChange Callback invoked with the new open state to show or close the dialog.
+ * @param onLaunchMeditation Optional callback that starts the meditation session from the dialog.
+ * @return A dialog with the video toggle, video picker, upload and URL inputs, sound toggle, live preview and footer buttons.
+ */
 export function SettingsDialog({
   open,
   onOpenChange,
@@ -52,10 +59,18 @@ export function SettingsDialog({
   const isVideoEnabled = settings.meditation.video_enabled;
   const isSoundEnabled = settings.meditation.sound_enabled;
 
+  /**
+   * @brief Saves the chosen video URL as the meditation background video.
+   * @param url The URL of the selected video.
+   */
   const handleSelectVideo = async (url: string) => {
     await updateMeditationSettings({ video_url: url });
   };
 
+  /**
+   * @brief Applies the typed custom video URL as the meditation video and clears the input.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleCustomUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customUrl.trim()) return;
@@ -63,6 +78,10 @@ export function SettingsDialog({
     setCustomUrl('');
   };
 
+  /**
+   * @brief Uploads the selected video file, sets it as the meditation video and reports upload errors.
+   * @param e The file input change event carrying the selected file.
+   */
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -80,6 +99,9 @@ export function SettingsDialog({
     }
   };
 
+  /**
+   * @brief Resets the meditation settings to the default video with video enabled and sound disabled.
+   */
   const handleResetToDefault = async () => {
     await updateMeditationSettings({
       video_enabled: true,
@@ -106,7 +128,6 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-6 pt-3">
-          {/* Section: Activer la vidéo d'arrière-plan */}
           <div className="flex items-center justify-between p-3.5 rounded-lg border border-border/70 bg-muted/20">
             <div className="space-y-0.5 pr-4">
               <div className="flex items-center gap-2">
@@ -127,7 +148,6 @@ export function SettingsDialog({
             />
           </div>
 
-          {/* Si vidéo activée : Choix et configuration de la vidéo */}
           {isVideoEnabled && (
             <div className="space-y-4 rounded-lg border border-border/60 p-4 bg-muted/10">
               <div className="flex items-center justify-between">
@@ -145,7 +165,6 @@ export function SettingsDialog({
                 </Button>
               </div>
 
-              {/* Liste des vidéos proposées / disponibles */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {availableVideos.map((vid) => {
                   const isSelected =
@@ -185,7 +204,6 @@ export function SettingsDialog({
                 })}
               </div>
 
-              {/* Option d'upload ou URL personnalisée */}
               <div className="space-y-3 pt-2 border-t border-border/50">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <input
@@ -236,7 +254,6 @@ export function SettingsDialog({
                 )}
               </div>
 
-              {/* Configuration audio de la vidéo */}
               <div className="flex items-center justify-between pt-2 border-t border-border/50">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-1.5">
@@ -261,7 +278,6 @@ export function SettingsDialog({
                 />
               </div>
 
-              {/* Prévisualisation miniature */}
               <div className="space-y-1.5 pt-2 border-t border-border/50">
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Aperçu du flux actif</span>
@@ -290,7 +306,6 @@ export function SettingsDialog({
           )}
         </div>
 
-        {/* Footer Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-border/60 mt-4">
           {onLaunchMeditation && (
             <Button

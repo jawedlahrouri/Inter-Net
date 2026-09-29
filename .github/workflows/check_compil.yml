@@ -67,6 +67,37 @@ jobs:
       - name: Run Pytest suite
         run: pytest
 
+  test-services:
+    name: Test Microservice (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [steam-service, github-service]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: services/${{ matrix.service }}/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check Python syntax & compilation
+        run: python -m compileall app ../common
+
+      - name: Run Pytest suite
+        run: pytest
+
   build-docker:
     name: Verify Docker Images Build
     runs-on: ubuntu-latest

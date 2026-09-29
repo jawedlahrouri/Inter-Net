@@ -39,6 +39,15 @@ interface DashboardContentDialogProps {
   onOpenVisualDashboard?: (userId: number, dashboardId: string) => void;
 }
 
+/**
+ * @brief Renders the admin dialog for editing a user's dashboard style and managing its widgets.
+ * @param open Whether the dialog is currently visible.
+ * @param onOpenChange Callback invoked with the new open state when the dialog is opened or closed.
+ * @param dashboardSummary Summary of the dashboard to edit (user id, dashboard id), or null when none is selected.
+ * @param onSuccess Callback invoked after a style or widget change is saved so the parent can refresh.
+ * @param onOpenVisualDashboard Optional callback receiving user id and dashboard id to open the dashboard visually.
+ * @return JSX for a dialog with style and widgets tabs, widget create and edit forms, and delete actions.
+ */
 export function DashboardContentDialog({
   open,
   onOpenChange,
@@ -50,7 +59,6 @@ export function DashboardContentDialog({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'style' | 'widgets'>('widgets');
 
-  // Form states for dashboard style
   const [dashName, setDashName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#0b0f19');
   const [secondaryColor, setSecondaryColor] = useState('#131b2e');
@@ -59,7 +67,6 @@ export function DashboardContentDialog({
   const [savingStyle, setSavingStyle] = useState(false);
   const [styleSuccess, setStyleSuccess] = useState(false);
 
-  // Widget editing state
   const [editingWidget, setEditingWidget] = useState<ApiUserWidget | null>(null);
   const [isAddingWidget, setIsAddingWidget] = useState(false);
   const [newWidgetType, setNewWidgetType] = useState<string>('weather');
@@ -71,6 +78,9 @@ export function DashboardContentDialog({
   const [widgetError, setWidgetError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  /**
+   * @brief Fetches the selected dashboard's details and fills the style form fields from them.
+   */
   const loadDetail = async () => {
     if (!dashboardSummary) return;
     try {
@@ -101,6 +111,10 @@ export function DashboardContentDialog({
     }
   }, [open, dashboardSummary]);
 
+  /**
+   * @brief Saves the dashboard name, colors and background image via the admin API and reloads the details.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleSaveStyle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dashboardSummary) return;
@@ -128,6 +142,10 @@ export function DashboardContentDialog({
     }
   };
 
+  /**
+   * @brief Builds type-specific parameters and creates a new widget on the dashboard through the admin API.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleCreateWidgetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dashboardSummary) return;
@@ -174,6 +192,10 @@ export function DashboardContentDialog({
     }
   };
 
+  /**
+   * @brief Saves the edited widget's title, refresh rate, size and parameters through the admin API.
+   * @param e The form submit event, whose default behavior is prevented.
+   */
   const handleUpdateWidgetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dashboardSummary || !editingWidget) return;
@@ -199,6 +221,10 @@ export function DashboardContentDialog({
     }
   };
 
+  /**
+   * @brief Deletes a widget through the admin API after user confirmation, then reloads the dashboard details.
+   * @param widgetId The numeric id of the widget to delete.
+   */
   const handleDeleteWidget = async (widgetId: number) => {
     if (!dashboardSummary) return;
     if (!confirm('Confirmez-vous la suppression de ce widget ?')) return;
@@ -218,7 +244,6 @@ export function DashboardContentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col border-border bg-background shadow-2xl p-0 overflow-hidden">
-        {/* Header */}
         <div className="p-6 pb-3 border-b border-border">
           <DialogHeader>
             <div className="flex items-center justify-between gap-4">
@@ -249,7 +274,6 @@ export function DashboardContentDialog({
             </div>
           </DialogHeader>
 
-          {/* Nav Tabs */}
           <div className="flex items-center gap-2 mt-4">
             <button
               type="button"
@@ -278,7 +302,6 @@ export function DashboardContentDialog({
           </div>
         </div>
 
-        {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2">
@@ -286,7 +309,6 @@ export function DashboardContentDialog({
               <p className="text-xs text-muted-foreground">Chargement des données du dashboard...</p>
             </div>
           ) : activeTab === 'style' ? (
-            /* Style Settings Tab */
             <form onSubmit={handleSaveStyle} className="space-y-4 max-w-lg mx-auto py-2">
               {styleSuccess && (
                 <div className="p-2.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
@@ -365,7 +387,6 @@ export function DashboardContentDialog({
               </div>
             </form>
           ) : (
-            /* Widgets Tab */
             <div className="space-y-4">
               {widgetError && (
                 <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
@@ -374,7 +395,6 @@ export function DashboardContentDialog({
                 </div>
               )}
 
-              {/* Action Bar */}
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
                   Modifiez, redimensionnez ou supprimez n'importe quel widget configuré sur cette page.
@@ -393,7 +413,6 @@ export function DashboardContentDialog({
                 </Button>
               </div>
 
-              {/* Formulaire d'ajout rapide de widget */}
               {isAddingWidget && (
                 <form
                   onSubmit={handleCreateWidgetSubmit}
@@ -512,7 +531,6 @@ export function DashboardContentDialog({
                 </form>
               )}
 
-              {/* Formulaire d'édition de widget existant */}
               {editingWidget && (
                 <form
                   onSubmit={handleUpdateWidgetSubmit}
@@ -612,7 +630,6 @@ export function DashboardContentDialog({
                 </form>
               )}
 
-              {/* Widgets List */}
               <div className="space-y-2">
                 {!detail?.widgets || detail.widgets.length === 0 ? (
                   <div className="p-8 text-center rounded-xl border border-dashed border-border/80">
@@ -657,7 +674,6 @@ export function DashboardContentDialog({
                           </div>
                         </div>
 
-                        {/* Action buttons */}
                         <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                           <Button
                             variant="outline"

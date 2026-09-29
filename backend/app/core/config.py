@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     @property
     def sync_database_url(self) -> str:
+        """
+        @brief Builds the synchronous database URL, using DATABASE_URL when set or a MySQL PyMySQL URL from the DB settings.
+        @return The database connection URL string.
+        """
         if self.DATABASE_URL:
             return self.DATABASE_URL
         return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
@@ -29,6 +33,8 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: Optional[str] = None
     GITHUB_CLIENT_SECRET: Optional[str] = None
     GITHUB_API_KEY: Optional[str] = None
+    STEAM_SERVICE_URL: str = "http://localhost:8081"
+    GITHUB_SERVICE_URL: str = "http://localhost:8082"
     BASE_URL: str = "http://localhost:8080"
     FRONTEND_URL: str = "http://localhost:3000"
     MAIL_USERNAME: str = "noreply@inter-net.com"
@@ -57,6 +63,11 @@ class Settings(BaseSettings):
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """
+        @brief Validates and normalizes the CORS origins setting from a JSON list, comma-separated string or list.
+        @param v The raw CORS origins value, either a string or a list of strings.
+        @return The list of allowed origin strings, or a default localhost list for unsupported types.
+        """
         if isinstance(v, str):
             v_trimmed = v.strip()
             if v_trimmed.startswith("[") and v_trimmed.endswith("]"):

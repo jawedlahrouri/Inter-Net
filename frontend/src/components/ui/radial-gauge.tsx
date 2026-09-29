@@ -6,33 +6,46 @@ export interface RadialGaugeProps extends React.ComponentProps<"div"> {
   value: number
   min?: number
   max?: number
-  /** Diameter in pixels. */
   size?: number
-  /** Stroke width in pixels. */
   thickness?: number
-  /** Number of arc segments. 0 draws a continuous arc. */
   segments?: number
-  /** Gap between segments in degrees. */
   gap?: number
-  /** Angle where the arc starts, in degrees clockwise from 12 o'clock. */
   startAngle?: number
-  /** Total sweep of the arc in degrees. 180 is a semicircle, 360 a ring. */
   sweep?: number
-  /** Any CSS color. Defaults to chart-1. */
   color?: string
   trackColor?: string
-  /** Content rendered in the middle of the gauge. */
   children?: React.ReactNode
 }
 
-// Round so server and client render identical path strings.
+/**
+ * @brief Rounds a number to three decimal places.
+ * @param n The number to round.
+ * @return The number rounded to three decimals.
+ */
 const round = (n: number) => Math.round(n * 1000) / 1000
 
+/**
+ * @brief Converts a polar angle and radius around a center into SVG cartesian coordinates, with 0 degrees pointing up.
+ * @param cx The x coordinate of the circle center.
+ * @param cy The y coordinate of the circle center.
+ * @param r The radius of the circle.
+ * @param angleDeg The angle in degrees, measured clockwise from the top.
+ * @return An object with the rounded x and y coordinates of the point.
+ */
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180
   return { x: round(cx + r * Math.cos(rad)), y: round(cy + r * Math.sin(rad)) }
 }
 
+/**
+ * @brief Builds an SVG path string describing a circular arc between two angles.
+ * @param cx The x coordinate of the circle center.
+ * @param cy The y coordinate of the circle center.
+ * @param r The radius of the arc.
+ * @param from The start angle in degrees.
+ * @param to The end angle in degrees.
+ * @return An SVG path data string starting with a move command followed by an arc command.
+ */
 function arcPath(cx: number, cy: number, r: number, from: number, to: number) {
   const start = polar(cx, cy, r, from)
   const end = polar(cx, cy, r, to)
@@ -40,6 +53,24 @@ function arcPath(cx: number, cy: number, r: number, from: number, to: number) {
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`
 }
 
+/**
+ * @brief Renders a radial gauge as an SVG arc, optionally segmented, that fills according to a value between a min and max.
+ * @param value Current value that determines how much of the arc is filled.
+ * @param min Lower bound of the value range; defaults to 0.
+ * @param max Upper bound of the value range; defaults to 100.
+ * @param size Width of the gauge in pixels; defaults to 160.
+ * @param thickness Stroke width of the arc in pixels; defaults to 10.
+ * @param segments Number of discrete arc segments; 0 draws a continuous arc.
+ * @param gap Angular gap in degrees between segments; defaults to 2.
+ * @param startAngle Angle in degrees where the arc starts; defaults to centered on the top.
+ * @param sweep Total angular span of the arc in degrees; defaults to 180.
+ * @param color Stroke color of the filled portion of the arc.
+ * @param trackColor Stroke color of the unfilled background track.
+ * @param className Extra CSS classes merged into the gauge container.
+ * @param children Optional content rendered centered inside the gauge.
+ * @param props Remaining div props forwarded to the gauge container.
+ * @return A meter div containing an SVG track and progress arc, with optional centered children.
+ */
 function RadialGauge({
   value,
   min = 0,
@@ -61,8 +92,6 @@ function RadialGauge({
   const r = size / 2 - thickness / 2
   const cx = size / 2
   const cy = size / 2
-  // Trim the box to the arc's vertical extent so a semicircle does not
-  // reserve a full circle of space.
   const angles = Array.from({ length: 64 }, (_, i) => start + (sweep * i) / 63)
   const ys = angles.map((a) => polar(cx, cy, r, a).y)
   const top = Math.max(0, Math.min(...ys) - thickness / 2)

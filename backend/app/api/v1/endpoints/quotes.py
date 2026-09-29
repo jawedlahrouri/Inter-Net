@@ -41,6 +41,10 @@ FRENCH_QUOTES = [
 
 @router.get("/random", response_model=QuoteResponse)
 async def get_random_quote() -> QuoteResponse:
+    """
+    @brief Fetches a quote from an external API with a short timeout and falls back to a random built-in French quote.
+    @return A QuoteResponse containing a quote text and its author.
+    """
     try:
         async with httpx.AsyncClient(timeout=2.0) as client:
             resp = await client.get("https://dummyjson.com/quotes/random", headers={"Accept": "application/json"})

@@ -21,6 +21,22 @@ export interface CustomApiTabProps {
 
 const REFRESH_PRESETS = [10, 30, 60, 300]
 
+/**
+ * @brief Renders the form tab used to configure a custom API widget with presets, URL, JSON path, unit, refresh rate and display mode.
+ * @param title Current widget title value in the form.
+ * @param setTitle Setter called to update the widget title.
+ * @param apiUrl Current URL of the API to call with a GET request.
+ * @param setApiUrl Setter called to update the API URL.
+ * @param jsonPath Current dot-separated JSON path of the value to display.
+ * @param setJsonPath Setter called to update the JSON path.
+ * @param displayMode Current display mode, either kpi or gauge.
+ * @param setDisplayMode Setter called to switch between kpi and gauge display modes.
+ * @param unit Current unit label shown next to the value.
+ * @param setUnit Setter called to update the unit label.
+ * @param refreshInterval Current auto-refresh interval in seconds.
+ * @param setRefreshInterval Setter called to update the refresh interval in seconds.
+ * @return A form with preset badges, input fields, a JSON path picker, refresh presets and KPI or gauge mode buttons.
+ */
 export function CustomApiTab({
   title,
   setTitle,
@@ -35,6 +51,10 @@ export function CustomApiTab({
   refreshInterval,
   setRefreshInterval,
 }: CustomApiTabProps) {
+  /**
+   * @brief Applies all fields of a preset to the custom API form state.
+   * @param preset Preset object with title, apiUrl, jsonPath, displayMode, unit and refreshInterval.
+   */
   const handleApplyPreset = (preset: {
     title: string
     apiUrl: string
@@ -51,6 +71,12 @@ export function CustomApiTab({
     setRefreshInterval(preset.refreshInterval)
   }
 
+  /**
+   * @brief Handles a JSON path chosen in the picker by setting the path, the suggested display mode and a default title.
+   * @param path Selected dot-separated JSON path.
+   * @param _previewValue Preview value at the path, unused.
+   * @param suggestedMode Display mode suggested by the picker, if any.
+   */
   const handleSelectPath = (path: string, _previewValue: any, suggestedMode?: 'kpi' | 'gauge') => {
     setJsonPath(path)
     if (suggestedMode) {
@@ -65,7 +91,6 @@ export function CustomApiTab({
 
   return (
     <div className="space-y-3 pt-3">
-      {/* Presets rapides */}
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
         <span className="text-muted-foreground text-[11px]">Exemples :</span>
         <Badge

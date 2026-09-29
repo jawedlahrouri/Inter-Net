@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchGithubOrgStats, type GithubOrgDetailedStats } from '@/services/api'
 
 const orgCache = new Map<string, { data: GithubOrgDetailedStats; timestamp: number }>()
-const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000
 
+/**
+ * @brief Loads and periodically refreshes detailed GitHub organization statistics using a five-minute client cache.
+ * @param orgName The GitHub organization name to load statistics for.
+ * @param refreshIntervalSeconds The polling interval in seconds, with a minimum of 300.
+ * @return An object with stats, loading, error, lastUpdated and a refresh function that forces a reload.
+ */
 export function useGithubOrgStats(orgName?: string, refreshIntervalSeconds: number = 300) {
   const [stats, setStats] = useState<GithubOrgDetailedStats | null>(null)
   const [loading, setLoading] = useState<boolean>(true)

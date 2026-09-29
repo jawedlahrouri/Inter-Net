@@ -22,6 +22,14 @@ interface GithubOrgMetricsProps {
   orgHook: OrgHookReturn
 }
 
+/**
+ * @brief Renders the GitHub widget body for collaboration, language, profile and organisation metrics depending on the selected metric.
+ * @param metric GitHub metric type selecting which collaboration, language, profile or org view is rendered.
+ * @param stats GitHub user statistics object supplying the values displayed.
+ * @param targetOrg Name of the GitHub organisation whose stats are shown for the org metric.
+ * @param orgHook Result of the organisation stats hook with loaded org data, loading and error state.
+ * @return The JSX panel matching the selected metric, or null for unsupported metrics or missing organisation data.
+ */
 export function GithubOrgMetrics({
   metric,
   stats,
@@ -29,7 +37,6 @@ export function GithubOrgMetrics({
   orgHook,
 }: GithubOrgMetricsProps) {
   switch (metric) {
-    // 13. Projets & Statut (Owner / Collab)
     case 'projects_collaboration':
       return (
         <div className="space-y-2.5 py-1">
@@ -48,7 +55,6 @@ export function GithubOrgMetrics({
         </div>
       )
 
-    // 14. Taille moyenne d'équipe
     case 'avg_team_size':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -65,7 +71,6 @@ export function GithubOrgMetrics({
         </div>
       )
 
-    // 15. Ancienneté des projets
     case 'project_seniority':
       return (
         <div className="space-y-2.5 py-1">
@@ -80,7 +85,6 @@ export function GithubOrgMetrics({
         </div>
       )
 
-    // 19. Langage de prédilection
     case 'primary_language':
       return (
         <div className="space-y-3 py-2 text-center">
@@ -97,7 +101,6 @@ export function GithubOrgMetrics({
         </div>
       )
 
-    // 20. Top 5 des langages utilisés
     case 'languages_breakdown': {
       const langs = stats.top_languages || []
       return (
@@ -120,7 +123,6 @@ export function GithubOrgMetrics({
       )
     }
 
-    // 21. Profil & Bio Développeur
     case 'profile_card':
       return (
         <div className="space-y-3">
@@ -171,7 +173,6 @@ export function GithubOrgMetrics({
         </div>
       )
 
-    // Activité d'une organisation
     case 'org_overview': {
       if (!targetOrg) {
         return (
@@ -228,7 +229,6 @@ export function GithubOrgMetrics({
       )
     }
 
-    // Liste des organisations
     case 'orgs_list': {
       const orgs = stats?.organisations || []
       return (
@@ -265,7 +265,6 @@ export function GithubOrgMetrics({
       )
     }
 
-    // Répartition par organisation
     case 'repos_by_org': {
       const groups = stats?.repos_by_owner || []
       return (

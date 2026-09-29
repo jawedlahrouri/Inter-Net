@@ -9,6 +9,15 @@ interface AdminSupervisionBannerProps {
   onOpenDashboardSettings?: () => void;
 }
 
+/**
+ * @brief Renders the banner shown when an admin is supervising another user's dashboard.
+ * @param targetUsername Username of the user whose dashboard is being supervised, shown as @username.
+ * @param targetEmail Email address of the supervised user, displayed next to the username.
+ * @param targetDashboardName Name of the supervised dashboard page shown in the banner text.
+ * @param onExitSupervision Callback fired by the exit button to leave supervision mode.
+ * @param onOpenDashboardSettings Optional callback that opens dashboard settings; the settings button is hidden when omitted.
+ * @return A sticky banner naming the supervised user and page, with an optional settings button and an exit button.
+ */
 export function AdminSupervisionBanner({
   targetUsername,
   targetEmail,

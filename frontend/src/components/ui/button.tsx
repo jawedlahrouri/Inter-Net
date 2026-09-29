@@ -38,6 +38,15 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * @brief Renders a styled button element with variant and size options, optionally rendering as its child.
+ * @param className Extra CSS classes merged into the button variant classes.
+ * @param variant Visual style variant of the button; defaults to default.
+ * @param size Size variant of the button; defaults to default.
+ * @param asChild When true, renders the child element instead of a button via Slot.
+ * @param props Remaining button props forwarded to the underlying element.
+ * @return A button element (or Slot when asChild) carrying data attributes and variant classes.
+ */
 function Button({
   className,
   variant = "default",

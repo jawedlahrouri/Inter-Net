@@ -11,6 +11,16 @@ interface GithubParamsFormProps {
   onOrgChange: (org: string) => void
 }
 
+/**
+ * @brief Renders the repository or organisation selection inputs required by the chosen GitHub metric preset.
+ * @param selectedPreset Selected GitHub metric preset that decides whether repo or organisation inputs are shown.
+ * @param githubStats Fetched GitHub user stats providing the repositories and organisations for the dropdowns, or null.
+ * @param selectedRepoFullName Currently selected repository in owner/repo form.
+ * @param selectedOrgName Currently selected GitHub organisation login.
+ * @param onRepoChange Callback receiving the new repository name when the select or text input changes.
+ * @param onOrgChange Callback receiving the new organisation name when the select or text input changes.
+ * @return A repo select and text input for repo presets, an org select and text input for the org preset, or an empty container.
+ */
 export function GithubParamsForm({
   selectedPreset,
   githubStats,

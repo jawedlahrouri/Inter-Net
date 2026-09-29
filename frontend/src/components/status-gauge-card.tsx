@@ -48,7 +48,27 @@ export interface StatusGaugeCardProps extends React.ComponentProps<typeof Card> 
   }
 }
 
-/** A status card with a headline word, a metric, an avatar stack, and a segmented gauge. */
+/**
+ * @brief Renders a card showing a status, a metric value, an optional avatar list and a radial gauge.
+ * @param title Card header title text.
+ * @param status Short status word displayed prominently, such as Stable.
+ * @param metricLabel Metric name shown before the value.
+ * @param value Metric value, numeric or string, displayed and used for the gauge fill.
+ * @param format Number format applied to the value; defaults to percent.
+ * @param currency Currency code used when the value is formatted as currency.
+ * @param progress Gauge fill from 0 to 100; defaults to the value when numeric.
+ * @param color CSS color of the gauge; defaults to emerald.
+ * @param segments Number of ticks in the gauge, 0 for a continuous arc; defaults to 40.
+ * @param segmentGap Space between gauge ticks in degrees; defaults to 2.5.
+ * @param thickness Length of each gauge tick in pixels; defaults to 14.
+ * @param gaugeSize Gauge diameter in pixels; defaults to 200.
+ * @param people Avatars shown under the metric, falling back to the name initial.
+ * @param peopleLabel Text displayed next to the avatars.
+ * @param action Optional header button with label, href or onClick, and icon.
+ * @param className Extra CSS classes merged onto the Card.
+ * @param props Remaining Card props forwarded to the underlying Card element.
+ * @return A Card with a header and optional action button, status and metric text, optional avatars, and a radial gauge.
+ */
 function StatusGaugeCard({
   title,
   status,

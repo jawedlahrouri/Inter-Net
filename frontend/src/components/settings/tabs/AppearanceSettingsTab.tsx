@@ -5,6 +5,12 @@ interface AppearanceSettingsTabProps {
   onSetTheme: (theme: 'dark' | 'light' | 'system') => void
 }
 
+/**
+ * @brief Renders the appearance settings tab where the user picks the dark, light or system theme.
+ * @param theme Currently active theme (dark, light or system) used to highlight the selected card.
+ * @param onSetTheme Callback invoked with the chosen theme when a theme card is clicked.
+ * @return A heading, three selectable theme cards with the active one highlighted, and an info note about per-page customization.
+ */
 export function AppearanceSettingsTab({ theme, onSetTheme }: AppearanceSettingsTabProps) {
   return (
     <div className="space-y-6 max-w-3xl">
@@ -19,7 +25,6 @@ export function AppearanceSettingsTab({ theme, onSetTheme }: AppearanceSettingsT
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Mode Sombre */}
         <div
           onClick={() => onSetTheme('dark')}
           className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between h-36 ${
@@ -40,7 +45,6 @@ export function AppearanceSettingsTab({ theme, onSetTheme }: AppearanceSettingsT
           </div>
         </div>
 
-        {/* Mode Clair */}
         <div
           onClick={() => onSetTheme('light')}
           className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between h-36 ${
@@ -61,7 +65,6 @@ export function AppearanceSettingsTab({ theme, onSetTheme }: AppearanceSettingsT
           </div>
         </div>
 
-        {/* Mode Système */}
         <div
           onClick={() => onSetTheme('system')}
           className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between h-36 ${

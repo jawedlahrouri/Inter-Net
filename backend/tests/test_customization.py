@@ -3,6 +3,10 @@ import pytest
 
 
 def test_custom_videos_list(client):
+    """
+    @brief Tests that the custom videos endpoint returns a list including la_peace.mp4.
+    @param client The FastAPI test client fixture.
+    """
     response = client.get("/api/v1/customization/videos")
     assert response.status_code == 200
     data = response.json()
@@ -11,6 +15,10 @@ def test_custom_videos_list(client):
 
 
 def test_storage_static_file_serving(client):
+    """
+    @brief Tests that a stored custom video file is served with a 200 status and non-empty content.
+    @param client The FastAPI test client fixture.
+    """
     response = client.get("/api/v1/storage/custom_vids/la_peace.mp4")
     assert response.status_code == 200
     assert len(response.content) > 0
@@ -20,17 +28,20 @@ from tests.conftest import create_user_token
 
 
 def test_user_settings_lifecycle(client, db_session):
+    """
+    @brief Tests registering a user, reading default settings, and patching meditation and customization settings.
+    @param client The FastAPI test client fixture.
+    @param db_session The test database session.
+    """
     token = create_user_token(client, db_session, "settings_tester@example.com", "settings_tester", "Password123!")
     headers = {"Authorization": f"Bearer {token}"}
 
-    # Get default settings
     get_res = client.get("/api/v1/auth/me/settings", headers=headers)
     assert get_res.status_code == 200
     settings = get_res.json()
     assert settings["meditation"]["video_enabled"] is True
     assert "la_peace.mp4" in settings["meditation"]["video_url"]
 
-    # Update settings (disable video, custom URL)
     patch_res = client.patch(
         "/api/v1/auth/me/settings",
         headers=headers,
@@ -48,19 +59,16 @@ def test_user_settings_lifecycle(client, db_session):
     assert updated["meditation"]["video_url"] == "https://example.com/custom.mp4"
     assert updated["meditation"]["sound_enabled"] is True
 
-    # Re-fetch settings
     get_res2 = client.get("/api/v1/auth/me/settings", headers=headers)
     assert get_res2.status_code == 200
     assert get_res2.json()["meditation"]["video_enabled"] is False
 
-    # Check default theme customization
     assert "customization" in get_res2.json()
     assert get_res2.json()["customization"]["primary_color"] == "#0b0f19"
     assert get_res2.json()["customization"]["secondary_color"] == "#131b2e"
     assert get_res2.json()["customization"]["tertiary_color"] == "#38bdf8"
     assert get_res2.json()["customization"]["background_image"] is None
 
-    # Update theme customization (colors and background image)
     patch_custom_res = client.patch(
         "/api/v1/auth/me/settings",
         headers=headers,
@@ -82,12 +90,14 @@ def test_user_settings_lifecycle(client, db_session):
 
 
 def test_custom_backgrounds_list_and_upload(client):
-    # List backgrounds
+    """
+    @brief Tests listing and uploading background images, and rejecting an invalid file type with a 400.
+    @param client The FastAPI test client fixture.
+    """
     get_res = client.get("/api/v1/customization/backgrounds")
     assert get_res.status_code == 200
     assert isinstance(get_res.json(), list)
 
-    # Upload valid image
     fake_png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
     files = {"file": ("test_space_wallpaper.png", io.BytesIO(fake_png), "image/png")}
     upload_res = client.post("/api/v1/customization/backgrounds/upload", files=files)
@@ -96,23 +106,23 @@ def test_custom_backgrounds_list_and_upload(client):
     assert "test_space_wallpaper.png" in bg_data["filename"]
     assert bg_data["url"].startswith("/api/v1/storage/custom_bg/")
 
-    # Check that it appears in list
     get_res2 = client.get("/api/v1/customization/backgrounds")
     assert any(b["filename"] == bg_data["filename"] for b in get_res2.json())
 
-    # Upload invalid file extension should return 400
     invalid_files = {"file": ("malicious.exe", io.BytesIO(b"binary"), "application/octet-stream")}
     bad_upload = client.post("/api/v1/customization/backgrounds/upload", files=invalid_files)
     assert bad_upload.status_code == 400
 
 
 def test_custom_music_list_and_upload(client):
-    # List music
+    """
+    @brief Tests listing and uploading music files, and rejecting an invalid file type with a 400.
+    @param client The FastAPI test client fixture.
+    """
     get_res = client.get("/api/v1/customization/music")
     assert get_res.status_code == 200
     assert isinstance(get_res.json(), list)
 
-    # Upload valid audio file (mp3)
     fake_mp3 = b"ID3\x03\x00\x00\x00\x00\x00\x00" + b"\x00" * 100
     files = {"file": ("test_lofi_beat.mp3", io.BytesIO(fake_mp3), "audio/mpeg")}
     upload_res = client.post("/api/v1/customization/music/upload", files=files)
@@ -121,11 +131,9 @@ def test_custom_music_list_and_upload(client):
     assert "test_lofi_beat.mp3" in music_data["filename"]
     assert music_data["url"].startswith("/api/v1/storage/custom_music/")
 
-    # Check that it appears in list
     get_res2 = client.get("/api/v1/customization/music")
     assert any(m["filename"] == music_data["filename"] for m in get_res2.json())
 
-    # Upload invalid audio extension should return 400
     invalid_files = {"file": ("bad_script.sh", io.BytesIO(b"echo 'hack'"), "text/plain")}
     bad_upload = client.post("/api/v1/customization/music/upload", files=invalid_files)
     assert bad_upload.status_code == 400

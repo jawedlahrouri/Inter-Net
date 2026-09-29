@@ -11,22 +11,29 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-/** Values at or above this are abbreviated by default. */
 export const DEFAULT_COMPACT_FROM = 100_000
 
 export interface MetricValueProps extends Omit<React.ComponentProps<"span">, "children"> {
-  /** Strings render as-is. */
   value: number | string
   format?: NumberFormat
   currency?: string
   maximumFractionDigits?: number
-  /** Values at or above this are abbreviated (e.g. $158K) with the full value in a tooltip. Set to Infinity to always show the full value. */
   compactFrom?: number
-  /** Text after the number, e.g. a unit. */
   suffix?: React.ReactNode
 }
 
-/** A formatted number. Large values are abbreviated and reveal the full value on hover. */
+/**
+ * @brief Renders a formatted metric number, abbreviating large values and showing the full value in a tooltip.
+ * @param value Metric to display; numbers are formatted, strings are shown as is.
+ * @param format Number format style (number, compact, currency or percent).
+ * @param currency Currency code used when formatting as currency.
+ * @param maximumFractionDigits Maximum number of fraction digits to show in the formatted number.
+ * @param compactFrom Absolute value threshold from which numbers are abbreviated; defaults to 100000.
+ * @param suffix Optional node appended after the value, such as a unit.
+ * @param className Extra CSS classes merged with the tabular-nums styling.
+ * @param props Remaining span props forwarded to the underlying span element.
+ * @return A span with the formatted value, wrapped in a tooltip with the full value when it is abbreviated.
+ */
 function MetricValue({
   value,
   format,

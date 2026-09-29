@@ -30,6 +30,11 @@ export interface CustomApiWidgetProps {
   className?: string
 }
 
+/**
+ * @brief Extracts the hostname from a URL, assuming https when no scheme is given.
+ * @param url The API URL string to parse.
+ * @return The hostname of the URL, or the original string if parsing fails.
+ */
 function getHostname(url: string): string {
   try {
     const parsed = new URL(url.startsWith('http') ? url : `https://${url}`)
@@ -39,6 +44,19 @@ function getHostname(url: string): string {
   }
 }
 
+/**
+ * @brief Renders a card widget that fetches a JSON API (with proxy fallback), extracts a value by path and shows it as a KPI or gauge.
+ * @param apiUrl URL of the JSON API to fetch, with a backend proxy fallback on failure.
+ * @param jsonPath Dot-separated path locating the value to extract from the API response.
+ * @param displayMode How the value is shown, as a kpi figure or a gauge (defaults to kpi).
+ * @param unit Optional unit label displayed with the value.
+ * @param refreshIntervalSeconds Optional interval in seconds for automatically refetching the API.
+ * @param gaugeMin Minimum bound of the gauge scale (defaults to 0).
+ * @param gaugeMax Maximum bound of the gauge scale (defaults to 100).
+ * @param title Optional title displayed in the card header.
+ * @param className Optional extra CSS classes applied to the card.
+ * @return A card with the title, host, refresh button, loading, error, not-found, KPI or gauge view and a last-updated footer.
+ */
 export function CustomApiWidget({
   apiUrl,
   jsonPath,
