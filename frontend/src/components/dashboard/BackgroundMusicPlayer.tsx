@@ -6,16 +6,22 @@ import { MUSIC_PRESETS } from '@/config/musicPresets'
 export function BackgroundMusicPlayer() {
   const { customization } = useSettings()
 
-  // Musique configurée pour la page ou Lo-Fi par défaut
-  const currentTrackUrl = customization.background_music || MUSIC_PRESETS[0].url
-  const currentTrackName = customization.background_music_name || MUSIC_PRESETS[0].title
+  const currentTrackUrl = customization.background_music
+  const currentTrackName = customization.background_music_name || 'Musique de fond'
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isStoppedByUser, setIsStoppedByUser] = useState<boolean>(false)
 
-  // Gestion de la lecture audio automatique par défaut
   useEffect(() => {
+    if (!currentTrackUrl) {
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      setIsPlaying(false)
+      return
+    }
+
     if (!audioRef.current) {
       audioRef.current = new Audio()
     }
@@ -45,7 +51,7 @@ export function BackgroundMusicPlayer() {
                 audioRef.current
                   .play()
                   .then(() => setIsPlaying(true))
-                  .catch(() => {})
+                  .catch(() => { })
               }
             }
 
@@ -60,7 +66,7 @@ export function BackgroundMusicPlayer() {
 
     const handleEnded = () => {
       if (!isStoppedByUser) {
-        audio.play().catch(() => {})
+        audio.play().catch(() => { })
       }
     }
 
@@ -94,8 +100,11 @@ export function BackgroundMusicPlayer() {
       audioRef.current
         .play()
         .then(() => setIsPlaying(true))
-        .catch(() => {})
+        .catch(() => { })
     }
+  }
+  if (!currentTrackUrl) {
+    return null
   }
 
   return (
