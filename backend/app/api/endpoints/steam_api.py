@@ -18,11 +18,13 @@ from app.services.integration_service import (
     get_user_service_status,
     unlink_user_service,
 )
-from app.services.steam_service import fetch_steam_user_stats
+from app.services.integration_clients import (
+    fetch_steam_player_profile,
+    fetch_steam_user_stats,
+)
 
 load_dotenv()
 
-STEAM_API_KEY = os.getenv("STEAM_API_KEY")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 RETURN_URL = f"{BASE_URL}/api/v1/auth/steam/callback"
@@ -41,7 +43,11 @@ class SteamResponse(BaseModel):
 
 @router.get("/auth/steam")
 def steam_auth(token: Optional[str] = None):
-    """Redirige l'utilisateur vers la mire de connexion Steam."""
+    """
+    @brief Builds the Steam OpenID login URL and redirects the user to Steam.
+    @param token The optional app JWT appended to the return URL to identify the user on callback.
+    @return A redirect response to the Steam OpenID login page.
+    """
     return_url = f"{RETURN_URL}?token={token}" if token else RETURN_URL
     params = {
         "openid.ns": "http://specs.openid.net/auth/2.0",
@@ -61,13 +67,13 @@ async def steam_callback(
     token: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    """Reçoit la réponse de Steam, vérifie la signature et récupère les infos du profil."""
-    if not STEAM_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="La clé API Steam n'est pas configurée.",
-        )
-
+    """
+    @brief Handles the Steam OpenID callback by verifying the assertion, extracting the SteamID and linking the Steam account to the user.
+    @param request The incoming request holding the OpenID query parameters and headers.
+    @param token The optional app JWT used to identify the user to link.
+    @param db The database session dependency.
+    @return The Steam player profile as JSON if the client accepts JSON, otherwise a redirect to the frontend settings tab.
+    """
     query_params = dict(request.query_params)
     if not query_params or query_params.get("openid.mode") != "id_res":
         raise HTTPException(
@@ -83,77 +89,47 @@ async def steam_callback(
             STEAM_OPENID_URL, data=verification_params
         )
 
-        if "is_valid:true" not in verify_response.text:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Échec de validation OpenID Steam.",
-            )
-
-        claimed_id = query_params.get("openid.claimed_id", "")
-        match = re.search(r"^https://steamcommunity\.com/openid/id/(\d+)$", claimed_id)
-        if not match:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Format de SteamID introuvable.",
-            )
-        steam_id = match.group(1)
-
-        api_url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
-        user_response = await client.get(
-            api_url, params={"key": STEAM_API_KEY, "steamids": steam_id}
+    if "is_valid:true" not in verify_response.text:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Échec de validation OpenID Steam.",
         )
 
-        if user_response.status_code != 200:
+    claimed_id = query_params.get("openid.claimed_id", "")
+    match = re.search(r"^https://steamcommunity\.com/openid/id/(\d+)$", claimed_id)
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format de SteamID introuvable.",
+        )
+    steam_id = match.group(1)
+
+    player_data = await fetch_steam_player_profile(steam_id)
+
+    user = resolve_user_from_request(db, request, token)
+    if user:
+        try:
+            link_user_service(
+                db=db,
+                user_id=user.id,
+                service_name="steam",
+                access_token=steam_id,
+                credentials=player_data,
+                service_display_name="Steam",
+                service_description="Service Steam Gaming",
+                service_auth_type="oauth2",
+            )
+        except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Erreur lors de la communication avec l'API Steam.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erreur lors de l'enregistrement du compte Steam: {e}",
             )
 
-        players = user_response.json().get("response", {}).get("players", [])
-        if not players:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Profil joueur introuvable.",
-            )
+    accept_header = request.headers.get("accept", "")
+    if "application/json" in accept_header:
+        return SteamResponse(**player_data)
 
-        player = players[0]
-        player_data = {
-            "steam_id": steam_id,
-            "username": player.get("personaname", ""),
-            "avatar": player.get("avatarfull", ""),
-            "profile_url": player.get("profileurl", ""),
-        }
-
-        # Associer à l'utilisateur connecté
-        user = resolve_user_from_request(db, request, token)
-        if user:
-            try:
-                link_user_service(
-                    db=db,
-                    user_id=user.id,
-                    service_name="steam",
-                    access_token=steam_id,
-                    credentials=player_data,
-                    service_display_name="Steam",
-                    service_description="Service Steam Gaming",
-                    service_auth_type="oauth2",
-                )
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Erreur lors de l'enregistrement du compte Steam: {e}",
-                )
-
-        accept_header = request.headers.get("accept", "")
-        if "application/json" in accept_header:
-            return SteamResponse(
-                steam_id=steam_id,
-                username=player.get("personaname", ""),
-                avatar=player.get("avatarfull", ""),
-                profile_url=player.get("profileurl", ""),
-            )
-
-        return RedirectResponse(url=f"{FRONTEND_URL}/?tab=settings&steam=connected")
+    return RedirectResponse(url=f"{FRONTEND_URL}/?tab=settings&steam=connected")
 
 
 @router.get("/auth/steam/status")
@@ -161,7 +137,12 @@ def steam_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retourne le statut de connexion Steam pour l'utilisateur actuel."""
+    """
+    @brief Returns the Steam connection status of the current user.
+    @param db The database session dependency.
+    @param current_user The authenticated user resolved from the bearer token.
+    @return The Steam service link status for the current user.
+    """
     return get_user_service_status(db=db, user_id=current_user.id, service_name="steam")
 
 
@@ -170,7 +151,12 @@ def steam_disconnect(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Déconnecte le compte Steam de l'utilisateur."""
+    """
+    @brief Unlinks the Steam account from the current user.
+    @param db The database session dependency.
+    @param current_user The authenticated user resolved from the bearer token.
+    @return A message dict stating whether a Steam account was disconnected or none was linked.
+    """
     unlinked = unlink_user_service(db=db, user_id=current_user.id, service_name="steam")
     if unlinked:
         return {"message": "Compte Steam déconnecté avec succès."}
@@ -185,16 +171,12 @@ async def steam_user_stats(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retourne les 15 métriques statistiques Steam pour l'utilisateur connecté.
-    Exige impérativement que le compte Steam soit lié.
-    Protégé par un cache serveur de 5 minutes pour respecter les quotas Steam.
+    @brief Fetches the Steam statistics of the current user after checking that Steam is configured and linked.
+    @param force_refresh Whether to bypass the cache and fetch fresh data.
+    @param db The database session dependency.
+    @param current_user The authenticated user resolved from the bearer token.
+    @return The Steam user statistics returned by the Steam client, or a 400 error if Steam is not configured or linked.
     """
-    if not STEAM_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="La clé API Steam n'est pas configurée sur le serveur.",
-        )
-
     service = db.query(Service).filter(Service.name == "steam").first()
     if not service:
         raise HTTPException(
@@ -214,17 +196,7 @@ async def steam_user_stats(
             detail="Veuillez connecter votre compte Steam dans vos Paramètres pour accéder aux widgets Steam.",
         )
 
-    steam_id = user_service.access_token
-    try:
-        stats = await fetch_steam_user_stats(
-            steam_id=steam_id,
-            api_key=STEAM_API_KEY,
-            force_refresh=force_refresh,
-        )
-        return stats
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Erreur lors de la récupération des données Steam: {e}",
-        )
+    return await fetch_steam_user_stats(
+        steam_id=user_service.access_token,
+        force_refresh=force_refresh,
+    )

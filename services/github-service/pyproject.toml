@@ -1,0 +1,10 @@
+[project]
+name = "github-service"
+version = "0.1.0"
+description = "Microservice github INTER-NET (appels API externes + cache)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# ".." rend le paquet partagé `common` importable
+pythonpath = [".", ".."]

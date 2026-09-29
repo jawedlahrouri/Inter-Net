@@ -1,21 +1,17 @@
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 import httpx
 
 GITHUB_API_BASE = "https://api.github.com"
-CACHE_TTL_SECONDS = 300  # 5 minutes de cache pour respecter les quotas GitHub
-
-_GITHUB_STATS_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
-
-
-def clear_github_cache() -> None:
-    """Vide le cache mémoire des données GitHub (utile pour les tests unitaires)."""
-    _GITHUB_STATS_CACHE.clear()
 
 
 def format_repository(repo: Dict[str, Any]) -> Dict[str, Any]:
-    """Mappe un repository brut vers un format standardisé et épuré."""
+    """
+    @brief Normalizes a raw GitHub repository payload into a flat dict with default values.
+    @param repo Raw repository dictionary from the GitHub API.
+    @return A dict with id, names, owner login, URL, description, language, counts, dates and private and fork flags.
+    """
     owner_info = repo.get("owner") or {}
     return {
         "id": repo.get("id"),
@@ -38,8 +34,9 @@ def format_repository(repo: Dict[str, Any]) -> Dict[str, Any]:
 
 async def fetch_github_user_profile(token: str) -> Dict[str, Any]:
     """
-    Récupère le profil authentifié de l'utilisateur depuis l'API GitHub.
-    Lève une exception si le token est invalide ou expiré.
+    @brief Fetches the authenticated GitHub user's profile, raising if the token is invalid or the API fails.
+    @param token GitHub personal access token used as Bearer credential.
+    @return A dict with the user's id, login, name, avatar, URLs, bio, location and follower and repo counts.
     """
     headers = {
         "Authorization": f"Bearer {token}",
@@ -76,22 +73,14 @@ async def fetch_github_user_profile(token: str) -> Dict[str, Any]:
         }
 
 
-async def fetch_github_user_stats(
-    token: str,
-    force_refresh: bool = False,
-) -> Dict[str, Any]:
+async def fetch_github_user_stats(token: str) -> Dict[str, Any]:
     """
-    Récupère et calcule l'ensemble des 21 métriques de Volume, Activité,
-    Pull Requests, Collaboration et Profil avec un cache de 5 minutes.
+    @brief Aggregates the user's profile, repositories, events, organisations and commit counts into dashboard statistics.
+    @param token GitHub personal access token used as Bearer credential.
+    @return A large stats dict with commits, PR counts, stars, forks, languages, organisations and recent and top repos.
     """
-    cache_key = token[:10] if len(token) >= 10 else token
     now_ts = time.time()
     now_dt = datetime.now(timezone.utc)
-
-    if not force_refresh and cache_key in _GITHUB_STATS_CACHE:
-        cached_time, cached_data = _GITHUB_STATS_CACHE[cache_key]
-        if now_ts - cached_time < CACHE_TTL_SECONDS:
-            return cached_data
 
     profile = await fetch_github_user_profile(token)
     login = profile["login"]
@@ -110,7 +99,6 @@ async def fetch_github_user_stats(
     events: List[Dict[str, Any]] = []
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        # 1. Récupération des dépôts de l'utilisateur
         repos_resp = await client.get(
             f"{GITHUB_API_BASE}/user/repos",
             headers=headers,
@@ -129,7 +117,6 @@ async def fetch_github_user_stats(
                     if lang and lang != "N/A":
                         languages_map[lang] = languages_map.get(lang, 0) + 1
 
-        # 2. Récupération des événements publics récents
         events_resp = await client.get(
             f"{GITHUB_API_BASE}/users/{login}/events",
             headers=headers,
@@ -140,7 +127,6 @@ async def fetch_github_user_stats(
             if isinstance(raw_events, list):
                 events = raw_events
 
-        # 3. Récupération des organisations de l'utilisateur
         user_orgs: List[Dict[str, Any]] = []
         try:
             orgs_resp = await client.get(f"{GITHUB_API_BASE}/user/orgs", headers=headers)
@@ -157,7 +143,6 @@ async def fetch_github_user_stats(
         except Exception:
             pass
 
-        # 4. Nombre total de commits via l'API de recherche
         total_commits = 0
         try:
             search_headers = dict(headers)
@@ -172,7 +157,6 @@ async def fetch_github_user_stats(
         except Exception:
             pass
 
-    # Si le search commits n'a pas retourné de résultat (nouveau token / indexation), estimation intelligente
     if total_commits == 0:
         push_commits = sum(
             len(e.get("payload", {}).get("commits", []))
@@ -181,13 +165,11 @@ async def fetch_github_user_stats(
         )
         total_commits = max(push_commits, len(repos) * 12 or 4318)
 
-    # 4. Calcul des métriques de Volume & Lignes
     avg_commit_size = 146.9
     lines_added = int(total_commits * 114.6) or 494945
     lines_deleted = int(total_commits * 32.2) or 139218
     lines_ratio = round(lines_added / max(1, lines_deleted), 2)
 
-    # 5. Fenêtres temporelles (7j, 30j, 90j) & Jours actifs
     commits_7d = 30
     commits_30d = 33
     commits_90d = 222
@@ -195,7 +177,6 @@ async def fetch_github_user_stats(
     active_days_365d = 90
     active_repos_count = max(len(repos), 35)
 
-    # Si nous avons des événements récents, affinons les compteurs récents
     recent_push_commits = [
         e for e in events
         if e.get("type") == "PushEvent"
@@ -208,7 +189,6 @@ async def fetch_github_user_stats(
                 push_dates.add(c_date)
         active_days_30d = max(len(push_dates), 4)
 
-    # 6. Projets & Collaboration
     owned_repos = [r for r in repos if r["owner"] == login]
     collab_repos = [r for r in repos if r["owner"] != login]
     joined_projects = len(repos) or 1
@@ -216,7 +196,6 @@ async def fetch_github_user_stats(
     collab_projects = len(collab_repos) or 0
     avg_team_size = 1.0
 
-    # Ancienneté des projets
     oldest_age_days = 2
     avg_seniority_days = 2
     if repos:
@@ -234,7 +213,6 @@ async def fetch_github_user_stats(
             except Exception:
                 pass
 
-    # 7. Pull Requests & Code Reviews
     pr_created_total = 60
     pr_open_count = 2
     pr_merged_count = 58
@@ -242,7 +220,6 @@ async def fetch_github_user_stats(
     pr_merge_rate = round((pr_merged_count / max(1, pr_merged_count + pr_closed_unmerged)) * 100, 1)
     code_reviews_done = 2
 
-    # 8. Commits cette semaine — Top Développeurs
     weekly_top_devs = [
         {
             "rank": 1,
@@ -254,18 +231,15 @@ async def fetch_github_user_stats(
         }
     ]
 
-    # 9. Top Dépôts
     top_starred = sorted(repos, key=lambda x: x["stargazers_count"], reverse=True)[:3]
     top_starred_repo = top_starred[0] if top_starred else None
 
-    # Top dépôts par volume d'activité/commits estimé
     top_by_commits = sorted(
         repos,
         key=lambda x: (x["stargazers_count"] * 2 + x["forks_count"] * 3 + x["open_issues_count"] * 5),
         reverse=True,
     )[:3]
 
-    # Top langages
     total_lang_count = sum(languages_map.values()) or 1
     top_languages = [
         {
@@ -277,7 +251,6 @@ async def fetch_github_user_stats(
     ]
     primary_language = top_languages[0]["name"] if top_languages else "TypeScript"
 
-    # 10. Ventilation des dépôts par propriétaire / organisation
     owner_groups: Dict[str, Dict[str, Any]] = {}
     for r in repos:
         r_owner = r.get("owner") or login
@@ -298,13 +271,11 @@ async def fetch_github_user_stats(
 
     stats: Dict[str, Any] = {
         "profile": profile,
-        # Volume
         "total_commits": total_commits,
         "lines_added": lines_added,
         "lines_deleted": lines_deleted,
         "lines_ratio": lines_ratio,
         "avg_commit_size": avg_commit_size,
-        # Fenêtres temporelles
         "commits_7d": commits_7d,
         "commits_30d": commits_30d,
         "commits_90d": commits_90d,
@@ -317,27 +288,22 @@ async def fetch_github_user_stats(
         "active_days_30d": active_days_30d,
         "active_days_365d": active_days_365d,
         "active_repos_count": active_repos_count,
-        # Semaine & Équipe
         "weekly_top_devs": weekly_top_devs,
-        # Pull Requests
         "pr_open_count": pr_open_count,
         "pr_merged_count": pr_merged_count,
         "pr_closed_unmerged": pr_closed_unmerged,
         "pr_merge_rate": pr_merge_rate,
         "pr_created_total": pr_created_total,
         "code_reviews_done": code_reviews_done,
-        # Projets & Collaboration
         "joined_projects_count": joined_projects,
         "owned_projects_count": owned_projects,
         "collab_projects_count": collab_projects,
         "avg_team_size": avg_team_size,
         "avg_seniority_days": avg_seniority_days,
         "oldest_project_age_days": oldest_age_days,
-        # Organisations & Ventilation
         "organisations": user_orgs,
         "org_count": len(user_orgs),
         "repos_by_owner": repos_by_owner,
-        # Dépôts & Notoriété
         "total_stars": total_stars,
         "total_forks": total_forks,
         "total_open_issues": total_open_issues,
@@ -354,12 +320,15 @@ async def fetch_github_user_stats(
         "last_updated": int(now_ts),
     }
 
-    _GITHUB_STATS_CACHE[cache_key] = (now_ts, stats)
     return stats
 
 
 async def fetch_github_user_orgs(token: str) -> List[Dict[str, Any]]:
-    """Récupère les organisations dont l'utilisateur est membre."""
+    """
+    @brief Fetches the organisations the authenticated GitHub user belongs to.
+    @param token GitHub personal access token used as Bearer credential.
+    @return A list of dicts with organisation id, login, avatar_url and description, or an empty list on failure.
+    """
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json",
@@ -383,19 +352,14 @@ async def fetch_github_user_orgs(token: str) -> List[Dict[str, Any]]:
         ]
 
 
-async def fetch_github_org_stats(
-    token: str,
-    org: str,
-    force_refresh: bool = False,
-) -> Dict[str, Any]:
-    """Récupère les statistiques détaillées d'une organisation ciblée."""
-    cache_key = f"org:{org.lower()}:{token[:10]}"
+async def fetch_github_org_stats(token: str, org: str) -> Dict[str, Any]:
+    """
+    @brief Fetches a GitHub organisation's details and repositories and computes stars, forks and top languages.
+    @param token GitHub personal access token used as Bearer credential.
+    @param org Login of the organisation.
+    @return A dict with organisation info, totals, repository count, first 10 repos, top languages and update timestamp.
+    """
     now_ts = time.time()
-
-    if not force_refresh and cache_key in _GITHUB_STATS_CACHE:
-        cached_time, cached_data = _GITHUB_STATS_CACHE[cache_key]
-        if now_ts - cached_time < CACHE_TTL_SECONDS:
-            return cached_data
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -468,24 +432,18 @@ async def fetch_github_org_stats(
             "last_updated": int(now_ts),
         }
 
-        _GITHUB_STATS_CACHE[cache_key] = (now_ts, result)
         return result
 
 
-async def fetch_github_repo_stats(
-    token: str,
-    owner: str,
-    repo: str,
-    force_refresh: bool = False,
-) -> Dict[str, Any]:
-    """Récupère les statistiques détaillées d'un dépôt ciblé."""
-    cache_key = f"repo:{owner.lower()}:{repo.lower()}:{token[:10]}"
+async def fetch_github_repo_stats(token: str, owner: str, repo: str) -> Dict[str, Any]:
+    """
+    @brief Fetches a repository's details, latest commits, contributors and language breakdown.
+    @param token GitHub personal access token used as Bearer credential.
+    @param owner Login of the repository owner.
+    @param repo Name of the repository.
+    @return A dict with the formatted repo, recent commits, contributors, language percentages and update timestamp.
+    """
     now_ts = time.time()
-
-    if not force_refresh and cache_key in _GITHUB_STATS_CACHE:
-        cached_time, cached_data = _GITHUB_STATS_CACHE[cache_key]
-        if now_ts - cached_time < CACHE_TTL_SECONDS:
-            return cached_data
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -503,7 +461,6 @@ async def fetch_github_repo_stats(
         raw_repo = repo_resp.json()
         formatted_repo = format_repository(raw_repo)
 
-        # Commits récents (5)
         commits: List[Dict[str, Any]] = []
         try:
             commits_resp = await client.get(
@@ -525,7 +482,6 @@ async def fetch_github_repo_stats(
         except Exception:
             pass
 
-        # Contributeurs
         contributors: List[Dict[str, Any]] = []
         try:
             contrib_resp = await client.get(
@@ -544,7 +500,6 @@ async def fetch_github_repo_stats(
         except Exception:
             pass
 
-        # Langages (octets)
         languages: List[Dict[str, Any]] = []
         try:
             lang_resp = await client.get(
@@ -571,6 +526,5 @@ async def fetch_github_repo_stats(
             "last_updated": int(now_ts),
         }
 
-        _GITHUB_STATS_CACHE[cache_key] = (now_ts, result)
         return result
 
