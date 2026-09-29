@@ -42,8 +42,8 @@ FRENCH_QUOTES = [
 @router.get("/random", response_model=QuoteResponse)
 async def get_random_quote() -> QuoteResponse:
     try:
-        async with httpx.AsyncClient(timeout=1.5) as client:
-            resp = await client.get("https://api.devisubox.com/quote", headers={"Accept": "application/json"})
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get("https://dummyjson.com/quotes/random", headers={"Accept": "application/json"})
             if resp.status_code == 200:
                 data = resp.json()
                 if "quote" in data and "author" in data:
