@@ -40,7 +40,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Runtime data (widgets par utilisateur, générés à l'exécution)
 backend/storage/widgets/*.json
 
 # Editor & OS files
