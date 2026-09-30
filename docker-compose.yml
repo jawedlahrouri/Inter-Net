@@ -140,7 +140,6 @@ services:
         condition: service_healthy
 
   # Web frontend
->>>>>>> origin/dev
   frontend:
     build:
       context: ./frontend

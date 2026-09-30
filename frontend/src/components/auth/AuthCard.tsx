@@ -1,11 +1,12 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, MailCheck, CheckCircle2, RefreshCw, ArrowLeft } from 'lucide-react';
-import { verifyEmailApi, resendVerificationApi } from '@/services/api';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { verifyEmailApi } from '@/services/api';
+import { MailConfirmationCard, MailVerificationAlert, MailNotice } from '@/components/mail';
 
 /**
  * @brief Renders the authentication card with login and registration tabs and their validation state.
@@ -30,8 +31,6 @@ export function AuthCard() {
   const [regError, setRegError] = useState<string | null>(null);
 
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendFeedback, setResendFeedback] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
 
@@ -142,19 +141,7 @@ export function AuthCard() {
     }
   };
 
-  const handleResendVerification = async (targetEmail: string) => {
-    if (!targetEmail) return;
-    setResendLoading(true);
-    setResendFeedback(null);
-    try {
-      const res = await resendVerificationApi(targetEmail);
-      setResendFeedback(res.message || 'Un nouvel e-mail de confirmation vous a été envoyé.');
-    } catch (err) {
-      setResendFeedback(err instanceof Error ? err.message : "Erreur lors de l'envoi de l'email.");
-    } finally {
-      setResendLoading(false);
-    }
-  };
+
 
   if (verificationStatus === 'loading') {
     return (
@@ -170,70 +157,13 @@ export function AuthCard() {
 
   if (registeredEmail) {
     return (
-      <Card className="w-full max-w-md mx-auto border border-border/80 bg-card rounded-lg shadow-xs">
-        <CardHeader className="text-center pb-3 pt-6 space-y-2">
-          <div className="size-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
-            <MailCheck className="size-6 text-primary" />
-          </div>
-          <CardTitle className="text-lg font-semibold tracking-tight text-foreground">
-            Vérifiez votre boîte mail
-          </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground leading-relaxed">
-            Un e-mail de confirmation a été envoyé à <strong className="text-foreground">{registeredEmail}</strong>.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="px-6 pb-6 pt-2 space-y-4">
-          <div className="p-3 rounded-md bg-muted/60 border border-border/80 text-xs text-muted-foreground space-y-1.5">
-            <p className="font-medium text-foreground">Accès restreint temporairement</p>
-            <p>
-              Pour débloquer votre accès à l'application, vous devez cliquer sur le bouton de confirmation présent dans cet e-mail.
-            </p>
-          </div>
-
-          {resendFeedback && (
-            <div className="p-2.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-2">
-              <CheckCircle2 className="size-3.5 shrink-0" />
-              <span>{resendFeedback}</span>
-            </div>
-          )}
-
-          <div className="space-y-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={resendLoading}
-              onClick={() => handleResendVerification(registeredEmail)}
-              className="w-full h-9 text-xs font-medium cursor-pointer"
-            >
-              {resendLoading ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin mr-2" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="size-3.5 mr-2" />
-                  Renvoyer l'e-mail de confirmation
-                </>
-              )}
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setRegisteredEmail(null);
-                setActiveTab('login');
-              }}
-              className="w-full h-9 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <ArrowLeft className="size-3.5 mr-2" />
-              Retour à la page de connexion
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <MailConfirmationCard
+        email={registeredEmail}
+        onBackToLogin={() => {
+          setRegisteredEmail(null);
+          setActiveTab('login');
+        }}
+      />
     );
   }
 
@@ -288,30 +218,18 @@ export function AuthCard() {
           <TabsContent value="login" className="space-y-4 focus-visible:outline-none">
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               {loginError && (
-                <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs space-y-2">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-2">
+                  <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
                     <AlertCircle className="size-3.5 shrink-0" />
                     <span>{loginError}</span>
                   </div>
                   {isUnverifiedError && loginIdentifier.includes('@') && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={resendLoading}
-                      onClick={() => handleResendVerification(loginIdentifier.trim())}
-                      className="w-full h-8 text-[11px] mt-1 cursor-pointer bg-destructive/5 hover:bg-destructive/15 border-destructive/30 text-destructive"
-                    >
-                      {resendLoading ? 'Envoi...' : "Renvoyer l'email d'activation"}
-                    </Button>
+                    <MailVerificationAlert
+                      email={loginIdentifier.trim()}
+                      message="Votre compte est en attente de validation."
+                      variant="destructive"
+                    />
                   )}
-                </div>
-              )}
-
-              {resendFeedback && (
-                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 shrink-0" />
-                  <span>{resendFeedback}</span>
                 </div>
               )}
 
@@ -431,10 +349,7 @@ export function AuthCard() {
                 />
               </div>
 
-              <div className="p-2 rounded bg-muted/40 text-[11px] text-muted-foreground flex items-center gap-2">
-                <MailCheck className="size-3.5 text-primary shrink-0" />
-                <span>Un e-mail de confirmation avec lien d'activation vous sera envoyé.</span>
-              </div>
+              <MailNotice />
 
               <Button
                 type="submit"
