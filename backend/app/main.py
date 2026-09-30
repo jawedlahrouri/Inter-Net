@@ -29,6 +29,18 @@ async def lifespan(app: FastAPI):
                 conn.commit()
         except Exception:
             pass
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+        except Exception:
+            pass
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN verification_token VARCHAR(255) DEFAULT NULL"))
+                conn.commit()
+        except Exception:
+            pass
     except Exception as e:
         print(f"DB Startup warning: {e}")
     yield

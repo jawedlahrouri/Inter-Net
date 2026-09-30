@@ -58,6 +58,11 @@ def get_current_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Utilisateur introuvable",
         )
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Compte non vérifié. Veuillez confirmer votre adresse email pour accéder à l'application.",
+        )
     return user
 
 

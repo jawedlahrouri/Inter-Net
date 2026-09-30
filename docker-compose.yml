@@ -40,9 +40,19 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-Admin123} # database password (override it in .env outside of dev)
       - STEAM_SERVICE_URL=http://steam-lb:8080 # internal URL of the Steam load balancer (nginx -> steam-service replicas)
       - GITHUB_SERVICE_URL=http://github-lb:8080 # internal URL of the GitHub load balancer (nginx -> github-service replicas)
+      - MAIL_SERVER=${MAIL_SERVER:-mailpit}
+      - MAIL_PORT=${MAIL_PORT:-1025}
+      - MAIL_USERNAME=${MAIL_USERNAME:-noreply@inter-net.com}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_FROM=${MAIL_FROM:-noreply@inter-net.com}
+      - MAIL_STARTTLS=${MAIL_STARTTLS:-false}
+      - MAIL_SSL_TLS=${MAIL_SSL_TLS:-false}
+      - MAIL_USE_CREDENTIALS=${MAIL_USE_CREDENTIALS:-false}
     depends_on: # start order
       db:
         condition: service_healthy # wait until MySQL answers its healthcheck
+      mailpit:
+        condition: service_started
       steam-lb:
         condition: service_started # just needs to be started
       github-lb:
@@ -55,6 +65,14 @@ services:
         aliases: # extra DNS names for this container on the compose network
           - server
           - backend
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
   # Shared cache for the microservices ──────────────────────────────────────
   redis:

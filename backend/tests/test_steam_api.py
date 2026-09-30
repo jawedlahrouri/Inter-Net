@@ -17,7 +17,7 @@ def steam_linked(db_session):
     @param db_session The test database session fixture used to persist the user and Steam link.
     @return A headers dictionary containing the Authorization bearer token of the Steam-linked user.
     """
-    user = User(email="gamer@epitech.eu", username="gamer", password_hash="fakehash", role="user")
+    user = User(email="gamer@epitech.eu", username="gamer", password_hash="fakehash", role="user", is_verified=True)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -40,7 +40,7 @@ def test_steam_stats_requires_linked_account(client, db_session):
     @param client The FastAPI test client fixture.
     @param db_session The test database session fixture used to create an unlinked user.
     """
-    user = User(email="nosteam@epitech.eu", username="nosteam", password_hash="fakehash", role="user")
+    user = User(email="nosteam@epitech.eu", username="nosteam", password_hash="fakehash", role="user", is_verified=True)
     db_session.add(user)
     db_session.commit()
     headers = {"Authorization": f"Bearer {create_access_token(subject=user.id)}"}

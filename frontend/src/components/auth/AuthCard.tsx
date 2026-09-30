@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { verifyEmailApi } from '@/services/api';
+import { MailConfirmationCard, MailVerificationAlert, MailNotice } from '@/components/mail';
 
 /**
  * @brief Renders the authentication card with login and registration tabs and their validation state.
@@ -19,6 +21,7 @@ export function AuthCard() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isUnverifiedError, setIsUnverifiedError] = useState(false);
 
   const [regEmail, setRegEmail] = useState('');
   const [regUsername, setRegUsername] = useState('');
@@ -27,6 +30,48 @@ export function AuthCard() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
 
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token') || params.get('verify_token');
+    const verifiedParam = params.get('verified');
+    const errorParam = params.get('error');
+
+    if (verifiedParam === 'true') {
+      setVerificationStatus('success');
+      setVerificationMessage('Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.');
+      setActiveTab('login');
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+
+    if (errorParam === 'invalid') {
+      setVerificationStatus('error');
+      setVerificationMessage('Le jeton de confirmation est invalide ou a expiré.');
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+
+    if (token) {
+      setVerificationStatus('loading');
+      verifyEmailApi(token)
+        .then((res) => {
+          setVerificationStatus('success');
+          setVerificationMessage(res.message || 'Votre compte a été confirmé avec succès ! Vous pouvez maintenant vous connecter.');
+          setActiveTab('login');
+          window.history.replaceState({}, '', window.location.pathname);
+        })
+        .catch((err) => {
+          setVerificationStatus('error');
+          setVerificationMessage(err instanceof Error ? err.message : 'Échec de la validation de votre compte.');
+          window.history.replaceState({}, '', window.location.pathname);
+        });
+    }
+  }, []);
+
   /**
    * @brief Validates the login form and calls the auth context login, storing any error message.
    * @param e The form submit event, whose default behavior is prevented.
@@ -34,6 +79,7 @@ export function AuthCard() {
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoginError(null);
+    setIsUnverifiedError(false);
 
     if (!loginIdentifier.trim() || !loginPassword) {
       setLoginError('Veuillez remplir tous les champs.');
@@ -47,7 +93,11 @@ export function AuthCard() {
         password: loginPassword,
       });
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : 'Échec de la connexion.');
+      const msg = err instanceof Error ? err.message : 'Échec de la connexion.';
+      setLoginError(msg);
+      if (msg.toLowerCase().includes('activé') || msg.toLowerCase().includes('vérifi') || msg.toLowerCase().includes('confirmer')) {
+        setIsUnverifiedError(true);
+      }
     } finally {
       setLoginLoading(false);
     }
@@ -78,17 +128,44 @@ export function AuthCard() {
 
     setRegLoading(true);
     try {
-      await register({
+      const res = await register({
         email: regEmail.trim(),
         username: regUsername.trim(),
         password: regPassword,
       });
+      setRegisteredEmail(res.email || regEmail.trim());
     } catch (err) {
       setRegError(err instanceof Error ? err.message : "Échec de l'inscription.");
     } finally {
       setRegLoading(false);
     }
   };
+
+
+
+  if (verificationStatus === 'loading') {
+    return (
+      <Card className="w-full max-w-md mx-auto border border-border/80 bg-card rounded-lg shadow-xs p-8 text-center space-y-4">
+        <Loader2 className="size-10 animate-spin text-primary mx-auto" />
+        <CardTitle className="text-lg font-medium text-foreground">Activation de votre compte...</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground">
+          Veuillez patienter pendant la validation de votre adresse email.
+        </CardDescription>
+      </Card>
+    );
+  }
+
+  if (registeredEmail) {
+    return (
+      <MailConfirmationCard
+        email={registeredEmail}
+        onBackToLogin={() => {
+          setRegisteredEmail(null);
+          setActiveTab('login');
+        }}
+      />
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto border border-border/80 bg-card rounded-lg shadow-xs">
@@ -104,11 +181,27 @@ export function AuthCard() {
       </CardHeader>
 
       <CardContent className="px-6 pb-6 pt-0">
+        {/* Bannière de notification après validation de compte */}
+        {verificationStatus === 'success' && verificationMessage && (
+          <div className="mb-4 p-3 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+            <span>{verificationMessage}</span>
+          </div>
+        )}
+
+        {verificationStatus === 'error' && verificationMessage && (
+          <div className="mb-4 p-3 rounded-md bg-destructive/15 border border-destructive/30 text-destructive text-xs flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{verificationMessage}</span>
+          </div>
+        )}
+
         <Tabs
           value={activeTab}
           onValueChange={(val) => {
             setActiveTab(val as 'login' | 'register');
             setLoginError(null);
+            setIsUnverifiedError(false);
             setRegError(null);
           }}
           className="w-full"
@@ -125,9 +218,18 @@ export function AuthCard() {
           <TabsContent value="login" className="space-y-4 focus-visible:outline-none">
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               {loginError && (
-                <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
-                  <AlertCircle className="size-3.5 shrink-0" />
-                  <span>{loginError}</span>
+                <div className="space-y-2">
+                  <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                    <AlertCircle className="size-3.5 shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                  {isUnverifiedError && loginIdentifier.includes('@') && (
+                    <MailVerificationAlert
+                      email={loginIdentifier.trim()}
+                      message="Votre compte est en attente de validation."
+                      variant="destructive"
+                    />
+                  )}
                 </div>
               )}
 
@@ -246,6 +348,8 @@ export function AuthCard() {
                   required
                 />
               </div>
+
+              <MailNotice />
 
               <Button
                 type="submit"

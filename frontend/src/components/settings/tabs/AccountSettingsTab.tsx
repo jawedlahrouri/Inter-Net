@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { User as UserType } from '@/services/api'
+import { MailStatusBadge, MailVerificationAlert } from '@/components/mail'
 
 interface AccountSettingsTabProps {
   user: UserType
@@ -60,9 +61,16 @@ export function AccountSettingsTab({ user, onLogout }: AccountSettingsTabProps) 
                     )}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono">
-                  {user.email}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {user.email}
+                  </p>
+                  <MailStatusBadge
+                    isVerified={user.is_verified ?? true}
+                    email={user.email}
+                    showResendAction
+                  />
+                </div>
               </div>
             </div>
 
@@ -76,6 +84,14 @@ export function AccountSettingsTab({ user, onLogout }: AccountSettingsTabProps) 
               <span>Se déconnecter</span>
             </Button>
           </div>
+
+          {user.is_verified === false && (
+            <MailVerificationAlert
+              email={user.email}
+              message="Votre adresse e-mail n'a pas encore été vérifiée. Certaines fonctionnalités peuvent être limitées."
+              variant="warning"
+            />
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="p-4 rounded-lg border border-border bg-muted/10 space-y-1">

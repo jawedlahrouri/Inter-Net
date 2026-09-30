@@ -18,6 +18,14 @@ export function BackgroundMusicPlayer() {
   const [isStoppedByUser, setIsStoppedByUser] = useState<boolean>(false)
 
   useEffect(() => {
+    if (!currentTrackUrl) {
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      setIsPlaying(false)
+      return
+    }
+
     if (!audioRef.current) {
       audioRef.current = new Audio()
     }
@@ -49,7 +57,7 @@ export function BackgroundMusicPlayer() {
                 audioRef.current
                   .play()
                   .then(() => setIsPlaying(true))
-                  .catch(() => {})
+                  .catch(() => { })
               }
             }
 
@@ -67,7 +75,7 @@ export function BackgroundMusicPlayer() {
      */
     const handleEnded = () => {
       if (!isStoppedByUser) {
-        audio.play().catch(() => {})
+        audio.play().catch(() => { })
       }
     }
 
@@ -106,8 +114,11 @@ export function BackgroundMusicPlayer() {
       audioRef.current
         .play()
         .then(() => setIsPlaying(true))
-        .catch(() => {})
+        .catch(() => { })
     }
+  }
+  if (!currentTrackUrl) {
+    return null
   }
 
   return (
