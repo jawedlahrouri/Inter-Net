@@ -1,0 +1,139 @@
+services:
+  # MySQL database
+  db:
+    image: mysql:latest # official MySQL image
+    container_name: ${DB_CONTAINER_NAME:-Database} # fixed container name, defaults to "Database"
+    restart: unless-stopped # restart automatically unless manually stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-Admin123} # root password (override it in .env outside of dev)
+      MYSQL_DATABASE: ${DB_NAME:-inter_net} # database created on first start
+      MYSQL_USER: ${DB_USER:-Admin} # application user created on first start
+      MYSQL_PASSWORD: ${DB_PASSWORD:-Admin123} # password of the application user
+    ports:
+      - "${DB_PORT:-3306}:3306" # host port : container port (lets you connect from the host)
+    volumes:
+      - db_data:/var/lib/mysql # named volume: data survives container removal
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro # SQL script run once on first start (read-only)
+    healthcheck: # other services wait for this before starting
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}" ] # $$ = literal $ (resolved inside the container)
+      interval: 5s # time between two checks
+      timeout: 5s # max duration of a single check
+      retries: 10 # failed checks before the container is "unhealthy"
+      start_period: 10s # grace period while MySQL initialises
+
+  # Backend API (the only public API, serves /about.json)
+  server:
+    build:
+      context: ./backend # folder sent to Docker as build context
+      dockerfile: Dockerfile # Dockerfile used to build the image
+    container_name: server # fixed container name
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # main port required by the subject (http://localhost:8080/about.json)
+      - "8000:8080" # alternative host port pointing to the same API
+    environment:
+      - PORT=8080 # port the API listens on inside the container (must stay 8080 for /about.json)
+      - DB_HOST=db # hostname of the MySQL container (the compose service name, resolved by Docker DNS)
+      - DB_PORT=${DB_PORT:-3306} # MySQL port, read from .env, defaults to 3306
+      - DB_NAME=${DB_NAME:-inter_net} # name of the database to connect to
+      - DB_USER=${DB_USER:-Admin} # database user
+      - DB_PASSWORD=${DB_PASSWORD:-Admin123} # database password (override it in .env outside of dev)
+      - STEAM_SERVICE_URL=http://steam-lb:8080 # internal URL of the Steam load balancer (nginx -> steam-service replicas)
+      - GITHUB_SERVICE_URL=http://github-lb:8080 # internal URL of the GitHub load balancer (nginx -> github-service replicas)
+    depends_on: # start order
+      db:
+        condition: service_healthy # wait until MySQL answers its healthcheck
+      steam-lb:
+        condition: service_started # just needs to be started
+      github-lb:
+        condition: service_started
+    volumes:
+      - ./backend:/app # mount the source code (live edits without rebuilding)
+      - ./backend/storage:/app/storage # uploaded backgrounds, music, videos and widget files
+    networks:
+      default:
+        aliases: # extra DNS names for this container on the compose network
+          - server
+          - backend
+
+  # Shared cache for the microservices ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine # lightweight Redis image
+    restart: unless-stopped
+    # Pure cache: no persistence, LRU eviction when memory is full
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"] # Redis answers PONG when it is ready
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Steam microservice (x2 replicas)
+  steam-service:
+    build:
+      context: ./services # build context is the whole services/ folder (shared "common" code)
+      dockerfile: steam-service/Dockerfile # Dockerfile path, relative to the context
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env # provides STEAM_API_KEY
+        required: false # do not fail if the file does not exist
+    environment:
+      - REDIS_URL=redis://redis:6379/0 # where to find the shared cache (Redis DB 0)
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-300} # cache lifetime in seconds (0 disables the cache)
+    deploy:
+      replicas: 2 # number of identical containers to run
+    depends_on:
+      redis:
+        condition: service_healthy # wait until Redis is ready
+
+  # Load balancer in front of steam-service
+  steam-lb:
+    image: nginx:1.28-alpine # nginx >= 1.27.3 is required for the "resolve" directive
+    restart: unless-stopped
+    volumes:
+      - ./services/lb/steam.conf:/etc/nginx/conf.d/default.conf:ro # nginx config, read-only
+    depends_on:
+      steam-service:
+        condition: service_healthy # start only once the replicas are healthy
+
+  # GitHub microservice (x2 replicas)
+  github-service:
+    build:
+      context: ./services
+      dockerfile: github-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379/0 # shared cache
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-300} # cache lifetime in seconds
+    deploy:
+      replicas: 2 # number of identical containers to run
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Load balancer in front of github-service
+  github-lb:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    volumes:
+      - ./services/lb/github.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      github-service:
+        condition: service_healthy
+
+  # Web frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080 # API URL baked into the JS bundle at build time
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # web app: http://localhost:3000
+    depends_on:
+      - server # start after the backend
+
+volumes:
+  db_data: # named volume holding the MySQL data

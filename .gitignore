@@ -11,13 +11,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 dist/
 build/
 *.egg-info/
 
-# Environment variables
+# Environment variables (les .env.example restent versionnés)
 .env
 .env.local
 .env.development.local
@@ -38,13 +40,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+backend/storage/widgets/*.json
+
 # Editor & OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
 .DS_Store
 Thumbs.db
-.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-

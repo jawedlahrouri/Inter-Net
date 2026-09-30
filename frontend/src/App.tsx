@@ -1,239 +1,731 @@
-import { useState, useEffect, useCallback } from 'react'
-import { fetchHealth, fetchRoot, type HealthResponse, type RootResponse } from '@/services/api'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useState, useEffect, useCallback } from 'react';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { SettingsProvider, useSettings } from '@/context/SettingsContext';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
+import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
+import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
+import { BackgroundMusicPlayer } from '@/components/dashboard/BackgroundMusicPlayer';
+import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
+import { AdminPanel } from '@/components/admin/AdminPanel';
+import { AdminSupervisionBanner } from '@/components/admin/AdminSupervisionBanner';
+import { DashboardContentDialog } from '@/components/admin/DashboardContentDialog';
+import { useWidgets, mapApiToWidget, mapWidgetToApiPayload } from '@/hooks/useWidgets';
 import {
-  Server,
-  Activity,
-  RefreshCw,
+  fetchAdminDashboardDetail,
+  createAdminWidget,
+  updateAdminWidget,
+  deleteAdminWidget,
+  type AdminDashboardSummary,
+  type ApiUserWidget,
+} from '@/services/api';
+import type { Widget, NewWidgetData } from '@/types/widget';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   ExternalLink,
-  Code2,
-  CheckCircle2,
-  AlertTriangle,
+  LayoutDashboard,
+  SlidersHorizontal,
+  ChevronDown,
+  Sun,
+  Moon,
+  Laptop,
+  LogOut,
+  Check,
+  Plus,
   Sparkles,
-} from 'lucide-react'
+  Shield,
+} from 'lucide-react';
 
-export function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
-  const [rootInfo, setRootInfo] = useState<RootResponse | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
+type NavTab = 'dashboard' | 'settings' | 'admin';
 
-  const checkConnection = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [healthData, rootData] = await Promise.all([fetchHealth(), fetchRoot()])
-      setHealth(healthData)
-      setRootInfo(rootData)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue de connexion au backend')
-      setHealth(null)
-      setRootInfo(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    checkConnection()
-  }, [checkConnection])
-
-  return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6">
-      <div className="max-w-3xl w-full space-y-6">
-        {/* Header Hero Card */}
-        <Card className="bg-neutral-900/90 border-neutral-800 shadow-2xl backdrop-blur-sm">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                  INTER-NET
-                </CardTitle>
-                <Badge variant="secondary" className="gap-1 text-[11px]">
-                  <Sparkles className="size-3 text-cyan-400" />
-                  shadcn/ui
-                </Badge>
-              </div>
-              <CardDescription className="text-neutral-400 text-sm">
-                Stack moderne FastAPI (Python) + React (TypeScript, Vite, Tailwind CSS, shadcn/ui)
-              </CardDescription>
-            </div>
-
-            <div>
-              {loading ? (
-                <Badge variant="outline" className="gap-1.5 border-amber-500/40 text-amber-300 bg-amber-950/30">
-                  <Activity className="size-3 animate-spin text-amber-400" />
-                  Connexion...
-                </Badge>
-              ) : health ? (
-                <Badge variant="outline" className="gap-1.5 border-emerald-500/40 text-emerald-300 bg-emerald-950/30">
-                  <CheckCircle2 className="size-3 text-emerald-400" />
-                  Backend Connecté
-                </Badge>
-              ) : (
-                <Badge variant="destructive" className="gap-1.5">
-                  <AlertTriangle className="size-3" />
-                  Backend Hors Ligne
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Status Monitoring Card */}
-        <Card className="bg-neutral-900/90 border-neutral-800 shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg flex items-center gap-2 text-neutral-200">
-                <Server className="size-5 text-indigo-400" />
-                Statut de l'API FastAPI
-              </CardTitle>
-              <CardDescription className="text-neutral-400 text-xs">
-                Surveillance de l'état du serveur backend en temps réel
-              </CardDescription>
-            </div>
-
-            <Button
-              onClick={checkConnection}
-              disabled={loading}
-              variant="outline"
-              size="sm"
-              className="gap-2 cursor-pointer border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200"
-            >
-              <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Test...' : 'Rafraîchir'}
-            </Button>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {loading ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">
-                Interrogation des endpoints API...
-              </p>
-            ) : error ? (
-              <div className="bg-rose-950/30 border border-rose-800/40 rounded-lg p-4 text-sm space-y-2">
-                <div className="flex items-center gap-2 text-rose-300 font-medium">
-                  <AlertTriangle className="size-4" />
-                  Impossible de contacter le backend
-                </div>
-                <p className="font-mono text-xs text-rose-400">{error}</p>
-                <div className="text-xs text-neutral-400 pt-2 border-t border-rose-900/40">
-                  Lancez FastAPI dans le terminal :
-                  <pre className="mt-1 p-2 bg-neutral-950 rounded font-mono text-neutral-300 overflow-x-auto">
-                    cd backend &amp;&amp; source .venv/bin/activate &amp;&amp; uvicorn app.main:app --reload
-                  </pre>
-                </div>
-              </div>
-            ) : health ? (
-              <div className="space-y-3">
-                {rootInfo?.message && (
-                  <div className="p-3 bg-indigo-950/30 border border-indigo-900/40 rounded-lg text-sm text-indigo-200 flex items-center gap-2">
-                    <Code2 className="size-4 text-indigo-400 shrink-0" />
-                    <span>
-                      Message backend : <strong className="text-white">{rootInfo.message}</strong>
-                    </span>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Service</span>
-                    <span className="font-mono font-medium text-neutral-200 text-xs sm:text-sm truncate block">
-                      {health.service}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Version</span>
-                    <span className="font-mono font-medium text-neutral-200 text-xs sm:text-sm block">
-                      {health.version}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Statut</span>
-                    <span className="font-mono font-medium text-emerald-400 text-xs sm:text-sm block">
-                      {health.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <span className="text-neutral-400 text-xs block">Dernier Ping</span>
-                    <span className="font-mono text-neutral-300 text-xs block truncate">
-                      {new Date(health.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        {/* Documentation Links Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <a
-            href="http://localhost:8000/api/v1/docs"
-            target="_blank"
-            rel="noreferrer"
-            className="group block"
-          >
-            <Card className="bg-neutral-900/60 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-900 transition-all h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center justify-between text-neutral-200 group-hover:text-indigo-400">
-                  Swagger OpenAPI
-                  <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-neutral-400">Documentation interactive des endpoints FastAPI</p>
-              </CardContent>
-            </Card>
-          </a>
-
-          <a
-            href="http://localhost:8000/api/v1/redoc"
-            target="_blank"
-            rel="noreferrer"
-            className="group block"
-          >
-            <Card className="bg-neutral-900/60 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-900 transition-all h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center justify-between text-neutral-200 group-hover:text-indigo-400">
-                  ReDoc
-                  <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-neutral-400">Documentation détaillée et lisible des schemas</p>
-              </CardContent>
-            </Card>
-          </a>
-
-          <a
-            href="https://ui.shadcn.com/docs"
-            target="_blank"
-            rel="noreferrer"
-            className="group block"
-          >
-            <Card className="bg-neutral-900/60 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-900 transition-all h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center justify-between text-neutral-200 group-hover:text-indigo-400">
-                  shadcn/ui Docs
-                  <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-neutral-400">Composants accessibles et stylables à volonté</p>
-              </CardContent>
-            </Card>
-          </a>
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-neutral-500 pt-2">
-          INTER-NET • FastAPI + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui
-        </p>
-      </div>
-    </div>
-  )
+interface SupervisedContext {
+  userId: number;
+  dashboardId: string;
+  userUsername: string;
+  userEmail: string;
+  dashboardName: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  tertiaryColor?: string;
+  backgroundImage?: string | null;
+  widgets: ApiUserWidget[];
 }
 
-export default App
+/**
+ * @brief Renders the main application shell handling navigation between dashboard, settings and admin views plus supervised dashboards.
+ * @return JSX with the header, the active tab content (dashboard, settings or admin), footer and background music player.
+ */
+function DashboardContent() {
+  const {
+    user,
+    loading: authLoading,
+    showMotivationalTransition,
+    setShowMotivationalTransition,
+    logout,
+  } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { activeDashboardId, setActiveDashboardId, customization } = useSettings();
+
+  const [isMeditating, setIsMeditating] = useState<boolean>(false);
+  const [currentTab, setCurrentTab] = useState<NavTab>(() => {
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    if (path.startsWith('/admin') || params.get('tab') === 'admin') {
+      return 'admin';
+    }
+    if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+      return 'settings';
+    }
+    return 'dashboard';
+  });
+
+  const [settingsSubpage, setSettingsSubpage] = useState<SettingsSubpage>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sub = params.get('sub');
+    if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
+      return sub;
+    }
+    return 'account';
+  });
+
+  const [adminSubtab, setAdminSubtab] = useState<'users' | 'dashboards'>('users');
+  const [supervisedContext, setSupervisedContext] = useState<SupervisedContext | null>(null);
+  const [adminDialogSummary, setAdminDialogSummary] = useState<AdminDashboardSummary | null>(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState<boolean>(false);
+
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  /**
+   * @brief Toggles the dashboard edit mode on or off.
+   */
+  const toggleEditMode = () => {
+    setIsEditing((prev) => !prev);
+  };
+  const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
+
+  const navigateToDashboard = useCallback((pageId?: string) => {
+    setSupervisedContext(null);
+    setCurrentTab('dashboard');
+    const targetPage = pageId || activeDashboardId;
+    const url = targetPage && targetPage !== 'default'
+      ? `/dashboard?page=${encodeURIComponent(targetPage)}`
+      : '/dashboard';
+    window.history.pushState({ tab: 'dashboard', page: targetPage }, '', url);
+  }, [activeDashboardId]);
+
+  const navigateToSettings = useCallback((subpage: SettingsSubpage = 'account') => {
+    setSupervisedContext(null);
+    setCurrentTab('settings');
+    setSettingsSubpage(subpage);
+    const url = subpage && subpage !== 'account'
+      ? `/settings?sub=${encodeURIComponent(subpage)}`
+      : '/settings';
+    window.history.pushState({ tab: 'settings', sub: subpage }, '', url);
+  }, []);
+
+  const navigateToAdmin = useCallback((tab: 'users' | 'dashboards' = 'users') => {
+    setSupervisedContext(null);
+    setCurrentTab('admin');
+    setAdminSubtab(tab);
+    const url = tab !== 'users' ? `/admin?tab=${encodeURIComponent(tab)}` : '/admin';
+    window.history.pushState({ tab: 'admin', adminTab: tab }, '', url);
+  }, []);
+
+  const handleDashboardPageChange = useCallback((pageId: string) => {
+    const url = pageId && pageId !== 'default'
+      ? `/dashboard?page=${encodeURIComponent(pageId)}`
+      : '/dashboard';
+    window.history.replaceState({ tab: 'dashboard', page: pageId }, '', url);
+  }, []);
+
+  const handleOpenVisualDashboard = useCallback(async (userId: number, dashboardId: string) => {
+    try {
+      const detail = await fetchAdminDashboardDetail(userId, dashboardId);
+      setSupervisedContext({
+        userId,
+        dashboardId,
+        userUsername: detail.user_username,
+        userEmail: detail.user_email,
+        dashboardName: detail.name,
+        primaryColor: detail.primary_color,
+        secondaryColor: detail.secondary_color,
+        tertiaryColor: detail.tertiary_color,
+        backgroundImage: detail.background_image,
+        widgets: detail.widgets,
+      });
+      setCurrentTab('dashboard');
+      window.history.pushState(
+        { tab: 'dashboard', superviseUser: userId, superviseDash: dashboardId },
+        '',
+        `/dashboard?superviseUser=${userId}&page=${encodeURIComponent(dashboardId)}`
+      );
+    } catch (err) {
+      console.error('Erreur ouverture dashboard supervision:', err);
+    }
+  }, []);
+
+  /**
+   * @brief Creates a widget on the supervised user's dashboard through the admin API and adds it to the local supervised state.
+   * @param data The new widget data, to which the supervised dashboard id is added.
+   */
+  const handleSupervisedAddWidget = async (data: NewWidgetData) => {
+    if (!supervisedContext) return;
+    try {
+      const payload = mapWidgetToApiPayload({
+        ...data,
+        dashboardId: supervisedContext.dashboardId,
+      });
+      const created = await createAdminWidget(supervisedContext.userId, payload);
+      setSupervisedContext((prev) =>
+        prev ? { ...prev, widgets: [...prev.widgets, created] } : null
+      );
+    } catch (err) {
+      console.error('Erreur création widget supervision:', err);
+    }
+  };
+
+  /**
+   * @brief Updates a widget on the supervised user's dashboard through the admin API and replaces it in local state.
+   * @param id The id of the widget to update, as a string.
+   * @param updatedFields The partial widget fields to merge into the existing widget.
+   */
+  const handleSupervisedUpdateWidget = async (id: string, updatedFields: Partial<Widget>) => {
+    if (!supervisedContext) return;
+    try {
+      const existing = supervisedContext.widgets.find((w) => String(w.id) === id);
+      if (!existing) return;
+      const mapped = mapApiToWidget(existing);
+      const merged = { ...mapped, ...updatedFields };
+      const payload = mapWidgetToApiPayload(merged);
+      const updated = await updateAdminWidget(supervisedContext.userId, id, payload);
+      setSupervisedContext((prev) =>
+        prev
+          ? {
+              ...prev,
+              widgets: prev.widgets.map((w) => (String(w.id) === id ? updated : w)),
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Erreur modification widget supervision:', err);
+    }
+  };
+
+  /**
+   * @brief Deletes a widget from the supervised user's dashboard through the admin API and removes it from local state.
+   * @param id The id of the widget to delete, as a string.
+   */
+  const handleSupervisedRemoveWidget = async (id: string) => {
+    if (!supervisedContext) return;
+    try {
+      await deleteAdminWidget(supervisedContext.userId, id);
+      setSupervisedContext((prev) =>
+        prev
+          ? {
+              ...prev,
+              widgets: prev.widgets.filter((w) => String(w.id) !== id),
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Erreur suppression widget supervision:', err);
+    }
+  };
+
+  useEffect(() => {
+    /**
+     * @brief Synchronizes the current tab and sub-pages with the browser URL when the user navigates back or forward.
+     */
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      if (path.startsWith('/admin') || params.get('tab') === 'admin') {
+        if (user?.role === 'admin') {
+          setCurrentTab('admin');
+          setSupervisedContext(null);
+          const at = params.get('adminTab') === 'dashboards' ? 'dashboards' : 'users';
+          setAdminSubtab(at);
+        } else {
+          setCurrentTab('dashboard');
+        }
+      } else if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+        setCurrentTab('settings');
+        setSupervisedContext(null);
+        const sub = params.get('sub');
+        if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
+          setSettingsSubpage(sub);
+        } else {
+          setSettingsSubpage('account');
+        }
+      } else {
+        setCurrentTab('dashboard');
+        const page = params.get('page');
+        if (page) {
+          setActiveDashboardId(page);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setActiveDashboardId, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+
+    if ((path.startsWith('/admin') || params.get('tab') === 'admin') && user.role === 'admin') {
+      setCurrentTab('admin');
+      const at = params.get('adminTab') === 'dashboards' ? 'dashboards' : 'users';
+      setAdminSubtab(at);
+      const url = at !== 'users' ? `/admin?tab=${encodeURIComponent(at)}` : '/admin';
+      window.history.replaceState({ tab: 'admin', adminTab: at }, '', url);
+    } else if (path.startsWith('/settings') || params.get('tab') === 'settings') {
+      setCurrentTab('settings');
+      const sub = params.get('sub') as SettingsSubpage;
+      if (sub === 'integrations' || sub === 'ambiance' || sub === 'appearance') {
+        setSettingsSubpage(sub);
+      }
+      const url = sub && sub !== 'account' ? `/settings?sub=${encodeURIComponent(sub)}` : '/settings';
+      window.history.replaceState({ tab: 'settings', sub }, '', url);
+    } else {
+      setCurrentTab('dashboard');
+      const page = params.get('page') || activeDashboardId;
+      const url = page && page !== 'default' ? `/dashboard?page=${encodeURIComponent(page)}` : '/dashboard';
+      window.history.replaceState({ tab: 'dashboard', page }, '', url);
+    }
+  }, [user]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-muted-foreground font-mono">Chargement de la session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showMotivationalTransition) {
+    return (
+      <MotivationalLoader
+        mode="login"
+        onComplete={() => setShowMotivationalTransition(false)}
+      />
+    );
+  }
+
+  if (isMeditating) {
+    return (
+      <MotivationalLoader
+        mode="meditate"
+        onComplete={() => setIsMeditating(false)}
+      />
+    );
+  }
+
+  const displayedWidgets = supervisedContext
+    ? supervisedContext.widgets.map(mapApiToWidget)
+    : widgets.filter((w) => (w.dashboardId || 'default') === activeDashboardId);
+
+  const isDashboardTab = currentTab === 'dashboard';
+
+  const activePrimaryColor = supervisedContext
+    ? (supervisedContext.primaryColor || '#0b0f19')
+    : (customization?.primary_color || '#0b0f19');
+  const activeSecondaryColor = supervisedContext
+    ? (supervisedContext.secondaryColor || '#131b2e')
+    : (customization?.secondary_color || '#131b2e');
+  const activeTertiaryColor = supervisedContext
+    ? (supervisedContext.tertiaryColor || '#38bdf8')
+    : (customization?.tertiary_color || '#38bdf8');
+  const activeBgImage = supervisedContext
+    ? supervisedContext.backgroundImage
+    : customization?.background_image;
+
+  const hasBgImage = Boolean(activeBgImage);
+
+  const containerStyle: React.CSSProperties = user && isDashboardTab ? {
+    backgroundColor: hasBgImage ? undefined : activePrimaryColor,
+    backgroundImage: hasBgImage
+      ? `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url("${activeBgImage}")`
+      : undefined,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+    ['--card' as string]: activeSecondaryColor,
+    ['--card-foreground' as string]: '#f8fafc',
+    ['--secondary' as string]: activeSecondaryColor,
+    ['--primary' as string]: activeTertiaryColor,
+    ['--ring' as string]: activeTertiaryColor,
+    ['--border' as string]: `${activeTertiaryColor}33`,
+    ['--user-primary' as string]: activePrimaryColor,
+    ['--user-secondary' as string]: activeSecondaryColor,
+    ['--user-tertiary' as string]: activeTertiaryColor,
+  } : {};
+
+  return (
+    <div
+      className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full transition-colors duration-200"
+      style={containerStyle}
+    >
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="w-full px-6 sm:px-8 lg:px-12 h-14 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <button
+              type="button"
+              onClick={() => navigateToDashboard()}
+              className="font-semibold text-sm tracking-widest text-foreground uppercase select-none cursor-pointer hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+            >
+              INTER-NET
+            </button>
+
+            {user && (
+              <nav className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => navigateToDashboard()}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                    currentTab === 'dashboard'
+                      ? 'bg-muted text-foreground font-semibold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                  }`}
+                >
+                  <LayoutDashboard className="size-3.5" />
+                  <span>Dashboard</span>
+                </button>
+
+                {user.role === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => navigateToAdmin()}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                      currentTab === 'admin'
+                        ? 'bg-violet-500/20 text-violet-300 font-semibold border border-violet-500/40'
+                        : 'text-violet-400/80 hover:text-violet-300 hover:bg-violet-500/10'
+                    }`}
+                  >
+                    <Shield className="size-3.5 text-violet-400" />
+                    <span>Administration</span>
+                  </button>
+                )}
+              </nav>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setIsMeditating(true)}
+                  className="h-10 text-xs gap-1.5 px-3.5 cursor-pointer font-medium border-border/80 hover:bg-muted/60"
+                  title="Pause méditation"
+                >
+                  <Sparkles className="size-3.5 text-primary" />
+                  <span>Méditer</span>
+                </Button>
+
+                {currentTab === 'dashboard' && (
+                  <Button
+                    variant={isEditing ? 'default' : 'outline'}
+                    size="default"
+                    onClick={toggleEditMode}
+                    className="h-10 text-xs gap-1.5 px-3.5 cursor-pointer font-medium"
+                  >
+                    {isEditing ? (
+                      'Terminer'
+                    ) : (
+                      <>
+                        <Plus className="size-3.5" />
+                        <span>Éditer les widgets</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="default"
+                      className="h-10 px-2.5 sm:px-3 gap-2 border-border/80 hover:bg-muted/60 data-state-open:bg-muted/80 cursor-pointer select-none"
+                    >
+                      <div className="size-6 rounded-md bg-muted border border-border/80 flex items-center justify-center font-mono text-[11px] font-semibold text-foreground shrink-0">
+                        {user.username.slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="hidden sm:inline text-xs font-medium text-foreground tracking-tight max-w-[120px] truncate">
+                        {user.username}
+                      </span>
+                      <ChevronDown className="size-3.5 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="w-60 p-1.5 shadow-lg border border-border">
+                    <div className="px-2.5 py-2">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-xs font-semibold text-foreground truncate">{user.username}</p>
+                        {user.role === 'admin' && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-violet-500/20 text-violet-300 font-semibold border border-violet-500/30">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">{user.email}</p>
+                    </div>
+
+                    <DropdownMenuSeparator />
+
+                    {user.role === 'admin' && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => navigateToAdmin()}
+                          className="cursor-pointer gap-2 text-xs py-2 text-violet-400 focus:text-violet-300 focus:bg-violet-500/10"
+                        >
+                          <Shield className="size-4 text-violet-400" />
+                          <span>Panel d'Administration</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+
+                    <DropdownMenuItem
+                      onClick={() => navigateToSettings('account')}
+                      className="cursor-pointer gap-2 text-xs py-2"
+                    >
+                      <SlidersHorizontal className="size-4 text-muted-foreground" />
+                      <span>Paramètres & Intégrations</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuLabel className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground/80 px-2.5 pt-1">
+                      Thème
+                    </DropdownMenuLabel>
+
+                    <DropdownMenuItem
+                      onClick={() => setTheme('light')}
+                      className="cursor-pointer gap-2 text-xs py-2 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sun className="size-4 text-muted-foreground" />
+                        <span>Thème Clair</span>
+                      </div>
+                      {theme === 'light' && <Check className="size-3.5 text-foreground" />}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => setTheme('dark')}
+                      className="cursor-pointer gap-2 text-xs py-2 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Moon className="size-4 text-muted-foreground" />
+                        <span>Thème Sombre</span>
+                      </div>
+                      {theme === 'dark' && <Check className="size-3.5 text-foreground" />}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => setTheme('system')}
+                      className="cursor-pointer gap-2 text-xs py-2 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Laptop className="size-4 text-muted-foreground" />
+                        <span>Système</span>
+                      </div>
+                      {theme === 'system' && <Check className="size-3.5 text-foreground" />}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={logout}
+                      className="cursor-pointer gap-2 text-xs py-2 text-rose-500 focus:text-rose-500"
+                    >
+                      <LogOut className="size-4" />
+                      <span>Se déconnecter</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <ThemeToggle />
+            )}
+          </div>
+        </div>
+      </header>
+
+      {user && supervisedContext && (
+        <AdminSupervisionBanner
+          targetUsername={supervisedContext.userUsername}
+          targetEmail={supervisedContext.userEmail}
+          targetDashboardName={supervisedContext.dashboardName}
+          onExitSupervision={() => {
+            setSupervisedContext(null);
+            setCurrentTab('admin');
+          }}
+          onOpenDashboardSettings={() => {
+            setAdminDialogSummary({
+              dashboard_id: supervisedContext.dashboardId,
+              user_id: supervisedContext.userId,
+              user_username: supervisedContext.userUsername,
+              user_email: supervisedContext.userEmail,
+              name: supervisedContext.dashboardName,
+              primary_color: supervisedContext.primaryColor,
+              secondary_color: supervisedContext.secondaryColor,
+              tertiary_color: supervisedContext.tertiaryColor,
+              background_image: supervisedContext.backgroundImage,
+              widgets_count: supervisedContext.widgets.length,
+            });
+            setAdminDialogOpen(true);
+          }}
+        />
+      )}
+
+      <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+        {!user ? (
+          <div className="space-y-8 max-w-md mx-auto py-12">
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                INTER-NET
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Connectez vos APIs et surveillez vos flux en direct.
+              </p>
+            </div>
+
+            <AuthCard />
+          </div>
+        ) : currentTab === 'admin' && user.role === 'admin' ? (
+          <AdminPanel
+            initialTab={adminSubtab}
+            onNavigateToVisualDashboard={handleOpenVisualDashboard}
+          />
+        ) : currentTab === 'settings' ? (
+          <SettingsView
+            initialSubpage={settingsSubpage}
+            onSubpageChange={(sub) => {
+              setSettingsSubpage(sub);
+              const url = sub !== 'account' ? `/settings?sub=${encodeURIComponent(sub)}` : '/settings';
+              window.history.replaceState({ tab: 'settings', sub }, '', url);
+            }}
+            onLaunchMeditation={() => setIsMeditating(true)}
+          />
+        ) : (
+          <div className="space-y-6 w-full">
+            {!supervisedContext && (
+              <DashboardTabs
+                widgets={widgets}
+                isEditing={isEditing}
+                onDashboardChange={handleDashboardPageChange}
+              />
+            )}
+
+            <div className="space-y-4 w-full">
+              <WidgetGrid
+                widgets={displayedWidgets}
+                isEditing={isEditing}
+                onAddWidget={
+                  supervisedContext
+                    ? handleSupervisedAddWidget
+                    : (data) => addWidget({ ...data, dashboardId: activeDashboardId })
+                }
+                onUpdateWidget={
+                  supervisedContext ? handleSupervisedUpdateWidget : updateWidget
+                }
+                onRemoveWidget={
+                  supervisedContext ? handleSupervisedRemoveWidget : removeWidget
+                }
+                onToggleEdit={() => setIsEditing(true)}
+              />
+            </div>
+          </div>
+        )}
+      </main>
+
+      {adminDialogSummary && (
+        <DashboardContentDialog
+          open={adminDialogOpen}
+          onOpenChange={setAdminDialogOpen}
+          dashboardSummary={adminDialogSummary}
+          onSuccess={async () => {
+            if (supervisedContext) {
+              const detail = await fetchAdminDashboardDetail(
+                supervisedContext.userId,
+                supervisedContext.dashboardId
+              );
+              setSupervisedContext({
+                ...supervisedContext,
+                dashboardName: detail.name,
+                primaryColor: detail.primary_color,
+                secondaryColor: detail.secondary_color,
+                tertiaryColor: detail.tertiary_color,
+                backgroundImage: detail.background_image,
+                widgets: detail.widgets,
+              });
+            }
+          }}
+        />
+      )}
+
+      <footer className="w-full border-t border-border py-6 text-xs text-muted-foreground mt-auto">
+        <div className="w-full px-6 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="font-medium text-foreground/80">CrabeCorp • INTER-NET</p>
+          <div className="flex items-center gap-6">
+            <a
+              href="http://localhost:8080/about.json"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
+            >
+              /about.json
+              <ExternalLink className="size-3.5" />
+            </a>
+            <a
+              href="http://localhost:8080/api/v1/docs"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
+            >
+              Swagger Docs
+              <ExternalLink className="size-3.5" />
+            </a>
+          </div>
+        </div>
+      </footer>
+
+      {user && isDashboardTab && <BackgroundMusicPlayer />}
+    </div>
+  );
+}
+
+/**
+ * @brief Renders the root component wrapping the application in theme, authentication and settings providers.
+ * @return JSX with ThemeProvider, AuthProvider and SettingsProvider nesting the DashboardContent component.
+ */
+export function App() {
+  return (
+    <ThemeProvider defaultTheme="dark" storageKey="internet-theme">
+      <AuthProvider>
+        <SettingsProvider>
+          <DashboardContent />
+        </SettingsProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
+
+export default App;
