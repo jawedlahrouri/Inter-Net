@@ -1,10 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { verifyEmailApi } from '@/services/api';
 import { MailConfirmationCard, MailVerificationAlert, MailNotice } from '@/components/mail';
 
