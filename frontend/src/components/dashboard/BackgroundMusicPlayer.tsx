@@ -39,6 +39,9 @@ export function BackgroundMusicPlayer() {
       audio.load()
     }
 
+    let startOnInteraction: (() => void) | null = null
+    let cancelled = false
+
     if (!isStoppedByUser) {
       const playPromise = audio.play()
       if (playPromise !== undefined) {
@@ -47,12 +50,13 @@ export function BackgroundMusicPlayer() {
             setIsPlaying(true)
           })
           .catch(() => {
+            if (cancelled) return
             setIsPlaying(false)
 
             /**
              * @brief Retries starting audio playback after the first pointer or keyboard interaction when autoplay was blocked.
              */
-            const startOnInteraction = () => {
+            startOnInteraction = () => {
               if (audioRef.current && !isStoppedByUser) {
                 audioRef.current
                   .play()
@@ -82,7 +86,12 @@ export function BackgroundMusicPlayer() {
     audio.addEventListener('ended', handleEnded)
 
     return () => {
+      cancelled = true
       audio.removeEventListener('ended', handleEnded)
+      if (startOnInteraction) {
+        window.removeEventListener('pointerdown', startOnInteraction)
+        window.removeEventListener('keydown', startOnInteraction)
+      }
     }
   }, [currentTrackUrl, isStoppedByUser])
 
@@ -90,6 +99,7 @@ export function BackgroundMusicPlayer() {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
+        audioRef.current = null
       }
     }
   }, [])

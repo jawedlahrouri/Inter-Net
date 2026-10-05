@@ -80,7 +80,6 @@ function DashboardContent() {
   } = useAuth();
   const { theme, setTheme } = useTheme();
   const { activeDashboardId, setActiveDashboardId, customization, brainrotMode } = useSettings();
-  const [isConcertPlaying, setIsConcertPlaying] = useState<boolean>(false);
 
   const [isMeditating, setIsMeditating] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
@@ -713,9 +712,9 @@ function DashboardContent() {
         </div>
       </footer>
 
-      {user && isDashboardTab && !isConcertPlaying && <BackgroundMusicPlayer />}
+      {user && isDashboardTab && !(brainrotMode && !supervisedContext) && <BackgroundMusicPlayer />}
       {user && brainrotMode && !supervisedContext && (
-        <BrainrotMode musicUrl={BRAINROT_MUSIC_URL} onConcertChange={setIsConcertPlaying} />
+        <BrainrotMode musicUrl={BRAINROT_MUSIC_URL} />
       )}
     </div>
   );

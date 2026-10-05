@@ -8,13 +8,13 @@ const CONCERT_CHANCE_PER_SECOND = 1 / 100
 
 interface BrainrotModeProps {
   musicUrl: string
-  onConcertChange: (playing: boolean) => void
+  onConcertChange?: (playing: boolean) => void
 }
 
 /**
  * @brief Drives the brainrot mode: a surprise concert rolled every second, and Sahur chasing the cursor otherwise.
  * @param musicUrl URL of the concert track, preloaded as soon as the mode is mounted.
- * @param onConcertChange Callback notified when a concert starts or ends, so the page can silence its own music.
+ * @param onConcertChange Optional callback notified when a concert starts or ends.
  * @return The concert overlay while a concert is on, or Sahur's cursor-chasing layer the rest of the time.
  */
 export function BrainrotMode({ musicUrl, onConcertChange }: BrainrotModeProps) {
@@ -28,10 +28,10 @@ export function BrainrotMode({ musicUrl, onConcertChange }: BrainrotModeProps) {
 
   useEffect(() => {
     concertActiveRef.current = concertActive
-    onConcertChange(concertActive)
+    onConcertChange?.(concertActive)
   }, [concertActive, onConcertChange])
 
-  useEffect(() => () => onConcertChange(false), [onConcertChange])
+  useEffect(() => () => onConcertChange?.(false), [onConcertChange])
 
   useEffect(() => {
     const prime = () => {
@@ -61,7 +61,8 @@ export function BrainrotMode({ musicUrl, onConcertChange }: BrainrotModeProps) {
   useEffect(() => {
     if (concertActive) return
     const id = setInterval(() => {
-      if (Math.random() < CONCERT_CHANCE_PER_SECOND) setConcertActive(true)
+      const userHasInteracted = navigator.userActivation?.hasBeenActive ?? true
+      if (userHasInteracted && Math.random() < CONCERT_CHANCE_PER_SECOND) setConcertActive(true)
     }, 1000)
     return () => clearInterval(id)
   }, [concertActive])
