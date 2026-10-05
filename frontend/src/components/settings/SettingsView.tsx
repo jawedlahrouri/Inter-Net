@@ -12,6 +12,8 @@ import {
 import { GithubConnectDialog } from './GithubConnectDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { BRAINROT_START_CONCERT_EVENT } from '@/components/brainrot/BrainrotMode'
 import {
   User,
   Layers,
@@ -26,6 +28,7 @@ import {
   CloudSun,
   Radio,
   Music,
+  PartyPopper,
 } from 'lucide-react'
 import { AccountSettingsTab } from './tabs/AccountSettingsTab'
 import { IntegrationsSettingsTab, type IntegrationItem } from './tabs/IntegrationsSettingsTab'
@@ -111,6 +114,8 @@ export function SettingsView({
     availableVideos,
     updateMeditationSettings,
     uploadVideo,
+    brainrotMode,
+    setBrainrotMode,
   } = useSettings()
 
   const [activeSubpage, setActiveSubpage] = useState<SettingsSubpage>(initialSubpage)
@@ -394,6 +399,29 @@ export function SettingsView({
           {activeSubpage === 'appearance' && (
             <AppearanceSettingsTab theme={theme} onSetTheme={setTheme} />
           )}
+
+          <div className="max-w-3xl flex items-center justify-between gap-4 rounded-xl border border-border/80 bg-card p-4 mt-8">
+            <div className="flex items-start gap-3">
+              <PartyPopper className="size-5 text-pink-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Brainrot mode</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Un concert surprise des 8 brainrots peut démarrer à tout moment (1 chance sur 100 par seconde), avec musique et lumières. Le reste du temps, Tung Tung Tung Sahur frappe votre curseur avec sa batte.
+                </p>
+                {brainrotMode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-7 cursor-pointer text-xs"
+                    onClick={() => window.dispatchEvent(new Event(BRAINROT_START_CONCERT_EVENT))}
+                  >
+                    Lancer le concert maintenant
+                  </Button>
+                )}
+              </div>
+            </div>
+            <Switch checked={brainrotMode} onCheckedChange={setBrainrotMode} aria-label="Brainrot mode" />
+          </div>
         </section>
       </div>
 

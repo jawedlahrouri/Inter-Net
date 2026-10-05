@@ -180,3 +180,8 @@ body {
     display: none;
   }
 }
+
+html.brainrot-cursor,
+html.brainrot-cursor * {
+  cursor: none !important;
+}

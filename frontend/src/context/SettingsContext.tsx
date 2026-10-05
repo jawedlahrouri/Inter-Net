@@ -20,6 +20,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const SETTINGS_STORAGE_KEY = 'dashboard_user_settings';
 const ACTIVE_DASHBOARD_STORAGE_KEY = 'dashboard_active_page_id';
+const BRAINROT_MODE_STORAGE_KEY = 'brainrot_mode';
 
 export const DEFAULT_CUSTOMIZATION: ThemeCustomization = {
   primary_color: '#0b0f19',
@@ -61,6 +62,8 @@ interface SettingsContextType {
   activeDashboardId: string;
   activeDashboard: DashboardPageInfo;
   customization: ThemeCustomization;
+  brainrotMode: boolean;
+  setBrainrotMode: (enabled: boolean) => void;
   setActiveDashboardId: (id: string) => void;
   createDashboard: (name: string) => Promise<string>;
   renameDashboard: (id: string, newName: string) => Promise<void>;
@@ -119,6 +122,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const setActiveDashboardId = useCallback((id: string) => {
     setActiveDashboardIdState(id);
     localStorage.setItem(ACTIVE_DASHBOARD_STORAGE_KEY, id);
+  }, []);
+
+  const [brainrotMode, setBrainrotModeState] = useState<boolean>(
+    () => localStorage.getItem(BRAINROT_MODE_STORAGE_KEY) === 'true'
+  );
+
+  const setBrainrotMode = useCallback((enabled: boolean) => {
+    setBrainrotModeState(enabled);
+    localStorage.setItem(BRAINROT_MODE_STORAGE_KEY, String(enabled));
   }, []);
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -436,6 +448,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         activeDashboardId,
         activeDashboard,
         customization,
+        brainrotMode,
+        setBrainrotMode,
         setActiveDashboardId,
         createDashboard,
         renameDashboard,

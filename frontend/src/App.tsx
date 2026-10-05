@@ -6,6 +6,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
+import { BrainrotMode } from '@/components/brainrot/BrainrotMode';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
 import { BackgroundMusicPlayer } from '@/components/dashboard/BackgroundMusicPlayer';
 import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
@@ -61,6 +62,10 @@ interface SupervisedContext {
   widgets: ApiUserWidget[];
 }
 
+const BRAINROT_MUSIC_URL = `/api/v1/storage/custom_music/${encodeURIComponent(
+  'W&W - Tung Tung Tung Sahur (Italian Brainrot) - W&W.mp3'
+)}`;
+
 /**
  * @brief Renders the main application shell handling navigation between dashboard, settings and admin views plus supervised dashboards.
  * @return JSX with the header, the active tab content (dashboard, settings or admin), footer and background music player.
@@ -74,7 +79,8 @@ function DashboardContent() {
     logout,
   } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { activeDashboardId, setActiveDashboardId, customization } = useSettings();
+  const { activeDashboardId, setActiveDashboardId, customization, brainrotMode } = useSettings();
+  const [isConcertPlaying, setIsConcertPlaying] = useState<boolean>(false);
 
   const [isMeditating, setIsMeditating] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
@@ -707,7 +713,10 @@ function DashboardContent() {
         </div>
       </footer>
 
-      {user && isDashboardTab && <BackgroundMusicPlayer />}
+      {user && isDashboardTab && !isConcertPlaying && <BackgroundMusicPlayer />}
+      {user && brainrotMode && !supervisedContext && (
+        <BrainrotMode musicUrl={BRAINROT_MUSIC_URL} onConcertChange={setIsConcertPlaying} />
+      )}
     </div>
   );
 }
