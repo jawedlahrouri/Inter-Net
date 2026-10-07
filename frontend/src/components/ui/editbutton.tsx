@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 export interface EditButtonProps extends React.ComponentProps<typeof Button> {
@@ -9,12 +10,12 @@ export interface EditButtonProps extends React.ComponentProps<typeof Button> {
 }
 
 /**
- * @brief Renders a button with a pencil icon and optional label used to trigger editing.
+ * @brief Renders a button with a pencil icon and optional label or tooltip used to trigger editing.
  * @param className Extra CSS classes merged with the default styles for the labelled or icon-only layout.
  * @param variant Button visual variant; defaults to outline.
  * @param size Button size; defaults to sm.
  * @param label Text used for the visible label, aria-label and tooltip; defaults to Modifier.
- * @param showLabel Whether to display the label next to the pencil icon; false gives an icon-only button.
+ * @param showLabel Whether to display the label next to the pencil icon; false gives an icon-only button with tooltip.
  * @param props Remaining Button props forwarded to the underlying Button component.
  * @return A styled button with a pencil icon and, when showLabel is true, the label text.
  */
@@ -26,7 +27,7 @@ export function EditButton({
   showLabel = true,
   ...props
 }: EditButtonProps) {
-  return (
+  const btn = (
     <Button
       type="button"
       variant={variant}
@@ -45,6 +46,17 @@ export function EditButton({
       {showLabel && <span>{label}</span>}
     </Button>
   )
+
+  if (!showLabel) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{btn}</TooltipTrigger>
+        <TooltipContent side="top">{label}</TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return btn
 }
 
 export default EditButton

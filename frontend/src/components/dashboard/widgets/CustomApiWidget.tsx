@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { extractJsonValue } from '@/lib/jsonPath'
 import {
@@ -200,16 +201,23 @@ export function CustomApiWidget({
             </CardDescription>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => fetchData({ background: true })}
-          disabled={loading || isRefreshing}
-          aria-label="Actualiser la métrique"
-          className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-        >
-          <RefreshCw className={cn('size-4', (loading || isRefreshing) && 'animate-spin')} />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => fetchData({ background: true })}
+              disabled={loading || isRefreshing}
+              aria-label="Actualiser la métrique"
+              className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+            >
+              <RefreshCw className={cn('size-4', (loading || isRefreshing) && 'animate-spin')} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            Actualiser la métrique
+          </TooltipContent>
+        </Tooltip>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col justify-between px-6 pb-6 pt-0">

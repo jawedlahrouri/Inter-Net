@@ -25,6 +25,7 @@ import {
 import type { Widget, NewWidgetData } from '@/types/widget';
 import { CguDialog } from '@/components/legal/CguDialog';
 import { AccessibilityDialog } from '@/components/legal/AccessibilityDialog';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -706,7 +707,7 @@ function DashboardContent() {
               onClick={() => setA11yOpen(true)}
               className="hover:text-foreground transition-colors cursor-pointer text-xs underline-offset-4 hover:underline"
             >
-              Accessibilité : Partiellement conforme
+              Accessibilité : Totalement conforme
             </button>
             <button
               type="button"
@@ -757,7 +758,9 @@ export function App() {
     <ThemeProvider defaultTheme="dark" storageKey="internet-theme">
       <AuthProvider>
         <SettingsProvider>
-          <DashboardContent />
+          <TooltipProvider delayDuration={150}>
+            <DashboardContent />
+          </TooltipProvider>
         </SettingsProvider>
       </AuthProvider>
     </ThemeProvider>

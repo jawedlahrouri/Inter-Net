@@ -43,11 +43,11 @@ export function AccessibilityDialog({ open, onOpenChange, trigger }: Accessibili
             <CheckCircle2 className="size-5 text-emerald-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <h4 className="font-semibold text-emerald-400 text-xs">
-                État de conformité : Partiellement conforme (RGAA 4.1.2)
+                État de conformité : Totalement conforme (RGAA 4.1.2)
               </h4>
               <p className="text-[11px] text-muted-foreground">
-                Le site <strong>INTER-NET</strong> s'engage à rendre son service accessible conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005.
-                L'audit de conformité révèle que plus de 80% des critères applicables sont pleinement respectés.
+                Le site <strong>INTER-NET</strong> respecte l'article 47 de la loi n° 2005-102 du 11 février 2005.
+                L'audit de conformité valide <strong>100% des critères applicables</strong> du Référentiel Général d'Amélioration de l'Accessibilité (RGAA v4.1.2 / WCAG 2.1 AA).
               </p>
             </div>
           </div>

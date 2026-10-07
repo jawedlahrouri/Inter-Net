@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Sparkline } from '@/components/ui/sparkline'
 import { cn } from '@/lib/utils'
 import {
@@ -246,16 +247,23 @@ export function WeatherWidget({
             {weather.condition}
           </CardDescription>
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={loadWeather}
-          disabled={loading}
-          aria-label="Actualiser les prévisions"
-          className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-        >
-          <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={loadWeather}
+              disabled={loading}
+              aria-label="Actualiser les prévisions météo"
+              className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+            >
+              <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            Actualiser la météo
+          </TooltipContent>
+        </Tooltip>
       </CardHeader>
 
       <CardContent className="space-y-4 px-6 pb-6 pt-0 flex-1 flex flex-col justify-between">

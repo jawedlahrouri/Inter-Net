@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export interface AddButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'card' | 'icon'
@@ -8,10 +9,10 @@ export interface AddButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEle
 }
 
 /**
- * @brief Renders an add button either as a large dashed card or as a compact icon button.
+ * @brief Renders an add button either as a large dashed card or as a compact icon button with tooltip.
  * @param className Extra CSS classes merged onto the button.
  * @param variant Display style: large dashed card or compact icon button; defaults to card.
- * @param label Text shown in card variant and used as aria-label and title; defaults to Ajouter un widget.
+ * @param label Text shown in card variant and used as aria-label and tooltip; defaults to Ajouter un widget.
  * @param props Remaining button attributes forwarded to the underlying button element.
  * @return A button element with a plus icon, and the label text in card variant.
  */
@@ -50,18 +51,25 @@ export function AddButton({
   }
 
   return (
-    <button
-      type="button"
-      className={cn(
-        'size-10 min-w-[40px] min-h-[40px] inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none cursor-pointer transition-all',
-        className
-      )}
-      aria-label={label}
-      title={label}
-      {...props}
-    >
-      <Plus className="size-4 text-foreground" />
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'size-10 min-w-[40px] min-h-[40px] inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none cursor-pointer transition-all',
+            className
+          )}
+          aria-label={label}
+          title={label}
+          {...props}
+        >
+          <Plus className="size-4 text-foreground" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {label}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

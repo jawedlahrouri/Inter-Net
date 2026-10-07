@@ -135,7 +135,7 @@ export function BackgroundMusicPlayer() {
     <div
       role="region"
       aria-label="Lecteur audio d'ambiance"
-      className="fixed bottom-4 right-4 z-40 select-none"
+      className="fixed bottom-20 right-6 sm:bottom-24 sm:right-8 z-40 select-none shadow-xl"
     >
       {isPlaying ? (
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-full border border-primary/40 bg-card/95 backdrop-blur-md shadow-lg shadow-black/30 transition-all text-xs">

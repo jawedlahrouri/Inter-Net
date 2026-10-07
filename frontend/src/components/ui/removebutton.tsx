@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 export interface RemoveButtonProps extends React.ComponentProps<typeof Button> {
@@ -9,7 +10,7 @@ export interface RemoveButtonProps extends React.ComponentProps<typeof Button> {
 }
 
 /**
- * @brief Renders a trash-icon delete button with an optional text label.
+ * @brief Renders a trash-icon delete button with an optional text label or tooltip.
  * @param className Extra CSS classes merged into the button styling.
  * @param variant Button visual variant; defaults to outline.
  * @param size Button size; defaults to sm.
@@ -26,7 +27,7 @@ export function RemoveButton({
   showLabel = true,
   ...props
 }: RemoveButtonProps) {
-  return (
+  const btn = (
     <Button
       type="button"
       variant={variant}
@@ -45,6 +46,17 @@ export function RemoveButton({
       {showLabel && <span>{label}</span>}
     </Button>
   )
+
+  if (!showLabel) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{btn}</TooltipTrigger>
+        <TooltipContent side="top">{label}</TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return btn
 }
 
 export default RemoveButton

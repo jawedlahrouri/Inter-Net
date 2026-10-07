@@ -19,6 +19,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSteamStats } from '@/hooks/useSteamStats'
 import type { Widget } from '@/types/widget'
 
@@ -650,15 +651,23 @@ export function SteamWidget({ widget, className = '' }: SteamWidgetProps) {
           </CardDescription>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-          onClick={() => refresh()}
-          title="Rafraîchir maintenant"
-        >
-          <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+              onClick={() => refresh()}
+              aria-label="Actualiser les données Steam"
+              title="Actualiser les données Steam"
+            >
+              <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            Actualiser les données Steam
+          </TooltipContent>
+        </Tooltip>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col justify-center px-4 py-2">
