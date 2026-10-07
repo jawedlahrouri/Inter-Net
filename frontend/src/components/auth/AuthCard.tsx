@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { verifyEmailApi } from '@/services/api';
 import { MailConfirmationCard, MailVerificationAlert, MailNotice } from '@/components/mail';
+import { CguDialog } from '@/components/legal/CguDialog';
 
 /**
  * @brief Renders the authentication card with login and registration tabs and their validation state.
@@ -33,6 +34,7 @@ export function AuthCard() {
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [cguOpen, setCguOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -234,11 +236,13 @@ export function AuthCard() {
               )}
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/80 block">
+                <label htmlFor="login-identifier" className="text-xs font-medium text-foreground/80 block">
                   Email ou nom d'utilisateur
                 </label>
                 <Input
+                  id="login-identifier"
                   type="text"
+                  autoComplete="username"
                   placeholder="nom@domaine.com ou pseudo"
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
@@ -249,11 +253,13 @@ export function AuthCard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/80 block">
+                <label htmlFor="login-password" className="text-xs font-medium text-foreground/80 block">
                   Mot de passe
                 </label>
                 <Input
+                  id="login-password"
                   type="password"
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
@@ -283,18 +289,20 @@ export function AuthCard() {
           <TabsContent value="register" className="space-y-4 focus-visible:outline-none">
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               {regError && (
-                <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                <div role="alert" aria-live="polite" className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
                   <AlertCircle className="size-3.5 shrink-0" />
                   <span>{regError}</span>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/80 block">
+                <label htmlFor="reg-email" className="text-xs font-medium text-foreground/80 block">
                   Adresse email
                 </label>
                 <Input
+                  id="reg-email"
                   type="email"
+                  autoComplete="email"
                   placeholder="exemple@domaine.com"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
@@ -305,11 +313,13 @@ export function AuthCard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/80 block">
+                <label htmlFor="reg-username" className="text-xs font-medium text-foreground/80 block">
                   Nom d'utilisateur
                 </label>
                 <Input
+                  id="reg-username"
                   type="text"
+                  autoComplete="username"
                   placeholder="pseudo"
                   value={regUsername}
                   onChange={(e) => setRegUsername(e.target.value)}
@@ -320,11 +330,13 @@ export function AuthCard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/80 block">
+                <label htmlFor="reg-password" className="text-xs font-medium text-foreground/80 block">
                   Mot de passe (min 6 caractères)
                 </label>
                 <Input
+                  id="reg-password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="••••••••"
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
@@ -335,11 +347,13 @@ export function AuthCard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/80 block">
+                <label htmlFor="reg-confirm-password" className="text-xs font-medium text-foreground/80 block">
                   Confirmer le mot de passe
                 </label>
                 <Input
+                  id="reg-confirm-password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="••••••••"
                   value={regConfirmPassword}
                   onChange={(e) => setRegConfirmPassword(e.target.value)}
@@ -350,6 +364,17 @@ export function AuthCard() {
               </div>
 
               <MailNotice />
+
+              <div className="text-[11px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
+                <span>En créant un compte, vous acceptez les</span>
+                <button
+                  type="button"
+                  onClick={() => setCguOpen(true)}
+                  className="text-primary hover:underline font-medium cursor-pointer inline-flex items-center"
+                >
+                  CGU
+                </button>
+              </div>
 
               <Button
                 type="submit"
@@ -369,6 +394,8 @@ export function AuthCard() {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <CguDialog open={cguOpen} onOpenChange={setCguOpen} />
     </Card>
   );
 }

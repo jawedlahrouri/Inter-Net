@@ -23,6 +23,8 @@ import {
   type ApiUserWidget,
 } from '@/services/api';
 import type { Widget, NewWidgetData } from '@/types/widget';
+import { CguDialog } from '@/components/legal/CguDialog';
+import { AccessibilityDialog } from '@/components/legal/AccessibilityDialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -107,6 +109,8 @@ function DashboardContent() {
   const [supervisedContext, setSupervisedContext] = useState<SupervisedContext | null>(null);
   const [adminDialogSummary, setAdminDialogSummary] = useState<AdminDashboardSummary | null>(null);
   const [adminDialogOpen, setAdminDialogOpen] = useState<boolean>(false);
+  const [cguOpen, setCguOpen] = useState<boolean>(false);
+  const [a11yOpen, setA11yOpen] = useState<boolean>(false);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   /**
@@ -385,7 +389,14 @@ function DashboardContent() {
       className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full transition-colors duration-200"
       style={containerStyle}
     >
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring font-medium text-xs"
+      >
+        Passer au contenu principal
+      </a>
+
+      <header role="banner" className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
         <div className="w-full px-6 sm:px-8 lg:px-12 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <button
@@ -600,7 +611,7 @@ function DashboardContent() {
         />
       )}
 
-      <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+      <main id="main-content" role="main" tabIndex={-1} className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6 focus:outline-none">
         {!user ? (
           <div className="space-y-8 max-w-md mx-auto py-12">
             <div className="text-center space-y-2">
@@ -686,14 +697,28 @@ function DashboardContent() {
         />
       )}
 
-      <footer className="w-full border-t border-border py-6 text-xs text-muted-foreground mt-auto">
+      <footer role="contentinfo" className="w-full border-t border-border py-6 text-xs text-muted-foreground mt-auto">
         <div className="w-full px-6 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-medium text-foreground/80">CrabeCorp • INTER-NET</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => setA11yOpen(true)}
+              className="hover:text-foreground transition-colors cursor-pointer text-xs underline-offset-4 hover:underline"
+            >
+              Accessibilité : Partiellement conforme
+            </button>
+            <button
+              type="button"
+              onClick={() => setCguOpen(true)}
+              className="hover:text-foreground transition-colors cursor-pointer text-xs underline-offset-4 hover:underline"
+            >
+              CGU
+            </button>
             <a
               href="http://localhost:8080/about.json"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
             >
               /about.json
@@ -702,7 +727,7 @@ function DashboardContent() {
             <a
               href="http://localhost:8080/api/v1/docs"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
             >
               Swagger Docs
@@ -711,6 +736,9 @@ function DashboardContent() {
           </div>
         </div>
       </footer>
+
+      <CguDialog open={cguOpen} onOpenChange={setCguOpen} />
+      <AccessibilityDialog open={a11yOpen} onOpenChange={setA11yOpen} />
 
       {user && isDashboardTab && !(brainrotMode && !supervisedContext) && <BackgroundMusicPlayer />}
       {user && brainrotMode && !supervisedContext && (

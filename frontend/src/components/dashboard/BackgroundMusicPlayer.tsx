@@ -132,7 +132,11 @@ export function BackgroundMusicPlayer() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 select-none">
+    <div
+      role="region"
+      aria-label="Lecteur audio d'ambiance"
+      className="fixed bottom-4 right-4 z-40 select-none"
+    >
       {isPlaying ? (
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-full border border-primary/40 bg-card/95 backdrop-blur-md shadow-lg shadow-black/30 transition-all text-xs">
           <div className="flex items-end gap-0.5 h-3.5 text-primary shrink-0" aria-hidden="true">
@@ -142,17 +146,18 @@ export function BackgroundMusicPlayer() {
           </div>
 
           <div className="flex items-center gap-1.5 max-w-[160px] truncate">
-            <Volume2 className="size-3.5 text-primary shrink-0" />
+            <Volume2 className="size-3.5 text-primary shrink-0" aria-hidden="true" />
             <span className="font-medium text-foreground truncate">{currentTrackName}</span>
           </div>
 
           <button
             type="button"
             onClick={handleStop}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 font-semibold text-[11px] transition-all cursor-pointer border border-rose-500/20 shadow-xs"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 font-semibold text-[11px] transition-all cursor-pointer border border-rose-500/20 shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             title="Arrêter la musique de fond"
+            aria-label={`Arrêter la musique de fond : ${currentTrackName}`}
           >
-            <Square className="size-2.5 fill-current" />
+            <Square className="size-2.5 fill-current" aria-hidden="true" />
             <span>Arrêter</span>
           </button>
         </div>
@@ -160,13 +165,14 @@ export function BackgroundMusicPlayer() {
         <button
           type="button"
           onClick={handlePlay}
-          className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/80 bg-card/90 hover:bg-card backdrop-blur-md shadow-md text-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+          className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/80 bg-card/90 hover:bg-card backdrop-blur-md shadow-md text-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           title="Relancer la musique de fond"
+          aria-label={`Activer la musique de fond : ${currentTrackName}`}
         >
-          <VolumeX className="size-3.5 text-muted-foreground" />
+          <VolumeX className="size-3.5 text-muted-foreground" aria-hidden="true" />
           <span className="text-[11px]">Musique arrêtée</span>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold border border-primary/20">
-            <Play className="size-2.5 fill-current" />
+            <Play className="size-2.5 fill-current" aria-hidden="true" />
             Activer
           </span>
         </button>
