@@ -6,6 +6,7 @@ import {
   createUserWidget,
   updateUserWidget,
   deleteWidgetApi,
+  reorderUserWidgets,
   type ApiUserWidget,
   getStoredToken,
 } from '@/services/api'
@@ -191,14 +192,47 @@ export function useWidgets() {
     }
   }
 
+  /**
+   * @brief Reorders widgets in state and persists the new order to the backend API.
+   * @param reorderedSubset The reordered subset of widgets.
+   */
+  const reorderWidgets = async (reorderedSubset: Widget[]) => {
+    const subsetIds = new Set(reorderedSubset.map((w) => w.id))
+    const firstIndex = widgets.findIndex((w) => subsetIds.has(w.id))
+
+    let nextAllWidgets: Widget[] = []
+    if (firstIndex !== -1) {
+      const before = widgets.filter((w, idx) => idx < firstIndex && !subsetIds.has(w.id))
+      const after = widgets.filter((w, idx) => idx >= firstIndex && !subsetIds.has(w.id))
+      nextAllWidgets = [...before, ...reorderedSubset, ...after]
+    } else {
+      nextAllWidgets = [...reorderedSubset, ...widgets.filter((w) => !subsetIds.has(w.id))]
+    }
+
+    setWidgets(nextAllWidgets)
+
+    if (user || getStoredToken()) {
+      try {
+        const numericIds = nextAllWidgets
+          .map((w) => Number(w.id))
+          .filter((id) => !isNaN(id))
+        await reorderUserWidgets(numericIds)
+      } catch (err) {
+        console.error('Erreur réordonnancement widgets:', err)
+      }
+    }
+  }
+
   return {
     widgets,
     loading,
     addWidget,
     updateWidget,
     removeWidget,
+    reorderWidgets,
     reloadWidgets,
   }
 }
 
 export default useWidgets
+

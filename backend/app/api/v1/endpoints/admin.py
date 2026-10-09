@@ -17,7 +17,7 @@ from app.schemas.admin import (
     AdminUserSummary,
     AdminUserUpdate,
 )
-from app.schemas.widget import UserWidgetCreate, UserWidgetOut, UserWidgetUpdate
+from app.schemas.widget import UserWidgetCreate, UserWidgetOut, UserWidgetUpdate, WidgetReorderIn
 from app.services.widget_storage import JsonWidgetStorage, get_user_file_path
 
 router = APIRouter()
@@ -185,6 +185,7 @@ def create_user(
         username=user_in.username,
         password_hash=hashed_pw,
         role=user_in.role,
+        is_verified=True,
         settings={
             "dashboards": [
                 {
@@ -645,6 +646,30 @@ def admin_create_user_widget(
             detail="Utilisateur introuvable",
         )
     return JsonWidgetStorage.create_widget(user_id, widget_in)
+
+
+@router.put("/users/{user_id}/widgets/reorder", response_model=List[UserWidgetOut])
+def admin_reorder_user_widgets(
+    user_id: int,
+    reorder_in: WidgetReorderIn,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_admin),
+):
+    """
+    @brief Reorders a user's widgets in the admin supervision view according to the given widget IDs sequence.
+    @param user_id Identifier of the user whose widgets are reordered.
+    @param reorder_in Payload with the ordered widget IDs.
+    @param db Database session to verify the user exists.
+    @param _ Authenticated admin user.
+    @return The reordered list of widgets.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur introuvable",
+        )
+    return JsonWidgetStorage.reorder_widgets(user_id, reorder_in.widget_ids)
 
 
 @router.put("/users/{user_id}/widgets/{widget_id}", response_model=UserWidgetOut)

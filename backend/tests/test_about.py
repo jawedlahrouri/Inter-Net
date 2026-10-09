@@ -23,6 +23,7 @@ def test_about_json(client):
         for widget in service["widgets"]:
             assert "name" in widget
             assert "params" in widget
+            assert len(widget["params"]) > 0, f"Widget {widget['name']} in {service['name']} must have at least one parameter"
             for param in widget["params"]:
                 assert "name" in param
                 assert "type" in param

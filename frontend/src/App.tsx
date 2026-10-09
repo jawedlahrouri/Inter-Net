@@ -6,6 +6,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
+import { BrainrotMode, BRAINROT_DROP_BAT_EVENT } from '@/components/brainrot/BrainrotMode';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
 import { BackgroundMusicPlayer } from '@/components/dashboard/BackgroundMusicPlayer';
 import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
@@ -18,10 +19,14 @@ import {
   createAdminWidget,
   updateAdminWidget,
   deleteAdminWidget,
+  reorderAdminWidgets,
   type AdminDashboardSummary,
   type ApiUserWidget,
 } from '@/services/api';
 import type { Widget, NewWidgetData } from '@/types/widget';
+import { CguDialog } from '@/components/legal/CguDialog';
+import { AccessibilityDialog } from '@/components/legal/AccessibilityDialog';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -61,6 +66,10 @@ interface SupervisedContext {
   widgets: ApiUserWidget[];
 }
 
+const BRAINROT_MUSIC_URL = `/api/v1/storage/custom_music/${encodeURIComponent(
+  'W&W - Tung Tung Tung Sahur (Italian Brainrot) - W&W.mp3'
+)}`;
+
 /**
  * @brief Renders the main application shell handling navigation between dashboard, settings and admin views plus supervised dashboards.
  * @return JSX with the header, the active tab content (dashboard, settings or admin), footer and background music player.
@@ -74,7 +83,7 @@ function DashboardContent() {
     logout,
   } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { activeDashboardId, setActiveDashboardId, customization } = useSettings();
+  const { activeDashboardId, setActiveDashboardId, customization, brainrotMode } = useSettings();
 
   const [isMeditating, setIsMeditating] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<NavTab>(() => {
@@ -102,6 +111,8 @@ function DashboardContent() {
   const [supervisedContext, setSupervisedContext] = useState<SupervisedContext | null>(null);
   const [adminDialogSummary, setAdminDialogSummary] = useState<AdminDashboardSummary | null>(null);
   const [adminDialogOpen, setAdminDialogOpen] = useState<boolean>(false);
+  const [cguOpen, setCguOpen] = useState<boolean>(false);
+  const [a11yOpen, setA11yOpen] = useState<boolean>(false);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   /**
@@ -110,7 +121,7 @@ function DashboardContent() {
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
   };
-  const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
+  const { widgets, addWidget, updateWidget, removeWidget, reorderWidgets } = useWidgets();
 
   const navigateToDashboard = useCallback((pageId?: string) => {
     setSupervisedContext(null);
@@ -240,6 +251,48 @@ function DashboardContent() {
       console.error('Erreur suppression widget supervision:', err);
     }
   };
+
+  /**
+   * @brief Reorders widgets on the supervised user's dashboard and synchronizes with the admin API.
+   * @param reorderedSubset The new order of widgets for the active dashboard.
+   */
+  const handleSupervisedReorderWidgets = async (reorderedSubset: Widget[]) => {
+    if (!supervisedContext) return;
+    try {
+      const subsetIds = new Set(reorderedSubset.map((w) => String(w.id)));
+      const firstIndex = supervisedContext.widgets.findIndex((w) => subsetIds.has(String(w.id)));
+
+      let nextAllApiWidgets: ApiUserWidget[] = [];
+      const subsetApiWidgets = reorderedSubset
+        .map((w) => supervisedContext.widgets.find((orig) => String(orig.id) === String(w.id)))
+        .filter(Boolean) as ApiUserWidget[];
+
+      if (firstIndex !== -1) {
+        const before = supervisedContext.widgets.filter((w, idx) => idx < firstIndex && !subsetIds.has(String(w.id)));
+        const after = supervisedContext.widgets.filter((w, idx) => idx >= firstIndex && !subsetIds.has(String(w.id)));
+        nextAllApiWidgets = [...before, ...subsetApiWidgets, ...after];
+      } else {
+        nextAllApiWidgets = [...subsetApiWidgets, ...supervisedContext.widgets.filter((w) => !subsetIds.has(String(w.id)))];
+      }
+
+      setSupervisedContext((prev) =>
+        prev
+          ? {
+              ...prev,
+              widgets: nextAllApiWidgets,
+            }
+          : null
+      );
+
+      const numericIds = nextAllApiWidgets
+        .map((w) => Number(w.id))
+        .filter((id) => !isNaN(id));
+      await reorderAdminWidgets(supervisedContext.userId, numericIds);
+    } catch (err) {
+      console.error('Erreur réordonnancement widgets supervision:', err);
+    }
+  };
+
 
   useEffect(() => {
     /**
@@ -380,77 +433,101 @@ function DashboardContent() {
       className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full transition-colors duration-200"
       style={containerStyle}
     >
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="w-full px-6 sm:px-8 lg:px-12 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring font-medium text-xs"
+      >
+        Passer au contenu principal
+      </a>
+
+      <header role="banner" className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="w-full px-3 sm:px-6 lg:px-10 h-14 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
             <button
               type="button"
               onClick={() => navigateToDashboard()}
-              className="font-semibold text-sm tracking-widest text-foreground uppercase select-none cursor-pointer hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+              className="font-bold text-sm tracking-wider text-foreground uppercase select-none cursor-pointer hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm shrink-0"
             >
               INTER-NET
             </button>
 
             {user && (
-              <nav className="flex items-center gap-1.5">
+              <nav className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => navigateToDashboard()}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
                     currentTab === 'dashboard'
                       ? 'bg-muted text-foreground font-semibold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
                   }`}
+                  title="Tableau de bord"
                 >
-                  <LayoutDashboard className="size-3.5" />
-                  <span>Dashboard</span>
+                  <LayoutDashboard className="size-3.5 shrink-0" />
+                  <span className="hidden md:inline">Dashboard</span>
                 </button>
 
                 {user.role === 'admin' && (
                   <button
                     type="button"
                     onClick={() => navigateToAdmin()}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
                       currentTab === 'admin'
                         ? 'bg-violet-500/20 text-violet-300 font-semibold border border-violet-500/40'
                         : 'text-violet-400/80 hover:text-violet-300 hover:bg-violet-500/10'
                     }`}
+                    title="Panel d'administration"
                   >
-                    <Shield className="size-3.5 text-violet-400" />
-                    <span>Administration</span>
+                    <Shield className="size-3.5 text-violet-400 shrink-0" />
+                    <span className="hidden md:inline">Administration</span>
                   </button>
                 )}
               </nav>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {user ? (
               <>
                 <Button
                   variant="outline"
                   size="default"
                   onClick={() => setIsMeditating(true)}
-                  className="h-10 text-xs gap-1.5 px-3.5 cursor-pointer font-medium border-border/80 hover:bg-muted/60"
+                  className="h-9 sm:h-10 text-xs gap-1.5 px-2.5 sm:px-3.5 cursor-pointer font-medium border-border/80 hover:bg-muted/60"
                   title="Pause méditation"
                 >
-                  <Sparkles className="size-3.5 text-primary" />
-                  <span>Méditer</span>
+                  <Sparkles className="size-3.5 text-primary shrink-0" />
+                  <span className="hidden sm:inline">Méditer</span>
                 </Button>
+
+                {brainrotMode && !supervisedContext && (
+                  <Button
+                    id="tung-header-button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => window.dispatchEvent(new Event(BRAINROT_DROP_BAT_EVENT))}
+                    className="h-9 sm:h-10 text-xs gap-1.5 px-2.5 sm:px-3.5 cursor-pointer font-medium border-border/80 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                    title="Tung (Faire tomber la batte)"
+                  >
+                    <span className="text-xs shrink-0 select-none">🏏</span>
+                    <span className="hidden sm:inline">Tung</span>
+                  </Button>
+                )}
 
                 {currentTab === 'dashboard' && (
                   <Button
                     variant={isEditing ? 'default' : 'outline'}
                     size="default"
                     onClick={toggleEditMode}
-                    className="h-10 text-xs gap-1.5 px-3.5 cursor-pointer font-medium"
+                    className="h-9 sm:h-10 text-xs gap-1.5 px-2.5 sm:px-3.5 cursor-pointer font-medium"
+                    title={isEditing ? 'Terminer l\'édition' : 'Éditer les widgets'}
                   >
                     {isEditing ? (
                       'Terminer'
                     ) : (
                       <>
-                        <Plus className="size-3.5" />
-                        <span>Éditer les widgets</span>
+                        <Plus className="size-3.5 shrink-0" />
+                        <span className="hidden sm:inline">Éditer</span>
                       </>
                     )}
                   </Button>
@@ -595,7 +672,7 @@ function DashboardContent() {
         />
       )}
 
-      <main className="flex-1 w-full px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+      <main id="main-content" role="main" tabIndex={-1} className="flex-1 w-full px-3 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 focus:outline-none">
         {!user ? (
           <div className="space-y-8 max-w-md mx-auto py-12">
             <div className="text-center space-y-2">
@@ -649,6 +726,9 @@ function DashboardContent() {
                 onRemoveWidget={
                   supervisedContext ? handleSupervisedRemoveWidget : removeWidget
                 }
+                onReorderWidgets={
+                  supervisedContext ? handleSupervisedReorderWidgets : reorderWidgets
+                }
                 onToggleEdit={() => setIsEditing(true)}
               />
             </div>
@@ -681,14 +761,28 @@ function DashboardContent() {
         />
       )}
 
-      <footer className="w-full border-t border-border py-6 text-xs text-muted-foreground mt-auto">
-        <div className="w-full px-6 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer role="contentinfo" className="w-full border-t border-border py-4 sm:py-6 text-xs text-muted-foreground mt-auto">
+        <div className="w-full px-3 sm:px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <p className="font-medium text-foreground/80">CrabeCorp • INTER-NET</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => setA11yOpen(true)}
+              className="hover:text-foreground transition-colors cursor-pointer text-xs underline-offset-4 hover:underline"
+            >
+              Accessibilité : Totalement conforme
+            </button>
+            <button
+              type="button"
+              onClick={() => setCguOpen(true)}
+              className="hover:text-foreground transition-colors cursor-pointer text-xs underline-offset-4 hover:underline"
+            >
+              CGU
+            </button>
             <a
               href="http://localhost:8080/about.json"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
             >
               /about.json
@@ -697,7 +791,7 @@ function DashboardContent() {
             <a
               href="http://localhost:8080/api/v1/docs"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-mono text-xs"
             >
               Swagger Docs
@@ -707,7 +801,13 @@ function DashboardContent() {
         </div>
       </footer>
 
-      {user && isDashboardTab && <BackgroundMusicPlayer />}
+      <CguDialog open={cguOpen} onOpenChange={setCguOpen} />
+      <AccessibilityDialog open={a11yOpen} onOpenChange={setA11yOpen} />
+
+      {user && isDashboardTab && !(brainrotMode && !supervisedContext) && <BackgroundMusicPlayer />}
+      {user && brainrotMode && !supervisedContext && (
+        <BrainrotMode musicUrl={BRAINROT_MUSIC_URL} />
+      )}
     </div>
   );
 }
@@ -721,7 +821,9 @@ export function App() {
     <ThemeProvider defaultTheme="dark" storageKey="internet-theme">
       <AuthProvider>
         <SettingsProvider>
-          <DashboardContent />
+          <TooltipProvider delayDuration={150}>
+            <DashboardContent />
+          </TooltipProvider>
         </SettingsProvider>
       </AuthProvider>
     </ThemeProvider>

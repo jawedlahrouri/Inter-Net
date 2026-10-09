@@ -114,7 +114,7 @@ export function EditWidgetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] max-h-[88vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-[560px] max-h-[88vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifier le widget</DialogTitle>
           <DialogDescription>

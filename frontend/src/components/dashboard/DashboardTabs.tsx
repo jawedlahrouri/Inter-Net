@@ -210,10 +210,11 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
             setNewDashboardName('');
             setIsCreateOpen(true);
           }}
-          className="h-8 text-xs gap-1.5 px-3 border-dashed border-border/80 hover:border-primary/60 hover:bg-primary/5 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-8 text-xs gap-1.5 px-2.5 sm:px-3 border-dashed border-border/80 hover:border-primary/60 hover:bg-primary/5 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
         >
           <Plus className="size-3.5 text-primary" />
-          <span>Nouvelle page</span>
+          <span className="hidden sm:inline">Nouvelle page</span>
+          <span className="sm:hidden">Page</span>
         </Button>
 
         {isEditing && (
@@ -225,16 +226,17 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
               setCustomizeTarget(activeDashboard);
               setIsCustomizeOpen(true);
             }}
-            className="h-8 text-xs gap-1.5 px-3 border-primary/50 bg-primary/10 text-foreground hover:bg-primary/20 cursor-pointer shrink-0 font-medium"
+            className="h-8 text-xs gap-1.5 px-2.5 sm:px-3 border-primary/50 bg-primary/10 text-foreground hover:bg-primary/20 cursor-pointer shrink-0 font-medium"
           >
             <Palette className="size-3.5 text-primary" />
-            <span>Personnaliser cette page</span>
+            <span className="hidden md:inline">Personnaliser cette page</span>
+            <span className="md:hidden">Thème</span>
           </Button>
         )}
       </div>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="w-[95vw] sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Créer une page de tableau de bord</DialogTitle>
             <DialogDescription>
@@ -273,7 +275,7 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
       </Dialog>
 
       <Dialog open={!!renameTarget} onOpenChange={(open) => !open && setRenameTarget(null)}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="w-[95vw] sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Renommer la page</DialogTitle>
             <DialogDescription>
@@ -311,7 +313,7 @@ export function DashboardTabs({ widgets, isEditing = false, onDashboardChange }:
       </Dialog>
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="w-[95vw] sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Supprimer la page ?</DialogTitle>
             <DialogDescription>

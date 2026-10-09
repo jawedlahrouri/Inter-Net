@@ -29,6 +29,18 @@ async def lifespan(app: FastAPI):
                 conn.commit()
         except Exception:
             pass
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+        except Exception:
+            pass
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN verification_token VARCHAR(255) DEFAULT NULL"))
+                conn.commit()
+        except Exception:
+            pass
     except Exception as e:
         print(f"DB Startup warning: {e}")
     yield
@@ -61,6 +73,28 @@ async def integration_service_error_handler(request: Request, exc: IntegrationSe
     @return A JSONResponse with the exception status code and a detail message.
     """
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """
+    @brief Catches unhandled exceptions and returns a consistent JSON payload.
+    @param request The incoming HTTP request.
+    @param exc The unhandled exception.
+    @return A JSONResponse with status 500 and sanitized message.
+    """
+    from fastapi.exceptions import RequestValidationError, HTTPException as FastApiHTTPException
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
+    if isinstance(exc, (FastApiHTTPException, StarletteHTTPException, IntegrationServiceError, RequestValidationError)):
+        raise exc
+
+    print(f"[Core API] Unhandled exception on {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Une erreur interne est survenue.", "status_code": 500},
+    )
+
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

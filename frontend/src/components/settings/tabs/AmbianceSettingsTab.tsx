@@ -94,13 +94,13 @@ export function AmbianceSettingsTab({
   }
 
   /**
-   * @brief Resets the meditation settings to the default video with video enabled and sound disabled.
+   * @brief Resets the meditation settings to the default video with video and sound enabled.
    */
   const handleResetToDefault = async () => {
     await onUpdateMeditationSettings({
       video_enabled: true,
       video_url: '/custom_vids/la_peace.mp4',
-      sound_enabled: false,
+      sound_enabled: true,
     })
   }
 

@@ -16,6 +16,7 @@ def create_user_helper(db_session, username="regular_user", email="regular@test.
         username=username,
         password_hash=get_password_hash("password123"),
         role=role,
+        is_verified=True,
         settings={"dashboards": [{"id": "default", "name": "Général"}]},
     )
     db_session.add(user)

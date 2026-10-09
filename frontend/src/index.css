@@ -180,3 +180,23 @@ body {
     display: none;
   }
 }
+
+/* RGAA 10.7 & 10.8: Prise en compte des préférences utilisateurs sur la réduction des mouvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Le masquage du curseur en mode Brainrot est strictement interdit si l'utilisateur demande des mouvements réduits */
+@media (prefers-reduced-motion: no-preference) {
+  html.brainrot-cursor,
+  html.brainrot-cursor * {
+    cursor: none !important;
+  }
+}

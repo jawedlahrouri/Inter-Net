@@ -1,24 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import secrets
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
+from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
 from app.models.widget import UserWidget, WidgetDefinition
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.user import (
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    Token,
+    RegisterResponse,
+    VerifyEmailRequest,
+    VerifyEmailResponse,
+    ResendVerificationRequest,
+)
 from app.schemas.settings import UserSettings, UserSettingsUpdate
+from app.services.mail_service import MailService
 
 router = APIRouter()
 
 
-
-@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_in: UserCreate, db: Session = Depends(get_db)):
     """
-    @brief Registers a new user after checking email and username uniqueness, creates default widgets and issues an access token.
+    @brief Registers a new user after checking email and username uniqueness, creates default widgets and sends an activation email.
     @param user_in The registration payload with email, username and password.
     @param db The SQLAlchemy database session.
-    @return A Token containing the bearer access token and the created user.
+    @return RegisterResponse containing registration status message and user info.
     """
     existing_email = db.query(User).filter(User.email == user_in.email).first()
     if existing_email:
@@ -33,11 +45,14 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             detail="Ce nom d'utilisateur est déjà pris.",
         )
     hashed_password = get_password_hash(user_in.password)
+    verification_token = secrets.token_urlsafe(32)
     user = User(
         email=user_in.email,
         username=user_in.username,
         password_hash=hashed_password,
         role="user",
+        is_verified=False,
+        verification_token=verification_token,
     )
     db.add(user)
     db.commit()
@@ -67,13 +82,62 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         ))
     db.commit()
 
-
-    access_token = create_access_token(subject=user.id)
-    return Token(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user),
+    await MailService.send_verification_email(user.email, user.username, verification_token)
+    return RegisterResponse(
+        message="Compte créé avec succès. Veuillez vérifier votre boîte email pour activer votre compte avant de vous connecter.",
+        email=user.email,
+        username=user.username,
+        is_verified=False,
     )
+
+
+@router.post("/verify-email", response_model=VerifyEmailResponse)
+def verify_email(data: VerifyEmailRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.verification_token == data.token).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Jeton de confirmation invalide ou expiré.",
+        )
+
+    user.is_verified = True
+    user.verification_token = None
+    db.commit()
+    return VerifyEmailResponse(
+        message="Votre compte a été confirmé avec succès. Vous pouvez maintenant vous connecter.",
+        is_verified=True,
+        email=user.email,
+    )
+
+
+@router.get("/verify-email")
+def verify_email_get(token: str = Query(..., description="Jeton de vérification"), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.verification_token == token).first()
+    if not user:
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/verify-email?error=invalid",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    user.is_verified = True
+    user.verification_token = None
+    db.commit()
+    return RedirectResponse(
+        url=f"{settings.FRONTEND_URL}/verify-email?verified=true&email={user.email}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/resend-verification")
+async def resend_verification(data: ResendVerificationRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+    if user and not user.is_verified:
+        new_token = secrets.token_urlsafe(32)
+        user.verification_token = new_token
+        db.commit()
+        await MailService.send_verification_email(user.email, user.username, new_token)
+
+    return {"message": "Si un compte non activé existe avec cette adresse email, un nouvel email de confirmation a été envoyé."}
 
 
 @router.post("/login", response_model=Token)
@@ -93,6 +157,12 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Identifiants incorrects.",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Votre compte n'est pas encore activé. Veuillez cliquer sur le bouton dans le mail de confirmation reçu pour valider votre compte.",
         )
 
     access_token = create_access_token(subject=user.id)

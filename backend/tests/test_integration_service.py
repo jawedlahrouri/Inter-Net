@@ -56,3 +56,43 @@ def test_integration_service_lifecycle(db_session):
     status_unlinked = get_user_service_status(db=db_session, user_id=user.id, service_name="steam")
     assert status_unlinked["connected"] is False
 
+
+def test_oauth_token_encryption_at_rest(db_session):
+    """
+    @brief Verifies that OAuth tokens are encrypted at rest in the database and decrypted on read.
+    """
+    from sqlalchemy import text
+    from app.core.security import encrypt_token, decrypt_token
+
+    raw_token = "gho_secret_github_token_12345"
+    user = User(email="dev@example.com", username="dev_tester", password_hash="h", role="user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    user_service = link_user_service(
+        db=db_session,
+        user_id=user.id,
+        service_name="github",
+        access_token=raw_token,
+    )
+
+    # 1. Accessing via the ORM returns the decrypted plaintext token
+    assert user_service.access_token == raw_token
+
+    # 2. Raw SQL query on the table proves that ciphertext is stored at rest
+    raw_db_val = db_session.execute(
+        text("SELECT access_token FROM user_services WHERE id = :id"),
+        {"id": user_service.id},
+    ).scalar()
+    assert raw_db_val is not None
+    assert raw_db_val != raw_token
+    assert raw_db_val.startswith("gAAAAA")
+
+    # 3. Direct decryption helper restores original token
+    assert decrypt_token(raw_db_val) == raw_token
+
+    # 4. Fallback on legacy unencrypted token
+    assert decrypt_token("legacy_plaintext_token") == "legacy_plaintext_token"
+
+

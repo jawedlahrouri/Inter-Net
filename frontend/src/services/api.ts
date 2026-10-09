@@ -16,6 +16,7 @@ export interface User {
   email: string;
   username: string;
   role: 'user' | 'admin';
+  is_verified?: boolean;
   created_at: string;
 }
 
@@ -29,6 +30,13 @@ export interface RegisterPayload {
   email: string;
   username: string;
   password: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  email: string;
+  username: string;
+  is_verified: boolean;
 }
 
 export interface LoginPayload {
@@ -127,17 +135,29 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
 }
 
 /**
- * @brief Registers a new user through the API and stores the returned access token.
+ * @brief Registers a new user through the API and sends an activation email.
  * @param payload The registration data containing email, username and password.
- * @return A promise resolving to the token response with the access token and created user.
+ * @return A promise resolving to the register response.
  */
-export async function registerUser(payload: RegisterPayload): Promise<TokenResponse> {
-  const data = await apiFetch<TokenResponse>('/api/v1/auth/register', {
+export async function registerUser(payload: RegisterPayload): Promise<RegisterResponse> {
+  return apiFetch<RegisterResponse>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
-  setStoredToken(data.access_token);
-  return data;
+}
+
+export async function verifyEmailApi(token: string): Promise<{ message: string; is_verified: boolean; email?: string }> {
+  return apiFetch<{ message: string; is_verified: boolean; email?: string }>('/api/v1/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendVerificationApi(email: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 }
 
 /**
@@ -1047,6 +1067,33 @@ export async function deleteAdminWidget(
     method: 'DELETE',
   });
 }
+
+/**
+ * @brief Reorders widgets of the authenticated user.
+ * @param widgetIds Ordered list of numeric widget IDs.
+ */
+export async function reorderUserWidgets(widgetIds: number[]): Promise<ApiUserWidget[]> {
+  return apiFetch<ApiUserWidget[]>('/api/v1/widgets/reorder', {
+    method: 'PUT',
+    body: JSON.stringify({ widget_ids: widgetIds }),
+  });
+}
+
+/**
+ * @brief Reorders a user's widgets in admin supervision mode.
+ * @param userId Target user ID.
+ * @param widgetIds Ordered list of numeric widget IDs.
+ */
+export async function reorderAdminWidgets(
+  userId: number,
+  widgetIds: number[]
+): Promise<ApiUserWidget[]> {
+  return apiFetch<ApiUserWidget[]>(`/api/v1/admin/users/${userId}/widgets/reorder`, {
+    method: 'PUT',
+    body: JSON.stringify({ widget_ids: widgetIds }),
+  });
+}
+
 
 
 
