@@ -16,6 +16,7 @@ import {
 import { getWidgetSpanClasses } from '@/lib/widgetLayout'
 import { cn } from '@/lib/utils'
 import type { Widget } from '@/types/widget'
+import { WidgetErrorBoundary } from '@/components/dashboard/WidgetErrorBoundary'
 
 export interface WidgetCardProps {
   widget: Widget
@@ -256,7 +257,9 @@ export function WidgetCard({
       )}
     >
       <div className="flex-1 min-h-0 flex flex-col">
-        {renderContent()}
+        <WidgetErrorBoundary widgetTitle={widget.title} widgetId={widget.id}>
+          {renderContent()}
+        </WidgetErrorBoundary>
       </div>
       {renderActions()}
     </div>

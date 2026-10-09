@@ -59,3 +59,46 @@ def decode_access_token(token: str) -> Optional[dict]:
         return payload
     except jwt.PyJWTError:
         return None
+
+
+def _get_fernet() -> Any:
+    """
+    @brief Derives a deterministic 32-byte Fernet key from the project SECRET_KEY.
+    @return A configured Fernet cipher instance.
+    """
+    import base64
+    import hashlib
+    from cryptography.fernet import Fernet
+
+    key_bytes = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
+    fernet_key = base64.urlsafe_b64encode(key_bytes)
+    return Fernet(fernet_key)
+
+
+def encrypt_token(plain_token: Optional[str]) -> Optional[str]:
+    """
+    @brief Encrypts an OAuth access or refresh token using Fernet before database storage.
+    @param plain_token The plaintext token string to encrypt.
+    @return The encrypted ciphertext token, or None if input was empty.
+    """
+    if not plain_token:
+        return plain_token
+    fernet = _get_fernet()
+    return fernet.encrypt(plain_token.encode("utf-8")).decode("utf-8")
+
+
+def decrypt_token(encrypted_token: Optional[str]) -> Optional[str]:
+    """
+    @brief Decrypts an encrypted OAuth token from the database, falling back gracefully if already plaintext.
+    @param encrypted_token The stored token string.
+    @return The original plaintext token.
+    """
+    if not encrypted_token:
+        return encrypted_token
+    from cryptography.fernet import InvalidToken
+    fernet = _get_fernet()
+    try:
+        return fernet.decrypt(encrypted_token.encode("utf-8")).decode("utf-8")
+    except (InvalidToken, Exception):
+        return encrypted_token
+
