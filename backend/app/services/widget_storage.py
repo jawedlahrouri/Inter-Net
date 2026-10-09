@@ -289,3 +289,31 @@ class JsonWidgetStorage:
             "message": "Widget supprimé avec succès",
             "id": widget_id,
         }
+
+    @staticmethod
+    def reorder_widgets(user_id: int, ordered_ids: List[int]) -> List[Dict[str, Any]]:
+        """
+        @brief Reorders user widgets according to the given list of IDs, assigning position_x sequentially.
+        @param user_id Identifier of the user whose widgets are reordered.
+        @param ordered_ids List of widget IDs defining the new visual sequence.
+        @return The reordered list of widgets.
+        """
+        widgets = JsonWidgetStorage.load_user_widgets(user_id)
+        widget_map = {w.get("id"): w for w in widgets}
+        reordered: List[Dict[str, Any]] = []
+
+        for i, wid in enumerate(ordered_ids):
+            if wid in widget_map:
+                w = widget_map.pop(wid)
+                w["position_x"] = i
+                w["updated_at"] = datetime.now(timezone.utc).isoformat()
+                reordered.append(w)
+
+        # Conserve en queue les widgets non spécifiés dans la liste
+        for w in widget_map.values():
+            w["position_x"] = len(reordered)
+            reordered.append(w)
+
+        JsonWidgetStorage.save_user_widgets(user_id, reordered)
+        return reordered
+

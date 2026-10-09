@@ -13,19 +13,21 @@ export interface WidgetGridProps {
   onAddWidget: (data: NewWidgetData) => void
   onUpdateWidget?: (id: string, data: Partial<Widget>) => void
   onRemoveWidget: (id: string) => void
+  onReorderWidgets?: (reordered: Widget[]) => void
   onOpenAddDialog?: () => void
   onToggleEdit?: () => void
 }
 
 /**
- * @brief Renders the dashboard widget grid with empty states, editing controls and the add and edit widget dialogs.
+ * @brief Renders the dashboard widget grid with empty states, editing controls, drag-and-drop reordering and widget dialogs.
  * @param widgets List of widgets to display in the grid.
- * @param isEditing Whether edit mode is active, showing add, edit and remove controls.
+ * @param isEditing Whether edit mode is active, showing add, edit, move and remove controls.
  * @param onAddWidget Callback receiving the new widget data submitted from the add dialog.
  * @param onUpdateWidget Optional callback receiving a widget id and partial data for edits and resizes.
  * @param onRemoveWidget Callback receiving the id of the widget to remove.
+ * @param onReorderWidgets Callback receiving the reordered widgets sequence after drag-and-drop or move.
  * @param onToggleEdit Optional callback that toggles edit mode, used by the empty-state button.
- * @return An empty-state placeholder or a responsive grid of widget cards with an add button, plus the add and edit dialogs.
+ * @return An empty-state placeholder or a responsive grid of widget cards with drag-and-drop reordering.
  */
 export function WidgetGrid({
   widgets,
@@ -33,10 +35,60 @@ export function WidgetGrid({
   onAddWidget,
   onUpdateWidget,
   onRemoveWidget,
+  onReorderWidgets,
   onToggleEdit,
 }: WidgetGridProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [editingWidget, setEditingWidget] = React.useState<Widget | null>(null)
+  const [draggedId, setDraggedId] = React.useState<string | null>(null)
+  const [dragOverId, setDragOverId] = React.useState<string | null>(null)
+
+  const reorderList = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return
+    const nextList = [...widgets]
+    const [moved] = nextList.splice(fromIndex, 1)
+    nextList.splice(toIndex, 0, moved)
+    onReorderWidgets?.(nextList)
+  }
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id)
+    e.dataTransfer.effectAllowed = 'move'
+    setDraggedId(id)
+  }
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (draggedId && draggedId !== id && dragOverId !== id) {
+      setDragOverId(id)
+    }
+  }
+
+  const handleDragLeave = (id: string) => {
+    if (dragOverId === id) {
+      setDragOverId(null)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    const sourceId = draggedId || e.dataTransfer.getData('text/plain')
+    if (sourceId && sourceId !== targetId) {
+      const fromIndex = widgets.findIndex((w) => w.id === sourceId)
+      const toIndex = widgets.findIndex((w) => w.id === targetId)
+      if (fromIndex !== -1 && toIndex !== -1) {
+        reorderList(fromIndex, toIndex)
+      }
+    }
+    setDraggedId(null)
+    setDragOverId(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedId(null)
+    setDragOverId(null)
+  }
 
   return (
     <>
@@ -88,27 +140,46 @@ export function WidgetGrid({
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full auto-rows-[minmax(280px,auto)] grid-flow-dense items-stretch">
-          {widgets.map((widget) => (
-            <WidgetCard
-              key={widget.id}
-              widget={widget}
-              isEditing={isEditing}
-              onEdit={(w) => setEditingWidget(w)}
-              onRemove={onRemoveWidget}
-              onResize={(width, height) => {
-                if (onUpdateWidget) {
-                  onUpdateWidget(widget.id, { width, height })
-                }
-              }}
-            />
-          ))}
-
+        <div className="space-y-3 w-full">
           {isEditing && (
-            <div className="col-span-1 min-h-[280px] flex items-center justify-center">
-              <AddButton onClick={() => setIsDialogOpen(true)} />
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/40 border border-border/70 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-primary animate-pulse" />
+                <span>Glissez-déposez les widgets pour modifier leur disposition.</span>
+              </span>
+              <span className="font-mono text-[11px] text-foreground/80">{widgets.length} widget{widgets.length > 1 ? 's' : ''}</span>
             </div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full auto-rows-[minmax(280px,auto)] grid-flow-dense items-stretch">
+            {widgets.map((widget) => (
+              <WidgetCard
+                key={widget.id}
+                widget={widget}
+                isEditing={isEditing}
+                onEdit={(w) => setEditingWidget(w)}
+                onRemove={onRemoveWidget}
+                onResize={(width, height) => {
+                  if (onUpdateWidget) {
+                    onUpdateWidget(widget.id, { width, height })
+                  }
+                }}
+                isDragging={draggedId === widget.id}
+                isDragOver={dragOverId === widget.id}
+                onDragStart={(e) => handleDragStart(e, widget.id)}
+                onDragOver={(e) => handleDragOver(e, widget.id)}
+                onDragLeave={() => handleDragLeave(widget.id)}
+                onDrop={(e) => handleDrop(e, widget.id)}
+                onDragEnd={handleDragEnd}
+              />
+            ))}
+
+            {isEditing && (
+              <div className="col-span-1 min-h-[280px] flex items-center justify-center">
+                <AddButton onClick={() => setIsDialogOpen(true)} />
+              </div>
+            )}
+          </div>
         </div>
       )}
 

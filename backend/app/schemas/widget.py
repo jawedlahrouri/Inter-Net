@@ -56,3 +56,8 @@ class UserWidgetOut(UserWidgetBase):
 class WidgetDeleteResponse(BaseModel):
     message: str = "Widget supprimé avec succès"
     id: int
+
+
+class WidgetReorderIn(BaseModel):
+    widget_ids: list[int]
+

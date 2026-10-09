@@ -220,3 +220,35 @@ def test_widget_dimensions_customization(client, db_session):
     updated = update_resp.json()
     assert updated["width"] == 3
     assert updated["height"] == 1
+
+
+def test_reorder_widgets_success(client, db_session):
+    """
+    @brief Tests reordering widgets updates their positions and array order.
+    """
+    token = create_user_token(client, db_session, "reorder_user@example.com", "reorder_user", "password123")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r1 = client.post(
+        "/api/v1/widgets",
+        headers=headers,
+        json={"type": "weather", "title": "Widget Alpha", "params_values": {"city": "Paris"}},
+    )
+    r2 = client.post(
+        "/api/v1/widgets",
+        headers=headers,
+        json={"type": "weather", "title": "Widget Beta", "params_values": {"city": "Lyon"}},
+    )
+    id1 = r1.json()["id"]
+    id2 = r2.json()["id"]
+
+    reorder_resp = client.put(
+        "/api/v1/widgets/reorder",
+        headers=headers,
+        json={"widget_ids": [id2, id1]},
+    )
+    assert reorder_resp.status_code == 200
+    widgets = reorder_resp.json()
+    ids_in_order = [w["id"] for w in widgets if w["id"] in [id1, id2]]
+    assert ids_in_order == [id2, id1]
+

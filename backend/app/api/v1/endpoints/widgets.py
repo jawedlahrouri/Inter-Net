@@ -9,6 +9,7 @@ from app.schemas.widget import (
     UserWidgetUpdate,
     WidgetDefinitionOut,
     WidgetDeleteResponse,
+    WidgetReorderIn,
 )
 from app.services.widget_storage import JsonWidgetStorage
 
@@ -108,6 +109,20 @@ def create_user_widget(
     @return The newly created widget.
     """
     return JsonWidgetStorage.create_widget(current_user.id, widget_in)
+
+
+@router.put("/reorder", response_model=List[UserWidgetOut])
+def reorder_user_widgets(
+    reorder_in: WidgetReorderIn,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    @brief Reorders user widgets according to the given widget IDs sequence.
+    @param reorder_in Payload containing the ordered list of widget IDs.
+    @param current_user Authenticated user owning the widgets.
+    @return The reordered list of widgets.
+    """
+    return JsonWidgetStorage.reorder_widgets(current_user.id, reorder_in.widget_ids)
 
 
 @router.put("/{widget_id}", response_model=UserWidgetOut)

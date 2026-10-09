@@ -19,6 +19,7 @@ import {
   createAdminWidget,
   updateAdminWidget,
   deleteAdminWidget,
+  reorderAdminWidgets,
   type AdminDashboardSummary,
   type ApiUserWidget,
 } from '@/services/api';
@@ -120,7 +121,7 @@ function DashboardContent() {
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
   };
-  const { widgets, addWidget, updateWidget, removeWidget } = useWidgets();
+  const { widgets, addWidget, updateWidget, removeWidget, reorderWidgets } = useWidgets();
 
   const navigateToDashboard = useCallback((pageId?: string) => {
     setSupervisedContext(null);
@@ -250,6 +251,48 @@ function DashboardContent() {
       console.error('Erreur suppression widget supervision:', err);
     }
   };
+
+  /**
+   * @brief Reorders widgets on the supervised user's dashboard and synchronizes with the admin API.
+   * @param reorderedSubset The new order of widgets for the active dashboard.
+   */
+  const handleSupervisedReorderWidgets = async (reorderedSubset: Widget[]) => {
+    if (!supervisedContext) return;
+    try {
+      const subsetIds = new Set(reorderedSubset.map((w) => String(w.id)));
+      const firstIndex = supervisedContext.widgets.findIndex((w) => subsetIds.has(String(w.id)));
+
+      let nextAllApiWidgets: ApiUserWidget[] = [];
+      const subsetApiWidgets = reorderedSubset
+        .map((w) => supervisedContext.widgets.find((orig) => String(orig.id) === String(w.id)))
+        .filter(Boolean) as ApiUserWidget[];
+
+      if (firstIndex !== -1) {
+        const before = supervisedContext.widgets.filter((w, idx) => idx < firstIndex && !subsetIds.has(String(w.id)));
+        const after = supervisedContext.widgets.filter((w, idx) => idx >= firstIndex && !subsetIds.has(String(w.id)));
+        nextAllApiWidgets = [...before, ...subsetApiWidgets, ...after];
+      } else {
+        nextAllApiWidgets = [...subsetApiWidgets, ...supervisedContext.widgets.filter((w) => !subsetIds.has(String(w.id)))];
+      }
+
+      setSupervisedContext((prev) =>
+        prev
+          ? {
+              ...prev,
+              widgets: nextAllApiWidgets,
+            }
+          : null
+      );
+
+      const numericIds = nextAllApiWidgets
+        .map((w) => Number(w.id))
+        .filter((id) => !isNaN(id));
+      await reorderAdminWidgets(supervisedContext.userId, numericIds);
+    } catch (err) {
+      console.error('Erreur réordonnancement widgets supervision:', err);
+    }
+  };
+
 
   useEffect(() => {
     /**
@@ -665,6 +708,9 @@ function DashboardContent() {
                 }
                 onRemoveWidget={
                   supervisedContext ? handleSupervisedRemoveWidget : removeWidget
+                }
+                onReorderWidgets={
+                  supervisedContext ? handleSupervisedReorderWidgets : reorderWidgets
                 }
                 onToggleEdit={() => setIsEditing(true)}
               />

@@ -1068,6 +1068,33 @@ export async function deleteAdminWidget(
   });
 }
 
+/**
+ * @brief Reorders widgets of the authenticated user.
+ * @param widgetIds Ordered list of numeric widget IDs.
+ */
+export async function reorderUserWidgets(widgetIds: number[]): Promise<ApiUserWidget[]> {
+  return apiFetch<ApiUserWidget[]>('/api/v1/widgets/reorder', {
+    method: 'PUT',
+    body: JSON.stringify({ widget_ids: widgetIds }),
+  });
+}
+
+/**
+ * @brief Reorders a user's widgets in admin supervision mode.
+ * @param userId Target user ID.
+ * @param widgetIds Ordered list of numeric widget IDs.
+ */
+export async function reorderAdminWidgets(
+  userId: number,
+  widgetIds: number[]
+): Promise<ApiUserWidget[]> {
+  return apiFetch<ApiUserWidget[]>(`/api/v1/admin/users/${userId}/widgets/reorder`, {
+    method: 'PUT',
+    body: JSON.stringify({ widget_ids: widgetIds }),
+  });
+}
+
+
 
 
 
