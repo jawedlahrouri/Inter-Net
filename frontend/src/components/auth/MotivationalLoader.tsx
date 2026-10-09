@@ -25,7 +25,7 @@ export function MotivationalLoader({
   const [showAuthor, setShowAuthor] = useState<boolean>(false);
   const [showMediter, setShowMediter] = useState<boolean>(false);
   const [isFinishing, setIsFinishing] = useState<boolean>(false);
-  const [isMuted, setIsMuted] = useState<boolean>(!settings.meditation.sound_enabled);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
 
   const completedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,6 +33,41 @@ export function MotivationalLoader({
   const isMeditateMode = mode === 'meditate';
   const showVideo = isMeditateMode && settings.meditation.video_enabled;
   const videoUrl = settings.meditation.video_url || '/custom_vids/la_peace.mp4';
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = isMuted;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        video.muted = true;
+        setIsMuted(true);
+        video.play().catch(() => {});
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  const handleToggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted((prev) => {
+      const next = !prev;
+      if (videoRef.current) {
+        videoRef.current.muted = next;
+        if (!next) {
+          videoRef.current.play().catch(() => {});
+        }
+      }
+      return next;
+    });
+  };
 
   const handleFinish = useCallback(() => {
     if (completedRef.current) return;
@@ -190,19 +225,22 @@ export function MotivationalLoader({
         <div className="flex items-center gap-2">
           {showVideo && (
             <Button
+              type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setIsMuted((prev) => !prev)}
-              className="text-xs text-white/70 hover:text-white gap-1.5 h-8 px-2.5 bg-black/30 hover:bg-black/50 border border-white/10 rounded-md cursor-pointer"
+              onClick={handleToggleMute}
+              className="text-xs text-white/70 hover:text-white gap-1.5 h-8 px-2.5 bg-black/30 hover:bg-black/50 border border-white/10 rounded-md cursor-pointer transition-colors"
+              title={isMuted ? 'Activer le son' : 'Couper le son (Muet)'}
+              aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
             >
               {isMuted ? (
                 <>
-                  <VolumeX className="size-3.5" />
+                  <VolumeX className="size-3.5 text-rose-400" />
                   <span className="text-[10px]">Muet</span>
                 </>
               ) : (
                 <>
-                  <Volume2 className="size-3.5" />
+                  <Volume2 className="size-3.5 text-emerald-400" />
                   <span className="text-[10px]">Son actif</span>
                 </>
               )}

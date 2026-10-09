@@ -35,7 +35,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   meditation: {
     video_enabled: true,
     video_url: '/custom_vids/la_peace.mp4',
-    sound_enabled: false,
+    sound_enabled: true,
   },
   dashboards: [
     {

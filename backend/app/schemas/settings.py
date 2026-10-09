@@ -8,7 +8,7 @@ class MeditationSettings(BaseModel):
         default="/api/v1/storage/custom_vids/la_peace.mp4",
         description="URL de la vidéo d'arrière-plan",
     )
-    sound_enabled: bool = Field(default=False, description="Active ou désactive le son de la vidéo")
+    sound_enabled: bool = Field(default=True, description="Active ou désactive le son de la vidéo")
 
 
 class MeditationSettingsUpdate(BaseModel):
