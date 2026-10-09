@@ -171,7 +171,7 @@ export function AuthCard() {
 
   return (
     <Card className="w-full max-w-md mx-auto border border-border/80 bg-card rounded-lg shadow-xs">
-      <CardHeader className="text-center pb-4 pt-6">
+      <CardHeader className="text-center p-4 sm:p-6 pb-3 sm:pb-4">
         <CardTitle className="text-xl font-semibold tracking-tight text-foreground">
           {activeTab === 'login' ? 'Connexion' : 'Créer un compte'}
         </CardTitle>
@@ -182,7 +182,7 @@ export function AuthCard() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="px-6 pb-6 pt-0">
+      <CardContent className="px-4 sm:px-6 pb-6 pt-0">
         {/* Bannière de notification après validation de compte */}
         {verificationStatus === 'success' && verificationMessage && (
           <div className="mb-4 p-3 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">

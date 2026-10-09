@@ -237,7 +237,7 @@ export function WeatherWidget({
         className
       )}
     >
-      <CardHeader className="flex flex-row items-start justify-between pb-2 p-6">
+      <CardHeader className="flex flex-row items-start justify-between pb-2 p-4 sm:p-6">
         <div className="space-y-1 min-w-0">
           <CardTitle className="text-base font-semibold flex items-center gap-2 text-card-foreground truncate">
             <MapPin className="size-4 text-muted-foreground shrink-0" />
@@ -266,7 +266,7 @@ export function WeatherWidget({
         </Tooltip>
       </CardHeader>
 
-      <CardContent className="space-y-4 px-6 pb-6 pt-0 flex-1 flex flex-col justify-between">
+      <CardContent className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6 pt-0 flex-1 flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1">
             <span className="text-4xl sm:text-5xl font-bold tracking-tight text-card-foreground tabular-nums font-mono">

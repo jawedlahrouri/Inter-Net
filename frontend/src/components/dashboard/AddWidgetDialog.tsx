@@ -342,17 +342,19 @@ export function AddWidgetDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <header className="h-14 px-5 border-b border-border/70 flex items-center justify-between bg-card/80 shrink-0 select-none">
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground/80 hover:text-foreground transition-colors cursor-pointer">
-              Tableau de bord
-            </span>
-            <span>/</span>
-            <span className="text-foreground/90 font-medium">Éditeur de panneau</span>
-            <span>/</span>
+        <header className="h-14 px-3 sm:px-5 border-b border-border/70 flex items-center justify-between gap-2 bg-card/80 shrink-0 select-none">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 text-xs text-muted-foreground min-w-0">
+            <div className="hidden md:flex items-center gap-2">
+              <span className="font-semibold text-foreground/80 hover:text-foreground transition-colors cursor-pointer">
+                Tableau de bord
+              </span>
+              <span>/</span>
+              <span className="text-foreground/90 font-medium">Éditeur de panneau</span>
+              <span>/</span>
+            </div>
             <Badge
               variant="outline"
-              className={`text-[11px] font-semibold py-0.5 px-2 gap-1.5 ${
+              className={`text-[11px] font-semibold py-0.5 px-2 gap-1.5 shrink-0 ${
                 selectedType === 'github'
                   ? 'border-purple-500/50 text-purple-500 bg-purple-500/10'
                   : selectedType === 'steam'
@@ -366,7 +368,7 @@ export function AddWidgetDialog({
               {selectedType === 'steam' && <Gamepad2 className="size-3.5" />}
               {selectedType === 'weather' && <CloudSun className="size-3.5" />}
               {selectedType === 'custom_api' && <Activity className="size-3.5" />}
-              <span>
+              <span className="truncate max-w-[140px] sm:max-w-none">
                 {selectedType === 'github'
                   ? `GitHub • ${currentGithubPreset.title}`
                   : selectedType === 'steam'
@@ -378,13 +380,13 @@ export function AddWidgetDialog({
             </Badge>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleCancel}
-              className="cursor-pointer text-xs h-9 px-3.5 text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-xs h-8 sm:h-9 px-2.5 sm:px-3.5 text-muted-foreground hover:text-foreground"
             >
               Annuler
             </Button>
@@ -396,16 +398,17 @@ export function AddWidgetDialog({
                 (selectedType === 'github' && !githubConnected) ||
                 (selectedType === 'steam' && !steamConnected)
               }
-              className="cursor-pointer text-xs h-9 px-4 gap-2 font-semibold shadow-sm"
+              className="cursor-pointer text-xs h-8 sm:h-9 px-3 sm:px-4 gap-1.5 sm:gap-2 font-semibold shadow-sm"
             >
-              <PlusCircle className="size-4" />
-              Ajouter au tableau de bord
+              <PlusCircle className="size-3.5 sm:size-4 shrink-0" />
+              <span className="hidden sm:inline">Ajouter au tableau de bord</span>
+              <span className="sm:hidden">Ajouter</span>
             </Button>
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-          <div className="lg:col-span-8 flex flex-col min-h-0 border-r border-border/70 bg-muted/5">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
+          <div className="lg:col-span-8 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-border/70 bg-muted/5">
             <div className="flex-1 min-h-[340px] flex flex-col overflow-hidden bg-background/40 relative">
               <div className="h-10 px-4 border-b border-border/50 flex items-center justify-between bg-muted/20 text-xs shrink-0 select-none">
                 <div className="flex items-center gap-2">
@@ -508,7 +511,7 @@ export function AddWidgetDialog({
               </div>
             </div>
 
-            <div className="h-[280px] border-t border-border/70 bg-card/50 p-4 overflow-y-auto shrink-0 flex flex-col gap-3">
+            <div className="h-auto lg:h-[280px] border-t border-border/70 bg-card/50 p-3 sm:p-4 overflow-y-auto shrink-0 flex flex-col gap-3">
               <div className="flex items-center justify-between pb-2 border-b border-border/40">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="size-4 text-primary" />

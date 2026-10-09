@@ -142,16 +142,16 @@ export function WidgetGrid({
       ) : (
         <div className="space-y-3 w-full">
           {isEditing && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/40 border border-border/70 text-xs text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-muted/40 border border-border/70 text-xs text-muted-foreground">
               <span className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-primary animate-pulse" />
+                <span className="size-2 rounded-full bg-primary animate-pulse shrink-0" />
                 <span>Glissez-déposez les widgets pour modifier leur disposition.</span>
               </span>
-              <span className="font-mono text-[11px] text-foreground/80">{widgets.length} widget{widgets.length > 1 ? 's' : ''}</span>
+              <span className="font-mono text-[11px] text-foreground/80 shrink-0">{widgets.length} widget{widgets.length > 1 ? 's' : ''}</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full auto-rows-[minmax(280px,auto)] grid-flow-dense items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 w-full auto-rows-[minmax(280px,auto)] grid-flow-dense items-stretch">
             {widgets.map((widget) => (
               <WidgetCard
                 key={widget.id}
