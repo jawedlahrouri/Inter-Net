@@ -13,7 +13,7 @@ import { GithubConnectDialog } from './GithubConnectDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { BRAINROT_START_CONCERT_EVENT } from '@/components/brainrot/BrainrotMode'
+import { BRAINROT_START_CONCERT_EVENT, BRAINROT_DROP_BAT_EVENT } from '@/components/brainrot/BrainrotMode'
 import {
   User,
   Layers,
@@ -406,17 +406,27 @@ export function SettingsView({
               <div>
                 <h4 className="text-sm font-semibold text-foreground">Brainrot mode</h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Un concert surprise des 8 brainrots peut démarrer à tout moment (1 chance sur 100 par seconde), avec musique et lumières. Le reste du temps, Tung Tung Tung Sahur frappe votre curseur avec sa batte.
+                  Un concert surprise des 8 brainrots peut démarrer à tout moment (1 chance sur 100 par seconde), avec musique et lumières. Le reste du temps, Tung Tung Tung Sahur frappe votre curseur... à moins que vous ne fassiez tomber une batte avec le bouton TUNG pour le frapper en rythme : TUNG TUNG TUNG SAHUR !
                 </p>
                 {brainrotMode && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 h-7 cursor-pointer text-xs"
-                    onClick={() => window.dispatchEvent(new Event(BRAINROT_START_CONCERT_EVENT))}
-                  >
-                    Lancer le concert maintenant
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 cursor-pointer text-xs"
+                      onClick={() => window.dispatchEvent(new Event(BRAINROT_START_CONCERT_EVENT))}
+                    >
+                      Lancer le concert maintenant
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 cursor-pointer text-xs border-amber-500/40 text-amber-500 hover:bg-amber-500/10 font-bold"
+                      onClick={() => window.dispatchEvent(new Event(BRAINROT_DROP_BAT_EVENT))}
+                    >
+                      🏏 Bouton TUNG (Faire tomber la batte)
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

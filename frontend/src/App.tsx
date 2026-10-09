@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { MotivationalLoader } from '@/components/auth/MotivationalLoader';
 import { WidgetGrid } from '@/components/dashboard/WidgetGrid';
-import { BrainrotMode } from '@/components/brainrot/BrainrotMode';
+import { BrainrotMode, BRAINROT_DROP_BAT_EVENT } from '@/components/brainrot/BrainrotMode';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
 import { BackgroundMusicPlayer } from '@/components/dashboard/BackgroundMusicPlayer';
 import { SettingsView, type SettingsSubpage } from '@/components/settings/SettingsView';
@@ -499,6 +499,20 @@ function DashboardContent() {
                   <Sparkles className="size-3.5 text-primary shrink-0" />
                   <span className="hidden sm:inline">Méditer</span>
                 </Button>
+
+                {brainrotMode && !supervisedContext && (
+                  <Button
+                    id="tung-header-button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => window.dispatchEvent(new Event(BRAINROT_DROP_BAT_EVENT))}
+                    className="h-9 sm:h-10 text-xs gap-1.5 px-2.5 sm:px-3.5 cursor-pointer font-medium border-border/80 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                    title="Tung (Faire tomber la batte)"
+                  >
+                    <span className="text-xs shrink-0 select-none">🏏</span>
+                    <span className="hidden sm:inline">Tung</span>
+                  </Button>
+                )}
 
                 {currentTab === 'dashboard' && (
                   <Button

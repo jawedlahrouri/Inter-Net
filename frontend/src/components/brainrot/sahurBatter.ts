@@ -159,3 +159,20 @@ export function drawBatterArm(ctx: CanvasRenderingContext2D, angle: number, trai
   ctx.fillRect(-3, 25, 6, 1)
   ctx.restore()
 }
+
+export function drawBatSprite(ctx: CanvasRenderingContext2D, angle: number): void {
+  ctx.save()
+  ctx.rotate(angle)
+  ctx.fillStyle = '#b77946'
+  ctx.fillRect(-1.5, -4, 3, 6)
+  ctx.fillStyle = '#804f23'
+  ctx.fillRect(-1.5, 2, 3, 3)
+  ctx.fillStyle = '#e2ab6f'
+  ctx.fillRect(-2, 5, 4, 18)
+  ctx.fillRect(-3, 15, 6, 8)
+  ctx.fillStyle = '#c98a4d'
+  ctx.fillRect(1, 6, 1, 16)
+  ctx.fillStyle = '#fde68a'
+  ctx.fillRect(-3, 22, 6, 1)
+  ctx.restore()
+}

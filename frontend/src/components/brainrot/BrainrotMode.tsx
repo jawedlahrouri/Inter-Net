@@ -3,6 +3,8 @@ import { BrainrotTroupe } from './BrainrotTroupe'
 import { BrainrotSahurPet } from './BrainrotSahurPet'
 
 export const BRAINROT_START_CONCERT_EVENT = 'brainrot:start-concert'
+export const BRAINROT_DROP_BAT_EVENT = 'brainrot:drop-bat'
+export const BRAINROT_TUNG_HIT_EVENT = 'brainrot:tung-hit'
 
 const CONCERT_CHANCE_PER_SECOND = 1 / 100
 
