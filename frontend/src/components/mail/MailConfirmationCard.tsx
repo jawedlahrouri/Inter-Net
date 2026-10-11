@@ -78,11 +78,6 @@ export function MailConfirmationCard({
     }
   };
 
-  const isLocalDev = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-  );
-
   return (
     <Card className={cn('w-full max-w-md mx-auto border border-border/80 bg-card rounded-lg shadow-xs', className)}>
       <CardHeader className="text-center pb-3 pt-6 space-y-2">
@@ -152,17 +147,6 @@ export function MailConfirmationCard({
                 <span>Outlook</span>
                 <ExternalLink className="size-2.5 opacity-60" />
               </a>
-              {isLocalDev && (
-                <a
-                  href="http://localhost:8025"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary transition-colors font-medium"
-                >
-                  <span>Boîte de dev Mailpit (localhost:8025)</span>
-                  <ExternalLink className="size-2.5" />
-                </a>
-              )}
             </div>
           </div>
         )}
