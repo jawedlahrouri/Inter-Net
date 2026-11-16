@@ -1,3 +1,5 @@
+[![Academic Year](https://img.shields.io/badge/Epitech-Tek3-purple?style=for-the-badge&logo=epitech&logoColor=white)](https://www.epitech.eu/)
+
 # INTER-NET — Modular Distributed Dashboard
 
 > **Projet Dashboard Epitech**  
